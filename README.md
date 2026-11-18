@@ -7,6 +7,7 @@ company they belong to and what they may do.
 |---|---|---|
 | `gateway-server` | 8080 | One entry point for the FE (`/api/v1/**`). Rejects requests without a valid Keycloak token, sets `X-Trace-Id`, routes to services. Makes no permission decision. |
 | `iam-service` | 8081 | Companies (tenants), user accounts, roles, permissions. Login facade over Keycloak. Database `hrm_iam`. |
+| `media-service` | 8082 | Media library: folders, uploads (type checked from the bytes, svg/html refused), stats, time-limited signed view/download links. Files on volume `media-data`, rows in `hrm_media`. Super admin sees every company; a company only its own. |
 | `hrm-common` | — | Library shared by the servlet services: API envelope, error handling + i18n, trace id, resource-server setup, `PermissionChecker`, `TenantGuard`. |
 | Keycloak 26 | 8180 | Realm `hrm`: passwords, sessions, brute-force lockout, token signing. Config in `deploy/keycloak/hrm-realm.json`. |
 
@@ -86,6 +87,7 @@ mvn -DskipTests package            # builds the jars the Dockerfiles copy
 #   KC_BOOTSTRAP_ADMIN_USERNAME, KC_BOOTSTRAP_ADMIN_PASSWORD,
 #   KEYCLOAK_ADMIN_CLIENT_SECRET          (secret of client hrm-iam-admin; realm import and IAM read the same value)
 #   HRM_SUPERADMIN_INITIAL_PASSWORD       (temporary; ≥10 chars, upper, lower, digit)
+#   MEDIA_DB_PASSWORD, MEDIA_LINK_SECRET  (media-service; the link secret is random, ≥ 32 chars)
 docker compose up -d --build
 ```
 

@@ -13,10 +13,11 @@ import java.util.Set;
 @Getter
 @RequiredArgsConstructor
 public enum EDefaultRole {
-    COMPANY_ADMIN("Company administrator", union(IamPermissions.ALL, vn.specom.hrm.iam.saas.SaasPermissions.ALL)),
+    COMPANY_ADMIN("Company administrator",
+            union(union(IamPermissions.ALL, vn.specom.hrm.iam.saas.SaasPermissions.ALL), MediaPermissions.ALL)),
     // TODO(assumption): HR manages accounts but not roles — confirm with BA.
-    HR("HR", Set.of(IamPermissions.USER_VIEW, IamPermissions.USER_CREATE, IamPermissions.USER_UPDATE,
-            IamPermissions.ROLE_VIEW, IamPermissions.PERMISSION_VIEW)),
+    HR("HR", union(Set.of(IamPermissions.USER_VIEW, IamPermissions.USER_CREATE, IamPermissions.USER_UPDATE,
+            IamPermissions.ROLE_VIEW, IamPermissions.PERMISSION_VIEW), MediaPermissions.ALL)),
     MANAGER("Manager", Set.of()),
     EMPLOYEE("Employee", Set.of()),
     EXECUTIVE("Executive board", Set.of()),

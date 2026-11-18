@@ -32,6 +32,8 @@ public class GatewaySecurityConfig {
                         .pathMatchers(HttpMethod.OPTIONS).permitAll()
                         .pathMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/refresh-token",
                                 "/api/v1/auth/logout", "/api/v1/auth/initial-password").permitAll()
+                        // Signed, time-limited file links: the signature is checked by media-service.
+                        .pathMatchers(HttpMethod.GET, "/api/v1/media/files/*/content").permitAll()
                         .pathMatchers("/actuator/health/**").permitAll()
                         .pathMatchers("/api/**").authenticated()
                         .anyExchange().denyAll())
