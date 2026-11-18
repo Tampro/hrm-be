@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import vn.specom.hrm.iam.model.UserAccount;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserAccountRepository extends JpaRepository<UserAccount, Long> {
@@ -16,6 +17,12 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long> 
     Optional<UserAccount> findByKeycloakIdAndDeletedFalse(String keycloakId);
 
     Optional<UserAccount> findByIdAndDeletedFalse(Long id);
+
+    List<UserAccount> findByCompanyIdAndDeletedFalse(Long companyId);
+
+    @Query("select distinct u from UserAccount u join u.roles r where u.companyId = :companyId and u.deleted = false"
+            + " and r.code = :roleCode and r.deleted = false order by u.id")
+    List<UserAccount> findByCompanyAndRole(Long companyId, String roleCode);
 
     boolean existsByUsernameAndDeletedFalse(String username);
 

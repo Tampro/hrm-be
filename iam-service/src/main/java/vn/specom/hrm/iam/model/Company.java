@@ -21,6 +21,10 @@ public class Company extends BaseAuditableEntity {
     @Column(name = "name", nullable = false)
     private String name;
 
+    /** Contact email of the company (not a login). Null for companies created before it existed. */
+    @Column(name = "email")
+    private String email;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private ECompanyStatus status;

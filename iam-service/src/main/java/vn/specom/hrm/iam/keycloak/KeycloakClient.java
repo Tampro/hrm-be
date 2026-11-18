@@ -215,6 +215,11 @@ public class KeycloakClient {
         return users != null && users.size() == 1 ? users.get(0).path("id").asText(null) : null;
     }
 
+    /** Ends every Keycloak session of the user (their refresh tokens stop working). */
+    public void logoutSessions(String keycloakId) {
+        admin().post().uri(props.adminUrl() + "/users/" + keycloakId + "/logout").retrieve().toBodilessEntity();
+    }
+
     /** Disabling also ends every session, so a locked user's refresh tokens stop working at once. */
     public void setEnabled(String keycloakId, boolean enabled) {
         admin().put().uri(props.adminUrl() + "/users/" + keycloakId)

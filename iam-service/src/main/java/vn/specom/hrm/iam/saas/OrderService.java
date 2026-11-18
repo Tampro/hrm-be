@@ -129,6 +129,47 @@ public class OrderService {
         return dto(o);
     }
 
+    /**
+     * "Upgrade Plan" from the companies list: the super admin moves the company to a plan for one billing cycle.
+     * Recorded as an APPROVED order with payment method MANUAL at the plan's list price, so the order history shows
+     * every plan change. No coupon; a pending order of the company is left as it is.
+     */
+    @Transactional
+    public OrderDto upgradeByAdmin(Long companyId, Long planId, EBillingCycle cycle) {
+        Company c = company(companyId);
+        Plan plan = catalog.requirePlan(planId);
+        var q = pricing.quote(plan, cycle, null, companyId);
+        PlanOrder o = new PlanOrder();
+        o.setOrderNumber(newOrderNumber());
+        o.setCompanyId(companyId);
+        o.setPlanId(plan.getId());
+        o.setBillingCycle(cycle);
+        o.setOriginalPrice(q.originalPrice());
+        o.setDiscountAmount(q.discountAmount());
+        o.setFinalPrice(q.finalPrice());
+        o.setPaymentMethod(EPaymentMethod.MANUAL);
+        o.setStatus(EOrderStatus.APPROVED);
+        o.setProcessedAt(clock.instant());
+        o.setProcessedBy(CurrentUser.get().keycloakId());
+        o.setNotes("Plan set by super admin");
+        subscriptions.activate(c, plan, cycle);
+        authorityCache.evictAll();
+        return dto(orders.save(o));
+    }
+
+    /** A deleted company's open orders are cancelled so they cannot be approved later. */
+    @Transactional
+    public void cancelPendingOf(Long companyId) {
+        orders.findByCompanyId(companyId, Pageable.unpaged()).stream()
+                .filter(o -> o.getStatus() == EOrderStatus.PENDING)
+                .forEach(o -> {
+                    o.setStatus(EOrderStatus.CANCELLED);
+                    o.setProcessedAt(clock.instant());
+                    o.setProcessedBy(CurrentUser.get().keycloakId());
+                    o.setNotes("Company deleted");
+                });
+    }
+
     @Transactional
     public SubscriptionDto assign(Long companyId, Long planId, Instant expiresAt) {
         Company c = company(companyId);
