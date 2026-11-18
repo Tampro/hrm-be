@@ -10,6 +10,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import vn.specom.hrm.common.ApiMessageDto;
+import vn.specom.hrm.common.Nulls;
 
 import java.time.Duration;
 
@@ -30,9 +31,9 @@ public class RemoteAuthorityResolver implements AuthorityResolver {
 
     public RemoteAuthorityResolver(String iamBaseUrl, Duration ttl) {
         SimpleClientHttpRequestFactory rf = new SimpleClientHttpRequestFactory();
-        rf.setConnectTimeout(Duration.ofSeconds(2));
-        rf.setReadTimeout(Duration.ofSeconds(3));
-        this.client = RestClient.builder().baseUrl(iamBaseUrl).requestFactory(rf).build();
+        rf.setConnectTimeout(Nulls.nonNull(Duration.ofSeconds(2)));
+        rf.setReadTimeout(Nulls.nonNull(Duration.ofSeconds(3)));
+        this.client = RestClient.builder().baseUrl(Nulls.nonNull(iamBaseUrl)).requestFactory(rf).build();
         this.cache = Caffeine.newBuilder().expireAfterWrite(ttl).maximumSize(10_000).build();
     }
 
@@ -47,7 +48,7 @@ public class RemoteAuthorityResolver implements AuthorityResolver {
                     .uri("/api/v1/me/authorities")
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                     .retrieve()
-                    .body(TYPE);
+                    .body(Nulls.nonNull(TYPE));
             if (body == null || body.getData() == null) {
                 throw new AuthenticationServiceException("IAM returned no authorities");
             }

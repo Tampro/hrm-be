@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -24,7 +25,8 @@ public class TraceIdFilter extends OncePerRequestFilter {
     private static final Pattern SAFE = Pattern.compile("[A-Za-z0-9-]{8,64}");
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain chain)
             throws ServletException, IOException {
         String incoming = request.getHeader(HEADER);
         String traceId = incoming != null && SAFE.matcher(incoming).matches()

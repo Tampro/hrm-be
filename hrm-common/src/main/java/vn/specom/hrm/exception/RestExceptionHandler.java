@@ -13,6 +13,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import vn.specom.hrm.common.ApiMessageDto;
+import vn.specom.hrm.common.Nulls;
 import vn.specom.hrm.common.TraceIdFilter;
 
 import java.util.LinkedHashMap;
@@ -57,7 +58,7 @@ public class RestExceptionHandler {
     }
 
     public String resolve(ErrorCode error, Object... args) {
-        return messageSource.getMessage(error.getCode(), args, error.getMessage(), LocaleContextHolder.getLocale());
+        return messageSource.getMessage(Nulls.nonNull(error.getCode()), args, error.getMessage(), LocaleContextHolder.getLocale());
     }
 
     private ResponseEntity<ApiMessageDto<Object>> build(HttpStatus status, ErrorCode error, Object data, Object... args) {
@@ -68,6 +69,6 @@ public class RestExceptionHandler {
                 .data(data)
                 .traceId(MDC.get(TraceIdFilter.MDC_KEY))
                 .build();
-        return ResponseEntity.status(status).body(body);
+        return ResponseEntity.status(Nulls.nonNull(status)).body(body);
     }
 }

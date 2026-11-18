@@ -2,6 +2,7 @@ package vn.specom.hrm.security;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -19,7 +20,7 @@ public class HrmJwtAuthenticationConverter implements Converter<Jwt, AbstractAut
     private final AuthorityResolver resolver;
 
     @Override
-    public AbstractAuthenticationToken convert(Jwt jwt) {
+    public AbstractAuthenticationToken convert(@NonNull Jwt jwt) {
         HrmPrincipal principal = resolver.resolve(jwt);
         List<GrantedAuthority> authorities = new ArrayList<>();
         principal.permissions().forEach(p -> authorities.add(new SimpleGrantedAuthority(p)));
