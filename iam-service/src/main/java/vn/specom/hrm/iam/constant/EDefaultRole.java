@@ -13,7 +13,7 @@ import java.util.Set;
 @Getter
 @RequiredArgsConstructor
 public enum EDefaultRole {
-    COMPANY_ADMIN("Company administrator", IamPermissions.ALL),
+    COMPANY_ADMIN("Company administrator", union(IamPermissions.ALL, vn.specom.hrm.iam.saas.SaasPermissions.ALL)),
     // TODO(assumption): HR manages accounts but not roles — confirm with BA.
     HR("HR", Set.of(IamPermissions.USER_VIEW, IamPermissions.USER_CREATE, IamPermissions.USER_UPDATE,
             IamPermissions.ROLE_VIEW, IamPermissions.PERMISSION_VIEW)),
@@ -21,6 +21,12 @@ public enum EDefaultRole {
     EMPLOYEE("Employee", Set.of()),
     EXECUTIVE("Executive board", Set.of()),
     ACCOUNTANT("Accountant", Set.of());
+
+    private static Set<String> union(Set<String> a, Set<String> b) {
+        java.util.Set<String> all = new java.util.HashSet<>(a);
+        all.addAll(b);
+        return Set.copyOf(all);
+    }
 
     private final String displayName;
     private final Set<String> permissions;

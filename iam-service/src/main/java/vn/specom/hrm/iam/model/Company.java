@@ -27,4 +27,15 @@ public class Company extends BaseAuditableEntity {
 
     @Column(name = "deleted", nullable = false)
     private boolean deleted;
+
+    /** Current plan; null = no subscription (internal / bootstrap company): no plan limits, never expires. */
+    @Column(name = "plan_id")
+    private Long planId;
+
+    /** Null with a plan = does not expire (default plan). */
+    @Column(name = "plan_expires_at")
+    private java.time.Instant planExpiresAt;
+
+    @Column(name = "on_trial", nullable = false)
+    private boolean onTrial;
 }

@@ -33,6 +33,7 @@ public class CompanyService {
     private final RoleService roleService;
     private final UserService userService;
     private final LocalAuthorityResolver authorityCache;
+    private final vn.specom.hrm.iam.saas.SubscriptionService subscriptions;
 
     @Transactional(readOnly = true)
     public Page<CompanyDto> list(Pageable pageable) {
@@ -54,6 +55,7 @@ public class CompanyService {
         c.setCode(form.code());
         c.setName(form.name());
         c.setStatus(ECompanyStatus.ACTIVE);
+        subscriptions.assignDefault(c);
         c = companies.save(c);
         roleService.createDefaultRoles(c.getId());
         Role admin = roles.findByCompanyIdAndCodeAndDeletedFalse(c.getId(), EDefaultRole.COMPANY_ADMIN.name())

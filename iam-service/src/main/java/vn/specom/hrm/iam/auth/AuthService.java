@@ -16,6 +16,7 @@ import vn.specom.hrm.iam.keycloak.KeycloakTokens;
 import vn.specom.hrm.iam.model.UserAccount;
 import vn.specom.hrm.iam.repository.CompanyRepository;
 import vn.specom.hrm.iam.repository.UserAccountRepository;
+import vn.specom.hrm.iam.saas.SubscriptionService;
 import vn.specom.hrm.iam.security.RevokedSessionStore;
 import vn.specom.hrm.security.HrmJwtAuthenticationConverter;
 
@@ -35,6 +36,7 @@ public class AuthService {
     private final UserAccountRepository users;
     private final CompanyRepository companies;
     private final RevokedSessionStore revokedSessions;
+    private final SubscriptionService subscriptions;
 
     @Transactional(readOnly = true)
     public TokenDto login(String username, String password) {
@@ -98,11 +100,17 @@ public class AuthService {
             throw ApiException.forbidden(EIamError.AUTH_006);
         }
         UserAccount u = account.get();
-        boolean companyActive = companies.findByIdAndDeletedFalse(u.getCompanyId())
-                .map(c -> c.getStatus() == ECompanyStatus.ACTIVE).orElse(false);
+        var company = companies.findByIdAndDeletedFalse(u.getCompanyId());
+        boolean companyActive = company.map(c -> c.getStatus() == ECompanyStatus.ACTIVE).orElse(false);
         if (u.getStatus() != EUserStatus.ACTIVE || !companyActive) {
             keycloak.logout(tokens.refreshToken());
             throw ApiException.unauthorized(EIamError.AUTH_002);
+        }
+        if (subscriptions.effective(company.get()).blocked() && !SubscriptionService.mayRenew(
+                u.getRoles().stream().filter(r -> !r.isDeleted()).map(r -> r.getCode())
+                        .collect(java.util.stream.Collectors.toSet()))) {
+            keycloak.logout(tokens.refreshToken());
+            throw ApiException.unauthorized(EIamError.AUTH_009);
         }
     }
 

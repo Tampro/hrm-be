@@ -1,0 +1,102 @@
+package vn.specom.hrm.iam.saas;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import vn.specom.hrm.common.ApiMessageDto;
+import vn.specom.hrm.common.ResponseListDto;
+import vn.specom.hrm.iam.saas.SaasDtos.OrderDto;
+import vn.specom.hrm.iam.saas.SaasDtos.OrderForm;
+import vn.specom.hrm.iam.saas.SaasDtos.PlanDto;
+import vn.specom.hrm.iam.saas.SaasDtos.QuoteDto;
+import vn.specom.hrm.iam.saas.SaasDtos.SubscriptionDto;
+
+import java.util.List;
+
+/**
+ * Company side. These permissions are all a COMPANY_ADMIN keeps while the subscription is EXPIRED, so renewing
+ * always works.
+ */
+@Tag(name = "SaaS — my subscription")
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/v1/saas")
+@SecurityRequirement(name = "bearerAuth")
+public class SubscriptionController {
+    private final CatalogService catalog;
+    private final OrderService orderService;
+
+    @Operation(summary = "Plans offered to companies")
+    @PreAuthorize("@PermissionChecker.has('SAAS_SUBSCRIPTION_VIEW')")
+    @GetMapping("/plans")
+    public ApiMessageDto<List<PlanDto>> plans() {
+        return ApiMessageDto.ok(catalog.offeredPlans());
+    }
+
+    @Operation(summary = "Current subscription of my company",
+            description = "status: NONE (no plan, no limits), TRIAL, ACTIVE, EXPIRED. fallback = the paid or trial "
+                    + "plan expired and the default plan applies.")
+    @ApiResponses(@ApiResponse(responseCode = "400", description = "Super admin without companyId (IAM_003)"))
+    @PreAuthorize("@PermissionChecker.has('SAAS_SUBSCRIPTION_VIEW')")
+    @GetMapping("/subscription")
+    public ApiMessageDto<SubscriptionDto> subscription(
+            @Parameter(description = "Super admin only") @RequestParam(required = false) Long companyId) {
+        return ApiMessageDto.ok(orderService.mySubscription(companyId));
+    }
+
+    @Operation(summary = "Price an order (with coupon) without creating it")
+    @ApiResponses(@ApiResponse(responseCode = "400", description = "No yearly price (SAAS_003), coupon invalid "
+            + "(SAAS_006), below minimum spend (SAAS_007), plan not offered (SAAS_014)"))
+    @PreAuthorize("@PermissionChecker.hasInCompany('SAAS_ORDER_CREATE')")
+    @PostMapping("/orders/quote")
+    public ApiMessageDto<QuoteDto> quote(@Valid @RequestBody OrderForm form) {
+        return ApiMessageDto.ok(orderService.quote(form));
+    }
+
+    @Operation(summary = "Order a plan (bank transfer)",
+            description = "Creates a PENDING order; transfer `finalPrice` with `bankTransfer.transferContent` as the "
+                    + "content. A super admin approves it to activate the plan.")
+    @ApiResponses(@ApiResponse(responseCode = "400", description = "Pending order exists (SAAS_010), no yearly "
+            + "price (SAAS_003), coupon invalid (SAAS_006), below minimum spend (SAAS_007), plan not offered (SAAS_014)"))
+    @PreAuthorize("@PermissionChecker.hasInCompany('SAAS_ORDER_CREATE')")
+    @PostMapping("/orders")
+    public ApiMessageDto<OrderDto> order(@Valid @RequestBody OrderForm form) {
+        return ApiMessageDto.ok(orderService.create(form));
+    }
+
+    @Operation(summary = "Orders of my company")
+    @PreAuthorize("@PermissionChecker.has('SAAS_ORDER_VIEW')")
+    @GetMapping("/orders")
+    public ApiMessageDto<ResponseListDto<OrderDto>> orders(
+            @Parameter(description = "Super admin only") @RequestParam(required = false) Long companyId,
+            @ParameterObject @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ApiMessageDto.ok(ResponseListDto.of(orderService.myOrders(companyId, pageable)));
+    }
+
+    @Operation(summary = "Cancel a pending order")
+    @ApiResponses({
+            @ApiResponse(responseCode = "400", description = "Not pending (SAAS_009)"),
+            @ApiResponse(responseCode = "404", description = "No such order in your company (SAAS_008)")})
+    @PreAuthorize("@PermissionChecker.has('SAAS_ORDER_CREATE')")
+    @PostMapping("/orders/{id}/cancel")
+    public ApiMessageDto<OrderDto> cancel(@PathVariable Long id) {
+        return ApiMessageDto.ok(orderService.cancel(id));
+    }
+}

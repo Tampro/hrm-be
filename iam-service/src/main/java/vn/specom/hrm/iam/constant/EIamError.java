@@ -16,6 +16,7 @@ public enum EIamError implements ErrorCode {
     AUTH_006("This account is signed in but has no HRM profile. Contact your administrator."),
     AUTH_007("The new password does not meet the password policy."),
     AUTH_008("Too many failed attempts. The account is temporarily locked."),
+    AUTH_009("The company subscription has expired. Ask your company administrator to renew it."),
     IAM_001("The company does not exist."),
     IAM_002("The company code is already taken."),
     IAM_003("A company must be specified for this action."),

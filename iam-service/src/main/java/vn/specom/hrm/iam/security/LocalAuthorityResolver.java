@@ -8,7 +8,10 @@ import org.springframework.security.oauth2.server.resource.InvalidBearerTokenExc
 import org.springframework.stereotype.Component;
 import vn.specom.hrm.iam.constant.ECompanyStatus;
 import vn.specom.hrm.iam.constant.EUserStatus;
+import vn.specom.hrm.iam.model.Company;
 import vn.specom.hrm.iam.model.Permission;
+import vn.specom.hrm.iam.saas.SaasPermissions;
+import vn.specom.hrm.iam.saas.SubscriptionService;
 import vn.specom.hrm.iam.model.Role;
 import vn.specom.hrm.iam.model.UserAccount;
 import vn.specom.hrm.iam.repository.CompanyRepository;
@@ -32,6 +35,7 @@ public class LocalAuthorityResolver implements AuthorityResolver {
     private final UserAccountRepository users;
     private final CompanyRepository companies;
     private final RevokedSessionStore revokedSessions;
+    private final SubscriptionService subscriptions;
 
     private final Cache<String, Optional<HrmPrincipal>> cache =
             Caffeine.newBuilder().expireAfterWrite(Duration.ofSeconds(30)).maximumSize(10_000).build();
@@ -70,16 +74,23 @@ public class LocalAuthorityResolver implements AuthorityResolver {
             return Optional.empty();
         }
         UserAccount u = found.get();
-        boolean companyActive = companies.findByIdAndDeletedFalse(u.getCompanyId())
-                .map(c -> c.getStatus() == ECompanyStatus.ACTIVE).orElse(false);
+        Optional<Company> company = companies.findByIdAndDeletedFalse(u.getCompanyId());
+        boolean companyActive = company.map(c -> c.getStatus() == ECompanyStatus.ACTIVE).orElse(false);
         if (u.getStatus() != EUserStatus.ACTIVE || !companyActive) {
             throw new InvalidBearerTokenException("Account locked or company inactive");
         }
         Set<Role> roles = u.getRoles().stream().filter(r -> !r.isDeleted()).collect(Collectors.toSet());
-        return Optional.of(new HrmPrincipal(
-                u.getId(), u.getKeycloakId(), u.getUsername(), u.getCompanyId(), false,
-                roles.stream().map(Role::getCode).collect(Collectors.toUnmodifiableSet()),
-                roles.stream().flatMap(r -> r.getPermissions().stream()).map(Permission::getCode)
-                        .collect(Collectors.toUnmodifiableSet())));
+        Set<String> roleCodes = roles.stream().map(Role::getCode).collect(Collectors.toUnmodifiableSet());
+        Set<String> permissions = roles.stream().flatMap(r -> r.getPermissions().stream()).map(Permission::getCode)
+                .collect(Collectors.toUnmodifiableSet());
+        if (subscriptions.effective(company.get()).blocked()) {
+            // Expired subscription: only someone who can renew gets in, and only with the renewal permissions.
+            if (!SubscriptionService.mayRenew(roleCodes)) {
+                throw new InvalidBearerTokenException("Subscription expired");
+            }
+            permissions = SaasPermissions.ALL;
+        }
+        return Optional.of(new HrmPrincipal(u.getId(), u.getKeycloakId(), u.getUsername(), u.getCompanyId(), false,
+                roleCodes, permissions));
     }
 }

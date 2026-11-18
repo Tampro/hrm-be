@@ -40,6 +40,8 @@ public class UserService {
     private final RoleRepository roles;
     private final KeycloakClient keycloak;
     private final LocalAuthorityResolver authorityCache;
+    private final vn.specom.hrm.iam.repository.CompanyRepository companies;
+    private final vn.specom.hrm.iam.saas.SubscriptionService subscriptions;
 
     @Transactional(readOnly = true)
     public Page<UserDto> search(Long requestedCompanyId, String keyword, Pageable pageable) {
@@ -69,6 +71,8 @@ public class UserService {
         if (users.existsByUsernameAndDeletedFalse(form.username())) {
             throw ApiException.badRequest(EIamError.IAM_010);
         }
+        subscriptions.assertCanAddUser(companies.findByIdAndDeletedFalse(companyId)
+                .orElseThrow(() -> ApiException.notFound(EIamError.IAM_001)));
         Set<Role> assigned = resolveAssignable(companyId, form.roleIds());
         String temporaryPassword = generatePassword();
         String keycloakId = keycloak.createUser(form.username(), form.email(), form.fullName(), temporaryPassword);
