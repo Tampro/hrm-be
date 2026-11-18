@@ -116,7 +116,7 @@ public class EmployeeService {
         if (employees.existsByCompanyIdAndEmailAndDeletedFalseAndIdNot(companyId, email, -1L)) {
             throw ApiException.badRequest(EEmployeeError.EMP_007);
         }
-        assertProfile(companyId, p, -1L);
+        assertProfile(companyId, p, -1L, null);
         List<DocumentForm> docs = form.documents() == null ? List.of() : form.documents();
         // Documents are checked before the account exists: a refused file must not leave an account behind.
         for (DocumentForm d : docs) {
@@ -152,7 +152,7 @@ public class EmployeeService {
     @Transactional
     public EmployeeDetail update(Long id, ProfileForm form) {
         Employee e = require(id);
-        assertProfile(e.getCompanyId(), form, id);
+        assertProfile(e.getCompanyId(), form, id, e.getBranchId());
         apply(e, form);
         return toDetail(e);
     }
@@ -246,12 +246,12 @@ public class EmployeeService {
         return e;
     }
 
-    private void assertProfile(Long companyId, ProfileForm p, Long selfId) {
+    private void assertProfile(Long companyId, ProfileForm p, Long selfId, Long currentBranchId) {
         String code = blankToNull(p.employeeCode());
         if (code != null && employees.existsByCompanyIdAndEmployeeCodeAndDeletedFalseAndIdNot(companyId, code, selfId)) {
             throw ApiException.badRequest(EEmployeeError.EMP_008);
         }
-        orgs.assertChain(companyId, p.branchId(), p.departmentId(), p.designationId());
+        orgs.assertChain(companyId, p.branchId(), p.departmentId(), p.designationId(), currentBranchId);
         assertReportsTo(companyId, p.reportsToId(), selfId);
         if (p.profileImageId() != null) {
             MediaFile f = media.require(p.profileImageId(), companyId);
