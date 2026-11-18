@@ -23,8 +23,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import vn.specom.hrm.common.ApiMessageDto;
 import vn.specom.hrm.common.ResponseListDto;
-import vn.specom.hrm.iam.saas.SaasDtos.CouponDto;
-import vn.specom.hrm.iam.saas.SaasDtos.CouponForm;
 import vn.specom.hrm.iam.saas.SaasDtos.OrderDecisionForm;
 import vn.specom.hrm.iam.saas.SaasDtos.OrderDto;
 import vn.specom.hrm.iam.saas.SaasDtos.PlanDto;
@@ -79,36 +77,6 @@ public class SaasAdminController {
     @DeleteMapping("/plans/{id}")
     public ApiMessageDto<Void> deletePlan(@PathVariable Long id) {
         catalog.deletePlan(id);
-        return ApiMessageDto.ok(null);
-    }
-
-    @Operation(summary = "All coupons")
-    @GetMapping("/coupons")
-    public ApiMessageDto<List<CouponDto>> coupons() {
-        return ApiMessageDto.ok(catalog.allCoupons());
-    }
-
-    @Operation(summary = "Create a coupon")
-    @ApiResponses(@ApiResponse(responseCode = "400", description = "Code taken (SAAS_005), percentage > 100 (SAAS_012)"))
-    @PostMapping("/coupons")
-    public ApiMessageDto<CouponDto> createCoupon(@Valid @RequestBody CouponForm form) {
-        return ApiMessageDto.ok(catalog.createCoupon(form));
-    }
-
-    @Operation(summary = "Update a coupon (full replacement)")
-    @ApiResponses({
-            @ApiResponse(responseCode = "400", description = "Code taken (SAAS_005), percentage > 100 (SAAS_012)"),
-            @ApiResponse(responseCode = "404", description = "No such coupon (SAAS_004)")})
-    @PutMapping("/coupons/{id}")
-    public ApiMessageDto<CouponDto> updateCoupon(@PathVariable Long id, @Valid @RequestBody CouponForm form) {
-        return ApiMessageDto.ok(catalog.updateCoupon(id, form));
-    }
-
-    @Operation(summary = "Delete a coupon (soft)")
-    @ApiResponses(@ApiResponse(responseCode = "404", description = "No such coupon (SAAS_004)"))
-    @DeleteMapping("/coupons/{id}")
-    public ApiMessageDto<Void> deleteCoupon(@PathVariable Long id) {
-        catalog.deleteCoupon(id);
         return ApiMessageDto.ok(null);
     }
 

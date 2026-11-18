@@ -34,6 +34,16 @@ public interface PlanOrderRepository extends JpaRepository<PlanOrder, Long> {
     Page<Object[]> searchWithNames(String keyword, java.time.Instant from, java.time.Instant to, EOrderStatus status,
                                    Pageable pageable);
 
+    /** Uses per coupon for a page of coupons in one query: rows of [couponId, count]. */
+    @Query("select o.couponId, count(o) from PlanOrder o where o.couponId in :couponIds and o.status in :statuses"
+            + " group by o.couponId")
+    java.util.List<Object[]> countUsesByCoupon(Collection<Long> couponIds, Collection<EOrderStatus> statuses);
+
+    /** Usage history of one coupon: rows of [PlanOrder, company name, company email], newest first. */
+    @Query("select o, c.name, c.email from PlanOrder o join Company c on c.id = o.companyId"
+            + " where o.couponId = :couponId order by o.id desc")
+    java.util.List<Object[]> usageOfCoupon(Long couponId);
+
     @Query("select o.status, count(o)" + FILTER + " group by o.status")
     java.util.List<Object[]> countByStatus(String keyword, java.time.Instant from, java.time.Instant to);
 }

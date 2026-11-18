@@ -7,7 +7,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import vn.specom.hrm.iam.model.Coupon;
 import vn.specom.hrm.iam.model.Plan;
 import vn.specom.hrm.iam.model.PlanOrder;
 
@@ -63,34 +62,6 @@ public final class SaasDtos {
     public record PlanStatusForm(
             @Schema(description = "Active = offered to companies", example = "false", requiredMode = Schema.RequiredMode.REQUIRED)
             @NotNull Boolean enabled) {
-    }
-
-    // ------------------------------------------------------------------ coupons
-
-    public record CouponDto(String id, String code, String name, ECouponType type, BigDecimal discountValue,
-                            BigDecimal minimumSpend, Integer useLimitTotal, Integer useLimitPerCompany,
-                            LocalDate expiryDate, boolean enabled) {
-        public static CouponDto of(Coupon c) {
-            return new CouponDto(SaasDtos.str(c.getId()), c.getCode(), c.getName(), c.getType(), c.getDiscountValue(),
-                    c.getMinimumSpend(), c.getUseLimitTotal(), c.getUseLimitPerCompany(), c.getExpiryDate(),
-                    c.isEnabled());
-        }
-    }
-
-    public record CouponForm(
-            @Schema(description = "Code companies type", example = "WELCOME10", requiredMode = Schema.RequiredMode.REQUIRED)
-            @NotBlank @Size(max = 50) @Pattern(regexp = "[A-Z0-9_-]+") String code,
-            @Schema(description = "Display name", example = "Welcome 10%", requiredMode = Schema.RequiredMode.REQUIRED)
-            @NotBlank @Size(max = 100) String name,
-            @Schema(description = "PERCENTAGE or FLAT", example = "PERCENTAGE", requiredMode = Schema.RequiredMode.REQUIRED)
-            @NotNull ECouponType type,
-            @Schema(description = "Percent (0–100) or amount", example = "10", requiredMode = Schema.RequiredMode.REQUIRED)
-            @NotNull @DecimalMin("0") BigDecimal discountValue,
-            @Schema(description = "Minimum order price; omit = none", example = "400000") @DecimalMin("0") BigDecimal minimumSpend,
-            @Schema(description = "Total uses; omit = unlimited", example = "100") @Min(1) Integer useLimitTotal,
-            @Schema(description = "Uses per company; omit = unlimited", example = "1") @Min(1) Integer useLimitPerCompany,
-            @Schema(description = "Last valid day (UTC); omit = no expiry", example = "2026-12-31") LocalDate expiryDate,
-            @Schema(description = "Usable", example = "true") boolean enabled) {
     }
 
     // ------------------------------------------------------------------ subscription & orders
