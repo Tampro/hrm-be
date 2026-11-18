@@ -5,3 +5,5 @@ databaseChangeLog:
       file: db/changelog/changes/20261120110000_employee_changelog.mysql.sql
   - include:
       file: db/changelog/changes/20261120110100_document_type_init_data.mysql.sql
+  - include:
+      file: db/changelog/changes/20261120120000_employee_reports_to_changelog.mysql.sql

@@ -133,6 +133,9 @@ public class Employee extends BaseAuditableEntity {
     @Column(name = "base_salary", precision = 15, scale = 2)
     private BigDecimal baseSalary;
 
+    @Column(name = "reports_to_id")
+    private Long reportsToId;
+
     @Column(name = "deleted", nullable = false)
     private boolean deleted;
 }

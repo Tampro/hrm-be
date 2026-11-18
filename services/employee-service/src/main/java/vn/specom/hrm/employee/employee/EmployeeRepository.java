@@ -38,4 +38,6 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long>, JpaSp
     void bumpSequence(Long companyId);
 
     List<Employee> findByCompanyIdAndDeletedFalse(Long companyId);
+
+    List<Employee> findByReportsToIdAndDeletedFalse(Long reportsToId);
 }
