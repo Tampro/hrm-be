@@ -69,7 +69,11 @@ public class KeycloakClient {
     }
 
     /** Ends the Keycloak session of this refresh token. Best effort: logout must not fail for the user. */
-    public void logout(String refreshToken) {
+    /**
+     * Returns true only when Keycloak accepted the refresh token and ended its session — the proof that the
+     * caller owned that session, so its {@code sid} may be revoked.
+     */
+    public boolean logout(String refreshToken) {
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         form.add("client_id", props.clientId());
         form.add("refresh_token", refreshToken);
@@ -77,8 +81,24 @@ public class KeycloakClient {
             http.post().uri(props.logoutUrl())
                     .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                     .body(form).retrieve().toBodilessEntity();
+            return true;
         } catch (RestClientException e) {
             log.warn("Keycloak logout failed: {}", e.getClass().getSimpleName());
+            return false;
+        }
+    }
+
+    /**
+     * Reads {@code sid} from a refresh token WITHOUT verifying it. Only call after {@link #logout} returned true:
+     * Keycloak has then validated the same token.
+     */
+    public String sessionIdOf(String refreshToken) {
+        try {
+            String[] parts = refreshToken.split("\\.");
+            byte[] payload = java.util.Base64.getUrlDecoder().decode(parts[1]);
+            return mapper.readTree(payload).path("sid").asText(null);
+        } catch (Exception e) {
+            return null;
         }
     }
 
