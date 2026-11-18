@@ -19,8 +19,9 @@
 
     <modules>
         <module>hrm-common</module>
-        <module>iam-service</module>
-        <module>gateway-server</module>
+        <module>services/iam-service</module>
+        <module>services/media-service</module>
+        <module>services/gateway-server</module>
     </modules>
 
     <properties>
