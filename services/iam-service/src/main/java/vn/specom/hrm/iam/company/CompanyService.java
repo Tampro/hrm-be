@@ -63,6 +63,7 @@ public class CompanyService {
     private final SubscriptionService subscriptions;
     private final KeycloakClient keycloak;
     private final LocalAuthorityResolver authorityCache;
+    private final vn.specom.hrm.iam.referral.ReferralService referral;
 
     /**
      * @param from first created day included (UTC); null = no lower bound
@@ -113,7 +114,9 @@ public class CompanyService {
         c.setEmail(form.email());
         c.setStatus(Boolean.FALSE.equals(form.enableLogin()) ? ECompanyStatus.SUSPENDED : ECompanyStatus.ACTIVE);
         subscriptions.assignDefault(c);
+        c.setReferredByCompanyId(referral.referrerOf(form.referralCode()));
         c = companies.save(c);
+        c.setReferralCode(vn.specom.hrm.iam.referral.ReferralService.codeFor(c.getId()));
         roleService.createDefaultRoles(c.getId());
         Role admin = roles.findByCompanyIdAndCodeAndDeletedFalse(c.getId(), EDefaultRole.COMPANY_ADMIN.name())
                 .orElseThrow();

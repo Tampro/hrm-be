@@ -31,4 +31,32 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
     /** Status tab counts with the same keyword/date filter: rows of [status, count]. */
     @Query("select c.status, count(c) from Company c where " + FILTER + " group by c.status")
     List<Object[]> countByStatus(String keyword, Instant from, Instant to);
+
+    // ---- referral program (docs/analysis/06 §3.2.6)
+    Optional<Company> findByReferralCodeAndDeletedFalse(String referralCode);
+
+    String REFERRED = " from Company c where c.deleted = false and c.referredByCompanyId is not null"
+            + " and (:keyword = '' or lower(c.name) like lower(concat('%', :keyword, '%'))"
+            + "   or lower(coalesce(c.email, '')) like lower(concat('%', :keyword, '%')))";
+
+    @Query(value = "select c" + REFERRED, countQuery = "select count(c)" + REFERRED)
+    Page<Company> searchReferred(String keyword, Pageable pageable);
+
+    @Query("select count(c) from Company c where c.deleted = false and c.referredByCompanyId is not null")
+    long countReferred();
+
+    @Query("select count(c) from Company c where c.deleted = false and c.referredByCompanyId is not null"
+            + " and c.planId is not null")
+    long countReferredWithPlan();
+
+    @Query("select count(c) from Company c where c.deleted = false and c.referredByCompanyId is not null"
+            + " and c.status = vn.specom.hrm.iam.constant.ECompanyStatus.ACTIVE")
+    long countReferredActive();
+
+    @Query("select count(c) from Company c where c.deleted = false and c.referredByCompanyId is not null"
+            + " and c.createdDate >= :from")
+    long countReferredSince(Instant from);
+
+    @Query("select count(c) from Company c where c.deleted = false and c.referredByCompanyId = :companyId")
+    long countReferredBy(Long companyId);
 }

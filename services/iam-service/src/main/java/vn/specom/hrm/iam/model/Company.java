@@ -42,4 +42,12 @@ public class Company extends BaseAuditableEntity {
 
     @Column(name = "on_trial", nullable = false)
     private boolean onTrial;
+
+    /** This company's code for referring others: REF + 6-digit id (docs/analysis/06 §3.2.6). */
+    @Column(name = "referral_code", length = 20)
+    private String referralCode;
+
+    /** The company whose code was given at creation; null = not referred. */
+    @Column(name = "referred_by_company_id")
+    private Long referredByCompanyId;
 }

@@ -46,7 +46,7 @@ class CompanyServiceTest {
         orders = mock(OrderService.class);
         service = new CompanyService(companies, mock(RoleRepository.class), mock(PlanRepository.class), users,
                 mock(RoleService.class), mock(UserService.class), orders, mock(SubscriptionService.class), keycloak,
-                mock(LocalAuthorityResolver.class));
+                mock(LocalAuthorityResolver.class), mock(vn.specom.hrm.iam.referral.ReferralService.class));
         company = new Company();
         company.setId(10L);
         company.setCode("ACME");

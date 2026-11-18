@@ -25,14 +25,16 @@ public final class CompanyDtos {
     /** One row of the super admin companies list. Plan fields describe the plan that applies right now. */
     public record CompanyDto(String id, String code, String name, String email, ECompanyStatus status,
                              ESubscriptionStatus subscriptionStatus, String planId, String planCode, String planName,
-                             Instant planExpiresAt, Instant createdDate, Instant updatedDate) {
+                             Instant planExpiresAt, Instant createdDate, Instant updatedDate, String referralCode,
+                             String referredByCompanyId) {
         static CompanyDto of(Company c, Effective e) {
             return new CompanyDto(c.getId().toString(), c.getCode(), c.getName(), c.getEmail(), c.getStatus(),
                     e.status(),
                     e.plan() == null ? null : e.plan().getId().toString(),
                     e.plan() == null ? null : e.plan().getCode(),
                     e.plan() == null ? null : e.plan().getName(),
-                    e.expiresAt(), c.getCreatedDate(), c.getUpdatedDate());
+                    e.expiresAt(), c.getCreatedDate(), c.getUpdatedDate(), c.getReferralCode(),
+                    c.getReferredByCompanyId() == null ? null : c.getReferredByCompanyId().toString());
         }
     }
 
@@ -70,7 +72,9 @@ public final class CompanyDtos {
             Boolean enableLogin,
             @Schema(description = "First administrator; gets the COMPANY_ADMIN role",
                     requiredMode = Schema.RequiredMode.REQUIRED)
-            @NotNull @Valid AdminForm admin) {
+            @NotNull @Valid AdminForm admin,
+            @Schema(description = "Referral code of the company that referred this one (optional)", example = "REF000002")
+            @Size(max = 20) String referralCode) {
     }
 
     public record CompanyUpdateForm(

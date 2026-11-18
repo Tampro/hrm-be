@@ -32,7 +32,14 @@ public enum ESaasError implements ErrorCode {
     SAAS_022("The currency does not exist."),
     SAAS_023("The currency code is already taken."),
     SAAS_024("The default currency cannot be deleted."),
-    SAAS_025("Set another currency as default instead of removing the default flag.");
+    SAAS_025("Set another currency as default instead of removing the default flag."),
+    SAAS_026("The referral code does not exist."),
+    SAAS_027("The payout amount is below the minimum threshold of {0}."),
+    SAAS_028("The payout amount is above the available balance of {0}."),
+    SAAS_029("There is already a pending payout request."),
+    SAAS_030("The payout request does not exist."),
+    SAAS_031("Only a pending payout request can be approved or rejected."),
+    SAAS_032("The referral program is disabled.");
 
     private final String message;
 }
