@@ -1,0 +1,58 @@
+package vn.specom.hrm.iam.user;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import vn.specom.hrm.iam.constant.EUserStatus;
+import vn.specom.hrm.iam.model.Role;
+import vn.specom.hrm.iam.model.UserAccount;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Set;
+
+public final class UserDtos {
+    private UserDtos() {
+    }
+
+    public record UserDto(String id, String companyId, String username, String email, String fullName,
+                          EUserStatus status, List<String> roles, Instant createdDate, Instant updatedDate) {
+        public static UserDto of(UserAccount u) {
+            return new UserDto(u.getId().toString(), u.getCompanyId().toString(), u.getUsername(), u.getEmail(),
+                    u.getFullName(), u.getStatus(),
+                    u.getRoles().stream().filter(r -> !r.isDeleted()).map(Role::getCode).sorted().toList(),
+                    u.getCreatedDate(), u.getUpdatedDate());
+        }
+    }
+
+    /** Returned once at creation: the temporary password is not stored and cannot be read again. */
+    public record CreatedUserDto(UserDto user, String temporaryPassword) {
+    }
+
+    public record UserCreateForm(
+            @Schema(description = "Login name, unique across HRM", example = "hr.demo",
+                    requiredMode = Schema.RequiredMode.REQUIRED)
+            @NotBlank @Size(min = 3, max = 100) @Pattern(regexp = "[a-zA-Z0-9._-]+") String username,
+            @Schema(description = "Email", example = "hr.demo@example.com", requiredMode = Schema.RequiredMode.REQUIRED)
+            @NotBlank @Email @Size(max = 255) String email,
+            @Schema(description = "Full name", example = "Demo HR", requiredMode = Schema.RequiredMode.REQUIRED)
+            @NotBlank @Size(max = 255) String fullName,
+            @Schema(description = "Role ids of the same company", example = "[\"3\"]",
+                    requiredMode = Schema.RequiredMode.REQUIRED)
+            @NotNull Set<@NotNull Long> roleIds) {
+    }
+
+    public record UserRolesForm(
+            @Schema(description = "Full set of role ids; replaces the current roles", example = "[\"3\",\"4\"]",
+                    requiredMode = Schema.RequiredMode.REQUIRED)
+            @NotNull Set<@NotNull Long> roleIds) {
+    }
+
+    public record UserStatusForm(
+            @Schema(description = "ACTIVE or LOCKED", example = "LOCKED", requiredMode = Schema.RequiredMode.REQUIRED)
+            @NotNull EUserStatus status) {
+    }
+}

@@ -1,0 +1,20 @@
+package vn.specom.hrm.iam.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import vn.specom.hrm.iam.model.Role;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+
+public interface RoleRepository extends JpaRepository<Role, Long> {
+    List<Role> findByCompanyIdAndDeletedFalseOrderByIdAsc(Long companyId);
+
+    Optional<Role> findByIdAndDeletedFalse(Long id);
+
+    List<Role> findByCompanyIdAndIdInAndDeletedFalse(Long companyId, Collection<Long> ids);
+
+    Optional<Role> findByCompanyIdAndCodeAndDeletedFalse(Long companyId, String code);
+
+    boolean existsByCompanyIdAndCodeAndDeletedFalse(Long companyId, String code);
+}

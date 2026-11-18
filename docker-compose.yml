@@ -1,0 +1,86 @@
+# Local stack: MySQL + Keycloak + IAM + gateway. Secrets come from .env (copy .env.example; .env is gitignored).
+# Build the jars first: mvn -DskipTests package
+name: hrm
+
+services:
+  mysql:
+    image: mysql:8.4.3
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set in .env}
+      IAM_DB_USERNAME: ${IAM_DB_USERNAME:?set in .env}
+      IAM_DB_PASSWORD: ${IAM_DB_PASSWORD:?set in .env}
+      KC_DB_USERNAME: ${KC_DB_USERNAME:?set in .env}
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD:?set in .env}
+    ports:
+      - "3316:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./deploy/mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0.7
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME:?set in .env}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:?set in .env}
+      KC_DB: mysql
+      KC_DB_URL: jdbc:mysql://mysql:3306/keycloak
+      KC_DB_USERNAME: ${KC_DB_USERNAME}
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD}
+      # Tokens always carry this issuer, whether Keycloak is reached from the browser or from inside the network.
+      KC_HOSTNAME: http://localhost:8180
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HEALTH_ENABLED: "true"
+      # Read by the realm import placeholders in hrm-realm.json.
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:?set in .env}
+      HRM_SUPERADMIN_INITIAL_PASSWORD: ${HRM_SUPERADMIN_INITIAL_PASSWORD:?set in .env}
+    ports:
+      - "8180:8080"
+    volumes:
+      - ./deploy/keycloak:/opt/keycloak/data/import:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      # The image has no curl; probe the management port with bash.
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '\"UP\"' <&3"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  iam-service:
+    build: ./iam-service
+    environment:
+      IAM_DB_URL: jdbc:mysql://mysql:3306/hrm_iam?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      IAM_DB_USERNAME: ${IAM_DB_USERNAME}
+      IAM_DB_PASSWORD: ${IAM_DB_PASSWORD}
+      KEYCLOAK_INTERNAL_URL: http://keycloak:8080
+      KEYCLOAK_ISSUER: http://localhost:8180/realms/hrm
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
+    ports:
+      - "8081:8081"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+
+  gateway-server:
+    build: ./gateway-server
+    environment:
+      KEYCLOAK_INTERNAL_URL: http://keycloak:8080
+      KEYCLOAK_ISSUER: http://localhost:8180/realms/hrm
+      IAM_SERVICE_URL: http://iam-service:8081
+    ports:
+      - "8080:8080"
+    depends_on:
+      keycloak:
+        condition: service_healthy
+
+volumes:
+  mysql-data:

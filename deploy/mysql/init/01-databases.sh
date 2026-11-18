@@ -1,0 +1,13 @@
+#!/bin/bash
+# Runs once, on an empty data volume. One database per service (microservices own their data) plus Keycloak's.
+set -euo pipefail
+
+mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" <<SQL
+CREATE DATABASE IF NOT EXISTS hrm_iam CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS keycloak CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER IF NOT EXISTS '${IAM_DB_USERNAME}'@'%' IDENTIFIED BY '${IAM_DB_PASSWORD}';
+CREATE USER IF NOT EXISTS '${KC_DB_USERNAME}'@'%' IDENTIFIED BY '${KC_DB_PASSWORD}';
+GRANT ALL PRIVILEGES ON hrm_iam.* TO '${IAM_DB_USERNAME}'@'%';
+GRANT ALL PRIVILEGES ON keycloak.* TO '${KC_DB_USERNAME}'@'%';
+FLUSH PRIVILEGES;
+SQL

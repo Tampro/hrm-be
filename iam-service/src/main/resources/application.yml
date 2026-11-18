@@ -1,0 +1,55 @@
+# Every secret comes from the environment with no default (see .env.example); non-secret values have local defaults.
+server:
+  port: ${IAM_PORT:8081}
+
+spring:
+  application:
+    name: iam-service
+  datasource:
+    url: ${IAM_DB_URL:jdbc:mysql://localhost:3306/hrm_iam?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${IAM_DB_USERNAME}
+    password: ${IAM_DB_PASSWORD}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+    properties:
+      "[hibernate.jdbc.time_zone]": UTC
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+  messages:
+    # common_* ships in hrm-common, messages_* is this service's own codes.
+    basename: language/common,language/messages
+    encoding: UTF-8
+    fallback-to-system-locale: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Keys are fetched from the internal address; the issuer is the public one the FE logs in through.
+          jwk-set-uri: ${KEYCLOAK_INTERNAL_URL:http://localhost:8180}/realms/${KEYCLOAK_REALM:hrm}/protocol/openid-connect/certs
+          issuer-uri: ${KEYCLOAK_ISSUER:http://localhost:8180/realms/hrm}
+
+hrm:
+  keycloak:
+    server-url: ${KEYCLOAK_INTERNAL_URL:http://localhost:8180}
+    realm: ${KEYCLOAK_REALM:hrm}
+    client-id: ${KEYCLOAK_WEB_CLIENT_ID:hrm-web}
+    admin-client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:hrm-iam-admin}
+    admin-client-secret: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
+  cors:
+    allowed-origins: ${HRM_CORS_ORIGINS:http://localhost:5173}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  pattern:
+    level: "%5p [%X{traceId:-}]"
