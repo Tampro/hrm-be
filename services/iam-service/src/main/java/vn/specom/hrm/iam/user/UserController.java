@@ -27,6 +27,7 @@ import vn.specom.hrm.common.ResponseListDto;
 import vn.specom.hrm.iam.user.UserDtos.CreatedUserDto;
 import vn.specom.hrm.iam.user.UserDtos.UserCreateForm;
 import vn.specom.hrm.iam.user.UserDtos.UserDto;
+import vn.specom.hrm.iam.user.UserDtos.UserPasswordForm;
 import vn.specom.hrm.iam.user.UserDtos.UserRolesForm;
 import vn.specom.hrm.iam.user.UserDtos.UserStatusForm;
 
@@ -83,6 +84,17 @@ public class UserController {
     @PutMapping("/{id}/roles")
     public ApiMessageDto<UserDto> roles(@PathVariable Long id, @Valid @RequestBody UserRolesForm form) {
         return ApiMessageDto.ok(userService.replaceRoles(id, form.roleIds()));
+    }
+
+    @Operation(summary = "Set a new password for an account",
+            description = "Permanent password; pending first-login change is cleared. Not for your own account.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "400", description = "Own account (IAM_013), password policy (AUTH_007)"),
+            @ApiResponse(responseCode = "404", description = "No such user in your company (IAM_009)")})
+    @PreAuthorize("@PermissionChecker.has('IAM_USER_UPDATE')")
+    @PutMapping("/{id}/password")
+    public ApiMessageDto<UserDto> password(@PathVariable Long id, @Valid @RequestBody UserPasswordForm form) {
+        return ApiMessageDto.ok(userService.changePassword(id, form.newPassword()));
     }
 
     @Operation(summary = "Lock or unlock an account",

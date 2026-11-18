@@ -1,0 +1,7 @@
+# Schema of the employee service only (own database hrm_employee).
+# Never edit a change file once it has run on a shared database — add a new one.
+databaseChangeLog:
+  - include:
+      file: db/changelog/changes/20261120110000_employee_changelog.mysql.sql
+  - include:
+      file: db/changelog/changes/20261120110100_document_type_init_data.mysql.sql

@@ -1,0 +1,86 @@
+package vn.specom.hrm.employee.client;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
+import vn.specom.hrm.common.Nulls;
+import vn.specom.hrm.exception.ApiException;
+import vn.specom.hrm.exception.ECommonError;
+import vn.specom.hrm.exception.ErrorCode;
+
+import java.time.Duration;
+import java.util.function.Function;
+
+/**
+ * Calls another HRM service as the caller (their own token, their language), so that service applies its own
+ * permission and company checks: no service credential exists. Explicit timeouts; never retried, because the calls
+ * that matter here (create account, lock) are not idempotent.
+ */
+@Slf4j
+class CallerHttp {
+    private final RestClient client;
+    private final ObjectMapper mapper;
+    private final ErrorCode unavailable;
+    private final String name;
+
+    CallerHttp(String baseUrl, ObjectMapper mapper, ErrorCode unavailable, String name) {
+        SimpleClientHttpRequestFactory rf = new SimpleClientHttpRequestFactory();
+        rf.setConnectTimeout(Nulls.nonNull(Duration.ofSeconds(2)));
+        rf.setReadTimeout(Nulls.nonNull(Duration.ofSeconds(10)));
+        this.client = RestClient.builder().baseUrl(Nulls.nonNull(baseUrl)).requestFactory(rf).build();
+        this.mapper = mapper;
+        this.unavailable = unavailable;
+        this.name = name;
+    }
+
+    /** 4xx with the HRM envelope: RemoteApiException (relayed as is). Anything else: 503 of this module. */
+    JsonNode call(Function<RestClient, RestClient.RequestHeadersSpec<?>> request) {
+        try {
+            RestClient.RequestHeadersSpec<?> spec = request.apply(client)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token())
+                    .header(HttpHeaders.ACCEPT_LANGUAGE, LocaleContextHolder.getLocale().toLanguageTag());
+            JsonNode body = spec.retrieve().body(JsonNode.class);
+            return body == null ? mapper.createObjectNode() : body;
+        } catch (HttpStatusCodeException e) {
+            if (e.getStatusCode().is4xxClientError()) {
+                JsonNode body = readBody(e);
+                String code = body.path("code").asText("");
+                if (!code.isEmpty()) {
+                    throw new RemoteApiException(e.getStatusCode(), code, body.path("message").asText(code));
+                }
+                if (e.getStatusCode().value() == 403) {
+                    throw ApiException.forbidden(ECommonError.COMMON_004);
+                }
+            }
+            log.error("{} answered {}", name, e.getStatusCode().value());
+            throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, unavailable);
+        } catch (RestClientException e) {
+            log.error("{} unreachable: {}", name, e.getClass().getSimpleName());
+            throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, unavailable);
+        }
+    }
+
+    private JsonNode readBody(HttpStatusCodeException e) {
+        try {
+            return mapper.readTree(e.getResponseBodyAsString());
+        } catch (Exception ignored) {
+            return mapper.createObjectNode();
+        }
+    }
+
+    private static String token() {
+        if (SecurityContextHolder.getContext().getAuthentication() instanceof JwtAuthenticationToken jwt) {
+            return jwt.getToken().getTokenValue();
+        }
+        throw ApiException.unauthorized(ECommonError.COMMON_003);
+    }
+}

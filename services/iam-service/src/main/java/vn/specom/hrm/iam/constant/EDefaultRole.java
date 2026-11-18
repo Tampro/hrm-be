@@ -15,10 +15,10 @@ import java.util.Set;
 public enum EDefaultRole {
     COMPANY_ADMIN("Company administrator",
             union(union(union(IamPermissions.ALL, vn.specom.hrm.iam.saas.SaasPermissions.ALL), MediaPermissions.ALL),
-                    NotificationPermissions.ALL)),
-    // TODO(assumption): HR manages accounts but not roles — confirm with BA.
+                    union(NotificationPermissions.ALL, EmployeePermissions.ALL))),
+    // TODO(assumption): HR manages accounts but not roles, and sees banking data — confirm with BA.
     HR("HR", union(Set.of(IamPermissions.USER_VIEW, IamPermissions.USER_CREATE, IamPermissions.USER_UPDATE,
-            IamPermissions.ROLE_VIEW, IamPermissions.PERMISSION_VIEW), MediaPermissions.ALL)),
+            IamPermissions.ROLE_VIEW, IamPermissions.PERMISSION_VIEW), union(MediaPermissions.ALL, EmployeePermissions.ALL))),
     MANAGER("Manager", Set.of()),
     EMPLOYEE("Employee", Set.of()),
     EXECUTIVE("Executive board", Set.of()),

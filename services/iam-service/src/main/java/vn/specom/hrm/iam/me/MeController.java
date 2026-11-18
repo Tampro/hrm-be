@@ -25,6 +25,14 @@ import java.util.TreeSet;
 @SecurityRequirement(name = "bearerAuth")
 public class MeController {
 
+    private final vn.specom.hrm.iam.repository.CompanyRepository companies;
+    private final vn.specom.hrm.iam.saas.SubscriptionService subscriptions;
+
+    /** Limits: null = none. */
+    public record CompanyContextDto(String companyId, String name, Integer maxUsers, Integer maxEmployees,
+                                    boolean blocked) {
+    }
+
     public record MeDto(String userId, String username, String companyId, boolean superAdmin,
                         List<String> roles, List<String> permissions) {
     }
@@ -52,6 +60,23 @@ public class MeController {
     @GetMapping("/authorities")
     public ApiMessageDto<HrmPrincipal> authorities() {
         return ApiMessageDto.ok(requireProfile());
+    }
+
+    @Operation(summary = "My company: name and the limits of its effective plan, for other HRM services",
+            description = "employee-service checks maxEmployees before creating an employee and prints the name on letters. "
+                    + "Super admin: companyId names the company.")
+    @GetMapping("/company")
+    public ApiMessageDto<CompanyContextDto> company(
+            @org.springframework.web.bind.annotation.RequestParam(required = false) Long companyId) {
+        requireProfile();
+        Long id = vn.specom.hrm.security.TenantGuard.resolveCompany(companyId, EIamError.IAM_003);
+        var company = companies.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> ApiException.notFound(EIamError.IAM_001));
+        var e = subscriptions.effective(company);
+        String cid = company.getId().toString();
+        return ApiMessageDto.ok(e.plan() == null ? new CompanyContextDto(cid, company.getName(), null, null, e.blocked())
+                : new CompanyContextDto(cid, company.getName(), e.plan().getMaxUsers(), e.plan().getMaxEmployees(),
+                e.blocked()));
     }
 
     private static HrmPrincipal requireProfile() {

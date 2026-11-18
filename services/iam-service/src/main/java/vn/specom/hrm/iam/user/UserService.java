@@ -81,8 +81,16 @@ public class UserService {
         var company = companies.findByIdAndDeletedFalse(companyId)
                 .orElseThrow(() -> ApiException.notFound(EIamError.IAM_001));
         subscriptions.assertCanAddUser(company);
-        Set<Role> assigned = resolveAssignable(companyId, form.roleIds());
-        String temporaryPassword = generatePassword();
+        Set<Long> roleIds = new HashSet<>(form.roleIds());
+        if (form.roleCodes() != null && !form.roleCodes().isEmpty()) {
+            List<Role> byCode = roles.findByCompanyIdAndCodeInAndDeletedFalse(companyId, form.roleCodes());
+            if (byCode.size() != form.roleCodes().size()) {
+                throw ApiException.badRequest(EIamError.IAM_011);
+            }
+            byCode.forEach(r -> roleIds.add(r.getId()));
+        }
+        Set<Role> assigned = resolveAssignable(companyId, roleIds);
+        String temporaryPassword = form.password() != null ? form.password() : generatePassword();
         String keycloakId = keycloak.createUser(form.username(), form.email(), form.fullName(), temporaryPassword);
 
         UserAccount u = new UserAccount();
@@ -120,6 +128,15 @@ public class UserService {
         u.setStatus(status);
         keycloak.setEnabled(u.getKeycloakId(), status == EUserStatus.ACTIVE);
         authorityCache.evictAll();
+        return UserDto.of(u);
+    }
+
+    /** Administrator sets a permanent password for an account of their company ("Change Password"). */
+    @Transactional
+    public UserDto changePassword(Long id, String newPassword) {
+        UserAccount u = require(id);
+        assertNotSelf(u);
+        keycloak.setPermanentPassword(u.getKeycloakId(), newPassword);
         return UserDto.of(u);
     }
 

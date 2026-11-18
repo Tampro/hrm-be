@@ -35,14 +35,29 @@ public final class UserDtos {
     public record UserCreateForm(
             @Schema(description = "Login name, unique across HRM", example = "hr.demo",
                     requiredMode = Schema.RequiredMode.REQUIRED)
-            @NotBlank @Size(min = 3, max = 100) @Pattern(regexp = "[a-zA-Z0-9._-]+") String username,
+            // '@' and '+' so an email can be the login name (employees are created with their email).
+            @NotBlank @Size(min = 3, max = 100) @Pattern(regexp = "[a-zA-Z0-9._@+-]+") String username,
             @Schema(description = "Email", example = "hr.demo@example.com", requiredMode = Schema.RequiredMode.REQUIRED)
             @NotBlank @Email @Size(max = 255) String email,
             @Schema(description = "Full name", example = "Demo HR", requiredMode = Schema.RequiredMode.REQUIRED)
             @NotBlank @Size(max = 255) String fullName,
             @Schema(description = "Role ids of the same company", example = "[\"3\"]",
                     requiredMode = Schema.RequiredMode.REQUIRED)
-            @NotNull Set<@NotNull Long> roleIds) {
+            @NotNull Set<@NotNull Long> roleIds,
+            @Schema(description = "Optional: role codes of the same company, added to roleIds", example = "[\"EMPLOYEE\"]")
+            Set<@NotBlank String> roleCodes,
+            @Schema(description = "Optional: the first password, chosen by the administrator. Still temporary: the user "
+                    + "changes it at the first login. Omitted = generated.")
+            @Size(min = 8, max = 128) String password) {
+        public UserCreateForm(String username, String email, String fullName, Set<Long> roleIds) {
+            this(username, email, fullName, roleIds, null, null);
+        }
+    }
+
+    public record UserPasswordForm(
+            @Schema(description = "New permanent password (realm password policy applies)",
+                    requiredMode = Schema.RequiredMode.REQUIRED)
+            @NotBlank @Size(min = 8, max = 128) String newPassword) {
     }
 
     public record UserRolesForm(
