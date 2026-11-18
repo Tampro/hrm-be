@@ -19,6 +19,9 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long> 
 
     boolean existsByUsernameAndDeletedFalse(String username);
 
+    /** Accounts counting toward the plan's max_users (locked ones included: they hold a seat until deleted). */
+    long countByCompanyIdAndDeletedFalse(Long companyId);
+
     @Query("select u from UserAccount u where u.companyId = :companyId and u.deleted = false and "
             + "(:keyword = '' or lower(u.username) like lower(concat('%', :keyword, '%')) "
             + "or lower(u.fullName) like lower(concat('%', :keyword, '%')) "

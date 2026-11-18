@@ -65,6 +65,10 @@ services:
       # First company admin (optional; both empty = skip). See BootstrapAdminRunner.
       ADMIN_USER: ${ADMIN_USER:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      # Account shown to companies paying plan orders by bank transfer.
+      SAAS_BANK_NAME: ${SAAS_BANK_NAME:-}
+      SAAS_BANK_ACCOUNT_NUMBER: ${SAAS_BANK_ACCOUNT_NUMBER:-}
+      SAAS_BANK_ACCOUNT_NAME: ${SAAS_BANK_ACCOUNT_NAME:-}
     ports:
       - "8081:8081"
     depends_on:

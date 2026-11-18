@@ -1,0 +1,15 @@
+package vn.specom.hrm.iam.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.time.Clock;
+
+/** Injected so expiry rules can be tested at a fixed instant. All stored instants are UTC. */
+@Configuration
+public class ClockConfig {
+    @Bean
+    Clock clock() {
+        return Clock.systemUTC();
+    }
+}

@@ -59,6 +59,19 @@ and cannot be deleted; nobody changes their own roles or status (`IAM_013`).
 | GET/POST/PUT/DELETE | `/api/v1/iam/roles[/{id}]` | `IAM_ROLE_*` |
 | GET/POST | `/api/v1/iam/users`, PUT `/{id}/roles`, PUT `/{id}/status` | `IAM_USER_*` |
 | GET/POST | `/api/v1/iam/companies`, PUT `/{id}/status` | super admin |
+| GET | `/api/v1/saas/plans`, `/api/v1/saas/subscription` | `SAAS_SUBSCRIPTION_VIEW` |
+| POST | `/api/v1/saas/orders/quote`, `/api/v1/saas/orders` `{planId, billingCycle, couponCode?, paymentReference?}`; GET `/api/v1/saas/orders`; POST `/orders/{id}/cancel` | `SAAS_ORDER_*` |
+| CRUD | `/api/v1/saas/admin/plans`, `/api/v1/saas/admin/coupons`; GET `/admin/orders`, POST `/admin/orders/{id}/approve\|reject`; PUT `/admin/companies/{id}/subscription` | super admin |
+
+### Subscriptions (SaaS)
+
+New companies get the default plan (trial when the plan has `trialDays`). A paid order is a bank transfer: the
+company orders (price + coupon frozen), transfers with the order number as content, a super admin approves → the
+plan runs 1 month / 1 year (renewing the running plan extends it). When a plan expires the company falls back to the
+default plan; with no default it is **EXPIRED**: employees cannot log in (`AUTH_009`), `COMPANY_ADMIN` logs in with
+the `SAAS_*` permissions only, to renew. `maxUsers` is enforced when accounts are created; `maxEmployees` and
+storage are stored for later services. Companies without a plan (e.g. the bootstrap company) have no limits.
+Bank account shown with pending orders: `SAAS_BANK_NAME`, `SAAS_BANK_ACCOUNT_NUMBER`, `SAAS_BANK_ACCOUNT_NAME`.
 
 Envelope `{ result, code, data, message, traceId }`; errors carry a stable `code` (`AUTH_00x`, `IAM_0xx`,
 `COMMON_00x`) and a message in `Accept-Language` (vi default, en, ko). Swagger UI: `http://localhost:8081/swagger-ui.html`
