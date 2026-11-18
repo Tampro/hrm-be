@@ -37,6 +37,14 @@ hrm:
     client-id: ${KEYCLOAK_WEB_CLIENT_ID:hrm-web}
     admin-client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:hrm-iam-admin}
     admin-client-secret: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
+  bootstrap:
+    # Both empty → no bootstrap. The password is the operator's (permanent), never logged.
+    admin-username: ${ADMIN_USER:}
+    admin-password: ${ADMIN_PASSWORD:}
+    admin-email: ${ADMIN_EMAIL:admin@specom.invalid}
+    admin-full-name: ${ADMIN_FULL_NAME:System Administrator}
+    company-code: ${BOOTSTRAP_COMPANY_CODE:SPECOM}
+    company-name: ${BOOTSTRAP_COMPANY_NAME:SPECOM INC}
   cors:
     allowed-origins: ${HRM_CORS_ORIGINS:http://localhost:5173}
 

@@ -120,6 +120,12 @@ public class KeycloakClient {
 
     /** Creates an enabled user with a temporary password; returns the Keycloak id. */
     public String createUser(String username, String email, String fullName, String temporaryPassword) {
+        return createUser(username, email, fullName, temporaryPassword, true);
+    }
+
+    /** {@code temporary = false} only for the bootstrap admin, whose password the operator chose. */
+    public String createUser(String username, String email, String fullName, String password, boolean temporary) {
+        String temporaryPassword = password;
         // Keycloak's user profile requires firstName AND lastName; without lastName every login stops at
         // "Account is not fully set up" (VERIFY_PROFILE). Keycloak only displays them — HRM keeps fullName.
         String[] names = splitName(fullName);
@@ -130,7 +136,7 @@ public class KeycloakClient {
                 "lastName", names[1],
                 "enabled", true,
                 "emailVerified", false,
-                "credentials", List.of(Map.of("type", "password", "value", temporaryPassword, "temporary", true)));
+                "credentials", List.of(Map.of("type", "password", "value", temporaryPassword, "temporary", temporary)));
         try {
             ResponseEntity<Void> res = admin().post().uri(props.adminUrl() + "/users")
                     .contentType(MediaType.APPLICATION_JSON).body(body).retrieve().toBodilessEntity();
@@ -142,6 +148,10 @@ public class KeycloakClient {
             return path.substring(path.lastIndexOf('/') + 1);
         } catch (HttpClientErrorException.Conflict e) {
             throw ApiException.badRequest(EIamError.IAM_010);
+        } catch (HttpClientErrorException.BadRequest e) {
+            // Password policy or user profile validation.
+            log.error("Keycloak rejected the user: {}", errorDescription(e));
+            throw ApiException.badRequest(EIamError.IAM_014);
         } catch (RestClientException e) {
             log.error("Keycloak create user failed: {}", e.getClass().getSimpleName());
             throw ApiException.badRequest(EIamError.IAM_014);
