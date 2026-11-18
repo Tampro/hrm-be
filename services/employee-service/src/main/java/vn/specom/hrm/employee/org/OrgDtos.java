@@ -9,12 +9,6 @@ public final class OrgDtos {
     private OrgDtos() {
     }
 
-    public record BranchDto(String id, String companyId, String name) {
-        static BranchDto of(Branch b) {
-            return new BranchDto(b.getId().toString(), b.getCompanyId().toString(), b.getName());
-        }
-    }
-
     public record DepartmentDto(String id, String companyId, String branchId, String name) {
         static DepartmentDto of(Department d) {
             return new DepartmentDto(d.getId().toString(), d.getCompanyId().toString(), d.getBranchId().toString(),

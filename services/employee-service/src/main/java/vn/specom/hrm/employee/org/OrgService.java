@@ -6,7 +6,6 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.specom.hrm.employee.common.EEmployeeError;
 import vn.specom.hrm.employee.document.EmployeeDocumentRepository;
 import vn.specom.hrm.employee.employee.EmployeeRepository;
-import vn.specom.hrm.employee.org.OrgDtos.BranchDto;
 import vn.specom.hrm.employee.org.OrgDtos.DepartmentDto;
 import vn.specom.hrm.employee.org.OrgDtos.DesignationDto;
 import vn.specom.hrm.employee.org.OrgDtos.DocumentTypeDto;
@@ -34,47 +33,6 @@ public class OrgService {
     private final EmployeeRepository employees;
     private final EmployeeDocumentRepository documents;
 
-    // ------------------------------------------------------------------ branches
-
-    @Transactional(readOnly = true)
-    public List<BranchDto> branches(Long requestedCompanyId) {
-        Long companyId = company(requestedCompanyId);
-        return branches.findByCompanyIdAndDeletedFalseOrderByNameAsc(companyId).stream().map(BranchDto::of).toList();
-    }
-
-    @Transactional
-    public BranchDto createBranch(Long requestedCompanyId, String name) {
-        Long companyId = company(requestedCompanyId);
-        String n = name.trim();
-        if (branches.existsByCompanyIdAndNameAndDeletedFalseAndIdNot(companyId, n, -1L)) {
-            throw ApiException.badRequest(EEmployeeError.EMP_011);
-        }
-        Branch b = new Branch();
-        b.setCompanyId(companyId);
-        b.setName(n);
-        return BranchDto.of(branches.save(b));
-    }
-
-    @Transactional
-    public BranchDto renameBranch(Long id, String name) {
-        Branch b = requireBranch(id);
-        String n = name.trim();
-        if (branches.existsByCompanyIdAndNameAndDeletedFalseAndIdNot(b.getCompanyId(), n, id)) {
-            throw ApiException.badRequest(EEmployeeError.EMP_011);
-        }
-        b.setName(n);
-        return BranchDto.of(b);
-    }
-
-    @Transactional
-    public void deleteBranch(Long id) {
-        Branch b = requireBranch(id);
-        if (departments.existsByBranchIdAndDeletedFalse(id) || employees.existsByBranchIdAndDeletedFalse(id)) {
-            throw ApiException.badRequest(EEmployeeError.EMP_010);
-        }
-        b.setDeleted(true);
-    }
-
     // ------------------------------------------------------------------ departments
 
     @Transactional(readOnly = true)
@@ -89,6 +47,9 @@ public class OrgService {
     @Transactional
     public DepartmentDto createDepartment(Long branchId, String name) {
         Branch b = requireBranch(branchId);
+        if (b.getStatus() == EBranchStatus.INACTIVE) {
+            throw ApiException.badRequest(EEmployeeError.EMP_029);
+        }
         String n = name.trim();
         if (departments.existsByBranchIdAndNameAndDeletedFalseAndIdNot(branchId, n, -1L)) {
             throw ApiException.badRequest(EEmployeeError.EMP_011);
@@ -231,6 +192,12 @@ public class OrgService {
      */
     @Transactional(readOnly = true)
     public void assertChain(Long companyId, Long branchId, Long departmentId, Long designationId) {
+        assertChain(companyId, branchId, departmentId, designationId, null);
+    }
+
+    /** @param currentBranchId the employee's branch today: keeping an inactive branch is allowed, choosing one is not */
+    @Transactional(readOnly = true)
+    public void assertChain(Long companyId, Long branchId, Long departmentId, Long designationId, Long currentBranchId) {
         if ((departmentId != null && branchId == null) || (designationId != null && departmentId == null)) {
             throw ApiException.badRequest(EEmployeeError.EMP_023);
         }
@@ -238,6 +205,9 @@ public class OrgService {
             Branch b = branches.findByIdAndDeletedFalse(branchId)
                     .filter(x -> Objects.equals(x.getCompanyId(), companyId))
                     .orElseThrow(() -> ApiException.badRequest(EEmployeeError.EMP_002));
+            if (b.getStatus() == EBranchStatus.INACTIVE && !Objects.equals(branchId, currentBranchId)) {
+                throw ApiException.badRequest(EEmployeeError.EMP_029);
+            }
             if (departmentId != null) {
                 Department d = departments.findByIdAndDeletedFalse(departmentId)
                         .filter(x -> Objects.equals(x.getBranchId(), b.getId()))

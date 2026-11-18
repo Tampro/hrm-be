@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import vn.specom.hrm.common.ApiMessageDto;
-import vn.specom.hrm.employee.org.OrgDtos.BranchDto;
 import vn.specom.hrm.employee.org.OrgDtos.DepartmentDto;
 import vn.specom.hrm.employee.org.OrgDtos.DepartmentForm;
 import vn.specom.hrm.employee.org.OrgDtos.DesignationDto;
@@ -38,44 +37,6 @@ public class OrgController {
     private static final String COMPANY = "Super admin only: the company to act on. Ignored for company users.";
 
     private final OrgService orgs;
-
-    @Operation(summary = "Branches of the company")
-    @ApiResponses(@ApiResponse(responseCode = "400", description = "Super admin without companyId (EMP_019)"))
-    @PreAuthorize("@PermissionChecker.has('ORG_VIEW')")
-    @GetMapping("/branches")
-    public ApiMessageDto<List<BranchDto>> branches(@Parameter(description = COMPANY) @RequestParam(required = false) Long companyId) {
-        return ApiMessageDto.ok(orgs.branches(companyId));
-    }
-
-    @Operation(summary = "Create a branch")
-    @ApiResponses(@ApiResponse(responseCode = "400", description = "Name taken (EMP_011), no company (EMP_019)"))
-    @PreAuthorize("@PermissionChecker.has('ORG_MANAGE')")
-    @PostMapping("/branches")
-    public ApiMessageDto<BranchDto> createBranch(@Parameter(description = COMPANY) @RequestParam(required = false) Long companyId,
-                                                 @Valid @RequestBody NameForm form) {
-        return ApiMessageDto.ok(orgs.createBranch(companyId, form.name()));
-    }
-
-    @Operation(summary = "Rename a branch (full replacement)")
-    @ApiResponses({
-            @ApiResponse(responseCode = "400", description = "Name taken (EMP_011)"),
-            @ApiResponse(responseCode = "404", description = "No such branch in your company (EMP_002)")})
-    @PreAuthorize("@PermissionChecker.has('ORG_MANAGE')")
-    @PutMapping("/branches/{id}")
-    public ApiMessageDto<BranchDto> renameBranch(@PathVariable Long id, @Valid @RequestBody NameForm form) {
-        return ApiMessageDto.ok(orgs.renameBranch(id, form.name()));
-    }
-
-    @Operation(summary = "Delete a branch", description = "Refused while a department or an employee uses it.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "400", description = "Still in use (EMP_010)"),
-            @ApiResponse(responseCode = "404", description = "No such branch in your company (EMP_002)")})
-    @PreAuthorize("@PermissionChecker.has('ORG_MANAGE')")
-    @DeleteMapping("/branches/{id}")
-    public ApiMessageDto<Void> deleteBranch(@PathVariable Long id) {
-        orgs.deleteBranch(id);
-        return ApiMessageDto.ok(null);
-    }
 
     @Operation(summary = "Departments of the company, optionally of one branch")
     @ApiResponses(@ApiResponse(responseCode = "400", description = "Super admin without companyId (EMP_019)"))

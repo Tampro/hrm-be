@@ -18,6 +18,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long>, JpaSp
 
     boolean existsByBranchIdAndDeletedFalse(Long branchId);
 
+    long countByBranchIdAndDeletedFalse(Long branchId);
+
     boolean existsByDepartmentIdAndDeletedFalse(Long departmentId);
 
     boolean existsByDesignationIdAndDeletedFalse(Long designationId);

@@ -18,4 +18,6 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
     boolean existsByBranchIdAndNameAndDeletedFalseAndIdNot(Long branchId, String name, Long id);
 
     boolean existsByBranchIdAndDeletedFalse(Long branchId);
+
+    long countByBranchIdAndDeletedFalse(Long branchId);
 }
