@@ -23,6 +23,7 @@ import vn.specom.hrm.media.service.MediaDtos.StatsDto;
 import vn.specom.hrm.media.storage.FileStorage;
 import vn.specom.hrm.media.storage.FileTypePolicy;
 import vn.specom.hrm.media.storage.LinkSigner;
+import vn.specom.hrm.media.storage.StoragePolicyClient;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,6 +43,7 @@ public class MediaService {
     private final FileStorage storage;
     private final LinkSigner links;
     private final MediaProperties props;
+    private final StoragePolicyClient storagePolicy;
 
     // ------------------------------------------------------------------ folders
 
@@ -125,16 +127,22 @@ public class MediaService {
         }
         record Checked(MultipartFile file, String name, FileTypePolicy.FileType type) {
         }
+        // Limits of the super admin's Storage Settings, on top of what this service can verify.
+        StoragePolicyClient.Policy policy = storagePolicy.current();
         List<Checked> checked = new ArrayList<>();
         for (MultipartFile u : uploads) {
             if (u.isEmpty()) {
                 continue;
             }
-            if (u.getSize() > props.maxFileSize().toBytes()) {
-                throw ApiException.badRequest(EMediaError.MEDIA_005, props.maxFileSize().toMegabytes() + " MB");
+            if (u.getSize() > policy.maxBytes()) {
+                throw ApiException.badRequest(EMediaError.MEDIA_005, (policy.maxBytes() / 1024) + " KB");
             }
             String name = cleanName(u.getOriginalFilename());
-            checked.add(new Checked(u, name, FileTypePolicy.check(name, head(u))));
+            FileTypePolicy.FileType type = FileTypePolicy.check(name, head(u));
+            if (policy.allowedTypes() != null && !policy.allowedTypes().contains(type.extension())) {
+                throw ApiException.badRequest(EMediaError.MEDIA_004, type.extension());
+            }
+            checked.add(new Checked(u, name, type));
         }
         List<String> stored = new ArrayList<>();
         try {

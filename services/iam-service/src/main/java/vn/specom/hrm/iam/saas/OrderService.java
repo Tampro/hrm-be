@@ -45,6 +45,7 @@ public class OrderService {
     private final PricingService pricing;
     private final SubscriptionService subscriptions;
     private final BankTransferProperties bank;
+    private final vn.specom.hrm.iam.settings.SettingsService settings;
     private final LocalAuthorityResolver authorityCache;
     private final vn.specom.hrm.iam.referral.ReferralService referral;
     private final Clock clock;
@@ -256,9 +257,14 @@ public class OrderService {
     }
 
     private OrderDto dto(PlanOrder o) {
-        BankTransferDto transfer = o.getStatus() == EOrderStatus.PENDING
-                ? new BankTransferDto(bank.bankName(), bank.accountNumber(), bank.accountName(), o.getOrderNumber())
-                : null;
+        BankTransferDto transfer = null;
+        if (o.getStatus() == EOrderStatus.PENDING) {
+            var s = settings.bankTransfer();
+            boolean fromSettings = s.accountNumber() != null && !s.accountNumber().isBlank();
+            transfer = fromSettings
+                    ? new BankTransferDto(s.bankName(), s.accountNumber(), s.accountName(), o.getOrderNumber())
+                    : new BankTransferDto(bank.bankName(), bank.accountNumber(), bank.accountName(), o.getOrderNumber());
+        }
         return OrderDto.of(o, transfer);
     }
 }

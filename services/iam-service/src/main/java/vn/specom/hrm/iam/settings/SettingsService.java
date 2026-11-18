@@ -1,0 +1,277 @@
+package vn.specom.hrm.iam.settings;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.mail.MailException;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import vn.specom.hrm.exception.ApiException;
+import vn.specom.hrm.iam.repository.CurrencyRepository;
+import vn.specom.hrm.iam.settings.SettingsDtos.BankTransferSettings;
+import vn.specom.hrm.iam.settings.SettingsDtos.BrandSettings;
+import vn.specom.hrm.iam.settings.SettingsDtos.CookieSettings;
+import vn.specom.hrm.iam.settings.SettingsDtos.CurrencyFormatSettings;
+import vn.specom.hrm.iam.settings.SettingsDtos.CurrencySettingsView;
+import vn.specom.hrm.iam.settings.SettingsDtos.EMailEncryption;
+import vn.specom.hrm.iam.settings.SettingsDtos.ESection;
+import vn.specom.hrm.iam.settings.SettingsDtos.EmailSettings;
+import vn.specom.hrm.iam.settings.SettingsDtos.EmailSettingsForm;
+import vn.specom.hrm.iam.settings.SettingsDtos.EmailSettingsView;
+import vn.specom.hrm.iam.settings.SettingsDtos.PublicRecaptcha;
+import vn.specom.hrm.iam.settings.SettingsDtos.PublicSettings;
+import vn.specom.hrm.iam.settings.SettingsDtos.RecaptchaSettings;
+import vn.specom.hrm.iam.settings.SettingsDtos.RecaptchaSettingsForm;
+import vn.specom.hrm.iam.settings.SettingsDtos.RecaptchaSettingsView;
+import vn.specom.hrm.iam.settings.SettingsDtos.SeoSettings;
+import vn.specom.hrm.iam.settings.SettingsDtos.StorageSettings;
+import vn.specom.hrm.iam.settings.SettingsDtos.SystemSettings;
+import vn.specom.hrm.security.CurrentUser;
+
+import java.time.Clock;
+import java.time.DateTimeException;
+import java.time.ZoneId;
+import java.util.List;
+import java.util.Locale;
+import java.util.Properties;
+import java.util.TreeSet;
+import java.util.function.Supplier;
+
+/**
+ * Platform settings (docs/analysis/06 §3.3.2), one JSON row per section; a section never saved reads as its
+ * defaults. PUT is a full replacement of a section, except write-only secrets: omitted = keep.
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class SettingsService {
+    private final PlatformSettingRepository repo;
+    private final CurrencyRepository currencies;
+    private final SecretCipher cipher;
+    private final ObjectMapper mapper;
+    private final Clock clock;
+
+    // ------------------------------------------------------------------ plain sections
+
+    @Transactional(readOnly = true)
+    public SystemSettings system() {
+        return read(ESection.SYSTEM, SystemSettings.class, SystemSettings::defaults);
+    }
+
+    @Transactional
+    public SystemSettings saveSystem(SystemSettings s) {
+        try {
+            ZoneId.of(s.defaultTimezone());
+        } catch (DateTimeException e) {
+            throw ApiException.badRequest(ESettingsError.SETTINGS_001, s.defaultTimezone());
+        }
+        return write(ESection.SYSTEM, s);
+    }
+
+    @Transactional(readOnly = true)
+    public BrandSettings brand() {
+        return read(ESection.BRAND, BrandSettings.class, BrandSettings::defaults);
+    }
+
+    @Transactional
+    public BrandSettings saveBrand(BrandSettings s) {
+        return write(ESection.BRAND, s);
+    }
+
+    @Transactional(readOnly = true)
+    public CurrencySettingsView currency() {
+        CurrencyFormatSettings f = read(ESection.CURRENCY_FORMAT, CurrencyFormatSettings.class,
+                CurrencyFormatSettings::defaults);
+        var def = currencies.findFirstByDefaultCurrencyTrue();
+        return new CurrencySettingsView(f, def.map(c -> c.getCode()).orElse(null),
+                def.map(c -> c.getSymbol()).orElse(null));
+    }
+
+    /** The default currency itself is changed on the Currency page (one source of truth). */
+    @Transactional
+    public CurrencySettingsView saveCurrencyFormat(CurrencyFormatSettings s) {
+        write(ESection.CURRENCY_FORMAT, s);
+        return currency();
+    }
+
+    @Transactional(readOnly = true)
+    public SeoSettings seo() {
+        return read(ESection.SEO, SeoSettings.class, SeoSettings::defaults);
+    }
+
+    @Transactional
+    public SeoSettings saveSeo(SeoSettings s) {
+        return write(ESection.SEO, s);
+    }
+
+    @Transactional(readOnly = true)
+    public CookieSettings cookie() {
+        return read(ESection.COOKIE, CookieSettings.class, CookieSettings::defaults);
+    }
+
+    @Transactional
+    public CookieSettings saveCookie(CookieSettings s) {
+        return write(ESection.COOKIE, s);
+    }
+
+    @Transactional(readOnly = true)
+    public BankTransferSettings bankTransfer() {
+        return read(ESection.BANK_TRANSFER, BankTransferSettings.class, BankTransferSettings::defaults);
+    }
+
+    @Transactional
+    public BankTransferSettings saveBankTransfer(BankTransferSettings s) {
+        return write(ESection.BANK_TRANSFER, s);
+    }
+
+    @Transactional(readOnly = true)
+    public StorageSettings storage() {
+        return read(ESection.STORAGE, StorageSettings.class, StorageSettings::defaults);
+    }
+
+    /** Only types media-service can verify by content may be allowed (it refuses the rest anyway). */
+    @Transactional
+    public StorageSettings saveStorage(StorageSettings s) {
+        List<String> types = s.allowedFileTypes().stream().map(t -> t.trim().toLowerCase(Locale.ROOT)).distinct().toList();
+        TreeSet<String> unsupported = new TreeSet<>(types);
+        unsupported.removeAll(StorageSettings.SUPPORTED);
+        if (!unsupported.isEmpty()) {
+            throw ApiException.badRequest(ESettingsError.SETTINGS_005, String.join(", ", unsupported));
+        }
+        return write(ESection.STORAGE, new StorageSettings(types, s.maxUploadSizeKb()));
+    }
+
+    // ------------------------------------------------------------------ email (secret)
+
+    @Transactional(readOnly = true)
+    public EmailSettingsView email() {
+        return EmailSettingsView.of(emailStored());
+    }
+
+    @Transactional
+    public EmailSettingsView saveEmail(EmailSettingsForm f) {
+        String enc = emailStored().passwordEnc();
+        if (f.password() != null) {
+            enc = f.password().isEmpty() ? null : cipher.encrypt(f.password());
+        }
+        return EmailSettingsView.of(write(ESection.EMAIL, new EmailSettings(f.host().trim(), f.port(), f.username(),
+                enc, f.encryption(), f.fromAddress(), f.fromName())));
+    }
+
+    /** Sends one message with the stored settings; the error text of the mail server is returned, never a secret. */
+    @Transactional(readOnly = true)
+    public void sendTestEmail(String to) {
+        EmailSettings s = emailStored();
+        if (s.host() == null || s.fromAddress() == null) {
+            throw ApiException.badRequest(ESettingsError.SETTINGS_003);
+        }
+        JavaMailSenderImpl sender = new JavaMailSenderImpl();
+        sender.setHost(s.host());
+        sender.setPort(s.port());
+        if (s.username() != null && !s.username().isBlank()) {
+            sender.setUsername(s.username());
+            sender.setPassword(s.passwordEnc() == null ? null : cipher.decrypt(s.passwordEnc()));
+        }
+        Properties p = sender.getJavaMailProperties();
+        p.put("mail.smtp.auth", String.valueOf(sender.getUsername() != null));
+        p.put("mail.smtp.starttls.enable", String.valueOf(s.encryption() == EMailEncryption.TLS));
+        p.put("mail.smtp.ssl.enable", String.valueOf(s.encryption() == EMailEncryption.SSL));
+        p.put("mail.smtp.connectiontimeout", "5000");
+        p.put("mail.smtp.timeout", "10000");
+        p.put("mail.smtp.writetimeout", "10000");
+        SimpleMailMessage m = new SimpleMailMessage();
+        m.setFrom(s.fromName() == null ? s.fromAddress() : s.fromName() + " <" + s.fromAddress() + ">");
+        m.setTo(to);
+        m.setSubject("SPECOM HRM — test email");
+        m.setText("This is a test email from the SPECOM HRM platform settings.");
+        try {
+            sender.send(m);
+        } catch (MailException e) {
+            String reason = e.getMostSpecificCause().getMessage();
+            log.warn("Test email failed: {}", e.getClass().getSimpleName());
+            throw ApiException.badRequest(ESettingsError.SETTINGS_004,
+                    reason == null ? e.getClass().getSimpleName() : reason.lines().findFirst().orElse(""));
+        }
+    }
+
+    private EmailSettings emailStored() {
+        return read(ESection.EMAIL, EmailSettings.class, EmailSettings::defaults);
+    }
+
+    // ------------------------------------------------------------------ reCAPTCHA (secret)
+
+    @Transactional(readOnly = true)
+    public RecaptchaSettingsView recaptcha() {
+        return RecaptchaSettingsView.of(recaptchaStored());
+    }
+
+    @Transactional
+    public RecaptchaSettingsView saveRecaptcha(RecaptchaSettingsForm f) {
+        String enc = recaptchaStored().secretEnc();
+        if (f.secret() != null) {
+            enc = f.secret().isEmpty() ? null : cipher.encrypt(f.secret());
+        }
+        if (f.enabled() && (enc == null || f.siteKey() == null || f.siteKey().isBlank())) {
+            throw ApiException.badRequest(ESettingsError.SETTINGS_006);
+        }
+        return RecaptchaSettingsView.of(write(ESection.RECAPTCHA,
+                new RecaptchaSettings(f.enabled(), f.version(), f.siteKey(), enc)));
+    }
+
+    /** For the login check: the stored settings with the decrypted secret; null when disabled. */
+    @Transactional(readOnly = true)
+    public ActiveRecaptcha activeRecaptcha() {
+        RecaptchaSettings s = recaptchaStored();
+        return s.enabled() ? new ActiveRecaptcha(s.version(), cipher.decrypt(s.secretEnc())) : null;
+    }
+
+    public record ActiveRecaptcha(SettingsDtos.ERecaptchaVersion version, String secret) {
+    }
+
+    private RecaptchaSettings recaptchaStored() {
+        return read(ESection.RECAPTCHA, RecaptchaSettings.class, RecaptchaSettings::defaults);
+    }
+
+    // ------------------------------------------------------------------ public bundle
+
+    @Transactional(readOnly = true)
+    public PublicSettings publicSettings() {
+        RecaptchaSettings r = recaptchaStored();
+        return new PublicSettings(system(), brand(), currency(), seo(), cookie(),
+                new PublicRecaptcha(r.enabled(), r.version(), r.enabled() ? r.siteKey() : null));
+    }
+
+    // ------------------------------------------------------------------ storage of a section
+
+    private <T> T read(ESection section, Class<T> type, Supplier<T> defaults) {
+        return repo.findById(section.name()).map(row -> {
+            try {
+                return mapper.readValue(row.getValueJson(), type);
+            } catch (JsonProcessingException e) {
+                // A row the current code cannot read: fall back rather than break the settings page.
+                log.error("Settings section {} unreadable, using defaults", section);
+                return defaults.get();
+            }
+        }).orElseGet(defaults);
+    }
+
+    private <T> T write(ESection section, T value) {
+        PlatformSetting row = repo.findById(section.name()).orElseGet(() -> {
+            PlatformSetting p = new PlatformSetting();
+            p.setSection(section.name());
+            return p;
+        });
+        try {
+            row.setValueJson(mapper.writeValueAsString(value));
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Cannot serialise settings " + section, e);
+        }
+        row.setUpdatedBy(CurrentUser.find().map(p -> p.keycloakId()).orElse("system"));
+        row.setUpdatedDate(clock.instant());
+        repo.save(row);
+        return value;
+    }
+}

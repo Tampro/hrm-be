@@ -88,6 +88,8 @@ mvn -DskipTests package            # builds the jars the Dockerfiles copy
 #   KEYCLOAK_ADMIN_CLIENT_SECRET          (secret of client hrm-iam-admin; realm import and IAM read the same value)
 #   HRM_SUPERADMIN_INITIAL_PASSWORD       (temporary; ≥10 chars, upper, lower, digit)
 #   MEDIA_DB_PASSWORD, MEDIA_LINK_SECRET  (media-service; the link secret is random, ≥ 32 chars)
+#   HRM_SETTINGS_ENC_KEY                  (optional; base64 of 32 random bytes — needed to save the SMTP password
+#                                          or reCAPTCHA secret in Settings: openssl rand -base64 32)
 docker compose up -d --build
 ```
 

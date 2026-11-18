@@ -1,0 +1,20 @@
+package vn.specom.hrm.iam.settings;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import vn.specom.hrm.exception.ErrorCode;
+
+/** Never renumber or reuse a code: the FE keys on it. */
+@Getter
+@RequiredArgsConstructor
+public enum ESettingsError implements ErrorCode {
+    SETTINGS_001("Unknown time zone: {0}."),
+    SETTINGS_002("The encryption key for secrets is not configured (HRM_SETTINGS_ENC_KEY)."),
+    SETTINGS_003("The email settings are not complete."),
+    SETTINGS_004("The test email could not be sent: {0}."),
+    SETTINGS_005("These file types cannot be allowed: {0}."),
+    SETTINGS_006("A secret is required to enable reCAPTCHA."),
+    SETTINGS_007("A stored secret cannot be read with the current encryption key.");
+
+    private final String message;
+}
