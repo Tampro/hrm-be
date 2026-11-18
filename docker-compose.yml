@@ -71,6 +71,8 @@ services:
       SAAS_BANK_NAME: ${SAAS_BANK_NAME:-}
       SAAS_BANK_ACCOUNT_NUMBER: ${SAAS_BANK_ACCOUNT_NUMBER:-}
       SAAS_BANK_ACCOUNT_NAME: ${SAAS_BANK_ACCOUNT_NAME:-}
+      # Encryption key for secrets saved in platform settings (base64, 32 bytes). Optional.
+      HRM_SETTINGS_ENC_KEY: ${HRM_SETTINGS_ENC_KEY:-}
     ports:
       - "8081:8081"
     depends_on:

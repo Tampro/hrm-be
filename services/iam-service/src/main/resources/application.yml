@@ -51,6 +51,9 @@ hrm:
       bank-name: ${SAAS_BANK_NAME:}
       account-number: ${SAAS_BANK_ACCOUNT_NUMBER:}
       account-name: ${SAAS_BANK_ACCOUNT_NAME:}
+  settings:
+    # base64 of 32 random bytes; encrypts SMTP password / reCAPTCHA secret. Empty = secrets cannot be saved.
+    enc-key: ${HRM_SETTINGS_ENC_KEY:}
   cors:
     allowed-origins: ${HRM_CORS_ORIGINS:http://localhost:5173}
 

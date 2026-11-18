@@ -22,18 +22,21 @@ import vn.specom.hrm.iam.auth.AuthForms.TokenDto;
 @RequestMapping("/api/v1/auth")
 public class AuthController {
     private final AuthService authService;
+    private final vn.specom.hrm.iam.settings.RecaptchaVerifier recaptcha;
 
     @Operation(summary = "Log in with username and password",
             description = "Returns Keycloak tokens. Access token lives 15 minutes, the refresh token rotates.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Logged in"),
-            @ApiResponse(responseCode = "400", description = "Temporary password must be changed first (AUTH_004)"),
+            @ApiResponse(responseCode = "400", description = "Temporary password must be changed first (AUTH_004), "
+                    + "reCAPTCHA missing or refused (AUTH_010)"),
             @ApiResponse(responseCode = "401", description = "Wrong credentials (AUTH_001), account locked or "
                     + "company inactive (AUTH_002), too many attempts (AUTH_008)"),
             @ApiResponse(responseCode = "403", description = "No HRM profile for this account (AUTH_006)"),
             @ApiResponse(responseCode = "503", description = "Keycloak unreachable (AUTH_005)")})
     @PostMapping("/login")
     public ApiMessageDto<TokenDto> login(@Valid @RequestBody LoginForm form) {
+        recaptcha.check(form.recaptchaToken());
         return ApiMessageDto.ok(authService.login(form.username(), form.password()));
     }
 
@@ -63,6 +66,7 @@ public class AuthController {
                     + "account locked (AUTH_002, AUTH_008)")})
     @PostMapping("/initial-password")
     public ApiMessageDto<TokenDto> initialPassword(@Valid @RequestBody InitialPasswordForm form) {
+        recaptcha.check(form.recaptchaToken());
         return ApiMessageDto.ok(authService.setInitialPassword(form.username(), form.currentPassword(),
                 form.newPassword()));
     }

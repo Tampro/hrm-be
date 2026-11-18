@@ -17,6 +17,8 @@ public enum EIamError implements ErrorCode {
     AUTH_007("The new password does not meet the password policy."),
     AUTH_008("Too many failed attempts. The account is temporarily locked."),
     AUTH_009("The company subscription has expired. Ask your company administrator to renew it."),
+    AUTH_010("The reCAPTCHA check failed. Please try again."),
+    AUTH_011("The reCAPTCHA service is unavailable. Please try again later."),
     IAM_001("The company does not exist."),
     IAM_002("The company code is already taken."),
     IAM_003("A company must be specified for this action."),

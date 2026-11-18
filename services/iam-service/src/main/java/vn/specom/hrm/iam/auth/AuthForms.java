@@ -13,7 +13,9 @@ public final class AuthForms {
             @Schema(description = "Username", example = "hr.demo", requiredMode = Schema.RequiredMode.REQUIRED)
             @NotBlank @Size(max = 100) String username,
             @Schema(description = "Password", example = "********", requiredMode = Schema.RequiredMode.REQUIRED)
-            @NotBlank @Size(max = 128) String password) {
+            @NotBlank @Size(max = 128) String password,
+            @Schema(description = "reCAPTCHA token; required when reCAPTCHA is enabled in the settings")
+            @Size(max = 4000) String recaptchaToken) {
     }
 
     public record RefreshTokenForm(
@@ -30,7 +32,9 @@ public final class AuthForms {
             @NotBlank @Size(max = 128) String currentPassword,
             @Schema(description = "New password; the realm password policy applies",
                     requiredMode = Schema.RequiredMode.REQUIRED)
-            @NotBlank @Size(min = 8, max = 128) String newPassword) {
+            @NotBlank @Size(min = 8, max = 128) String newPassword,
+            @Schema(description = "reCAPTCHA token; required when reCAPTCHA is enabled in the settings")
+            @Size(max = 4000) String recaptchaToken) {
     }
 
     @Schema(description = "Tokens. The FE sends accessToken as Bearer and calls refresh-token on 401.")
