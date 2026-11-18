@@ -48,6 +48,7 @@ public class OrderService {
     private final vn.specom.hrm.iam.settings.SettingsService settings;
     private final LocalAuthorityResolver authorityCache;
     private final vn.specom.hrm.iam.referral.ReferralService referral;
+    private final vn.specom.hrm.iam.email.EmailNotifier notifier;
     private final Clock clock;
 
     // ------------------------------------------------------------------ company side
@@ -149,9 +150,12 @@ public class OrderService {
         PlanOrder o = require(id);
         decide(o, EOrderStatus.APPROVED, notes);
         Company c = company(o.getCompanyId());
-        subscriptions.activate(c, catalog.requirePlan(o.getPlanId()), o.getBillingCycle());
+        Plan plan = catalog.requirePlan(o.getPlanId());
+        subscriptions.activate(c, plan, o.getBillingCycle());
         referral.onOrderApproved(o, c);
         authorityCache.evictAll();
+        notifier.orderDecided(true, c, o.getOrderNumber(), plan.getName(), o.getBillingCycle().name(),
+                o.getFinalPrice(), c.getPlanExpiresAt(), notes);
         return dto(o);
     }
 
@@ -159,6 +163,9 @@ public class OrderService {
     public OrderDto reject(Long id, String notes) {
         PlanOrder o = require(id);
         decide(o, EOrderStatus.REJECTED, notes);
+        Plan plan = catalog.findAny(o.getPlanId());
+        notifier.orderDecided(false, company(o.getCompanyId()), o.getOrderNumber(), plan == null ? "" : plan.getName(),
+                o.getBillingCycle().name(), o.getFinalPrice(), null, notes);
         return dto(o);
     }
 

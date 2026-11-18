@@ -121,7 +121,7 @@ public class CompanyService {
         Role admin = roles.findByCompanyIdAndCodeAndDeletedFalse(c.getId(), EDefaultRole.COMPANY_ADMIN.name())
                 .orElseThrow();
         CreatedUserDto adminUser = userService.createInCompany(c.getId(), new UserCreateForm(
-                form.admin().username(), form.admin().email(), form.admin().fullName(), Set.of(admin.getId())));
+                form.admin().username(), form.admin().email(), form.admin().fullName(), Set.of(admin.getId())), true);
         return new CompanyCreatedDto(CompanyDto.of(c, subscriptions.effective(c)), adminUser);
     }
 

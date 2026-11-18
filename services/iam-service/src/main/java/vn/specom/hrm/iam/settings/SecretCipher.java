@@ -26,7 +26,14 @@ public class SecretCipher {
     public SecretCipher(@Value("${hrm.settings.enc-key:}") String base64Key) {
         SecretKeySpec k = null;
         if (base64Key != null && !base64Key.isBlank()) {
-            byte[] raw = Base64.getDecoder().decode(base64Key.trim());
+            byte[] raw;
+            try {
+                raw = Base64.getDecoder().decode(base64Key.trim());
+            } catch (IllegalArgumentException e) {
+                // Never print the value. Typical cause: a hand-typed key instead of `openssl rand -base64 32`.
+                throw new IllegalStateException("HRM_SETTINGS_ENC_KEY is not valid base64 "
+                        + "(generate one with: openssl rand -base64 32)");
+            }
             if (raw.length != 32) {
                 // Never print the value: only its length.
                 throw new IllegalStateException("HRM_SETTINGS_ENC_KEY must be base64 of 32 bytes, got " + raw.length);

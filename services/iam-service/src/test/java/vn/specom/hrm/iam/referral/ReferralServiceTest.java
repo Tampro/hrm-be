@@ -48,7 +48,7 @@ class ReferralServiceTest {
         payouts = mock(PayoutRequestRepository.class);
         companies = mock(CompanyRepository.class);
         service = new ReferralService(settings, commissions, payouts, companies, mock(PlanRepository.class),
-                Clock.systemUTC());
+                Clock.systemUTC(), mock(vn.specom.hrm.iam.email.EmailNotifier.class));
         setting = new ReferralSetting();
         setting.setId(1L);
         setting.setEnabled(true);

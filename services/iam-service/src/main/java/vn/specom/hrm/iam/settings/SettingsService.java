@@ -161,16 +161,20 @@ public class SettingsService {
                 enc, f.encryption(), f.fromAddress(), f.fromName())));
     }
 
-    /** Sends one message with the stored settings; the error text of the mail server is returned, never a secret. */
+    /** A ready SMTP sender with the stored settings and the sender identity, or null when not configured. */
+    public record Mailer(JavaMailSenderImpl sender, String fromAddress, String fromName) {
+    }
+
     @Transactional(readOnly = true)
-    public void sendTestEmail(String to) {
+    public Mailer mailer() {
         EmailSettings s = emailStored();
-        if (s.host() == null || s.fromAddress() == null) {
-            throw ApiException.badRequest(ESettingsError.SETTINGS_003);
+        if (s.host() == null || s.host().isBlank() || s.fromAddress() == null) {
+            return null;
         }
         JavaMailSenderImpl sender = new JavaMailSenderImpl();
         sender.setHost(s.host());
         sender.setPort(s.port());
+        sender.setDefaultEncoding("UTF-8");
         if (s.username() != null && !s.username().isBlank()) {
             sender.setUsername(s.username());
             sender.setPassword(s.passwordEnc() == null ? null : cipher.decrypt(s.passwordEnc()));
@@ -182,13 +186,23 @@ public class SettingsService {
         p.put("mail.smtp.connectiontimeout", "5000");
         p.put("mail.smtp.timeout", "10000");
         p.put("mail.smtp.writetimeout", "10000");
+        return new Mailer(sender, s.fromAddress(), s.fromName());
+    }
+
+    /** Sends one message with the stored settings; the error text of the mail server is returned, never a secret. */
+    @Transactional(readOnly = true)
+    public void sendTestEmail(String to) {
+        Mailer mailer = mailer();
+        if (mailer == null) {
+            throw ApiException.badRequest(ESettingsError.SETTINGS_003);
+        }
         SimpleMailMessage m = new SimpleMailMessage();
-        m.setFrom(s.fromName() == null ? s.fromAddress() : s.fromName() + " <" + s.fromAddress() + ">");
+        m.setFrom(mailer.fromName() == null ? mailer.fromAddress() : mailer.fromName() + " <" + mailer.fromAddress() + ">");
         m.setTo(to);
         m.setSubject("SPECOM HRM — test email");
         m.setText("This is a test email from the SPECOM HRM platform settings.");
         try {
-            sender.send(m);
+            mailer.sender().send(m);
         } catch (MailException e) {
             String reason = e.getMostSpecificCause().getMessage();
             log.warn("Test email failed: {}", e.getClass().getSimpleName());
