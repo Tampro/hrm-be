@@ -19,3 +19,7 @@ databaseChangeLog:
       file: db/changelog/changes/20261119140000_plan_request_changelog.mysql.sql
   - include:
       file: db/changelog/changes/20261119160000_coupon_changelog.mysql.sql
+  - include:
+      file: db/changelog/changes/20261119180000_currency_changelog.mysql.sql
+  - include:
+      file: db/changelog/changes/20261119180100_currency_init_data.mysql.sql
