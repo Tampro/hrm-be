@@ -20,7 +20,7 @@ spring:
                 allowed-origins: ${HRM_CORS_ORIGINS:http://localhost:5173}
                 allowed-methods: GET,POST,PUT,DELETE,OPTIONS
                 allowed-headers: Authorization,Content-Type,Accept-Language
-                exposed-headers: X-Trace-Id
+                exposed-headers: X-Trace-Id,Content-Disposition
           # Each service sets its own CORS headers too; keep only the gateway's.
           default-filters:
             - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
@@ -36,6 +36,10 @@ spring:
               uri: ${MEDIA_SERVICE_URL:http://localhost:8082}
               predicates:
                 - Path=/api/v1/media/**
+            - id: employee-service
+              uri: ${EMPLOYEE_SERVICE_URL:http://localhost:8083}
+              predicates:
+                - Path=/api/v1/employees/**,/api/v1/employees,/api/v1/org/**
 
 management:
   endpoints:
