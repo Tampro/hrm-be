@@ -60,7 +60,7 @@ public class SubscriptionService {
                 .orElseGet(() -> new Effective(ESubscriptionStatus.EXPIRED, null, company.getPlanExpiresAt(), false));
     }
 
-    /** Who may still log in to an EXPIRED company, to renew it. TODO(assumption): COMPANY_ADMIN only — confirm. */
+    /** Who may still log in to an EXPIRED company, to renew it: COMPANY_ADMIN only (PO, 2026-11-18). */
     public static boolean mayRenew(java.util.Set<String> roleCodes) {
         return roleCodes.contains(vn.specom.hrm.iam.constant.EDefaultRole.COMPANY_ADMIN.name());
     }
