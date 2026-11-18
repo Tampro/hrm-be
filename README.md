@@ -110,4 +110,4 @@ first-login password, cross-company 404, escalation 403, lock/suspend revocation
    should have them.
 3. Every table with company data gets `company_id`; every list uses `TenantGuard.resolveCompany`, every by-id access
    `TenantGuard.assertSameCompany`.
-4. Add a route in `gateway-server/src/main/resources/application.yml`.
+4. Add a route in `services/gateway-server/src/main/resources/application.yml`.

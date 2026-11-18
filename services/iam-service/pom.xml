@@ -7,6 +7,7 @@
         <groupId>vn.specom.hrm</groupId>
         <artifactId>hrm-be</artifactId>
         <version>0.0.1-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
     <artifactId>iam-service</artifactId>
     <name>iam-service</name>
