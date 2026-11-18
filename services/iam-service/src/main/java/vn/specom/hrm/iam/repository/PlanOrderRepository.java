@@ -3,6 +3,7 @@ package vn.specom.hrm.iam.repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import vn.specom.hrm.iam.model.PlanOrder;
 import vn.specom.hrm.iam.saas.EOrderStatus;
 
@@ -18,4 +19,21 @@ public interface PlanOrderRepository extends JpaRepository<PlanOrder, Long> {
     long countByCouponIdAndStatusIn(Long couponId, Collection<EOrderStatus> statuses);
 
     long countByCouponIdAndCompanyIdAndStatusIn(Long couponId, Long companyId, Collection<EOrderStatus> statuses);
+
+    /** Keyword matches order number, company name/code/email; order date in [from, to). */
+    String FILTER = " from PlanOrder o join Company c on c.id = o.companyId join Plan p on p.id = o.planId"
+            + " where (:keyword = '' or lower(o.orderNumber) like lower(concat('%', :keyword, '%'))"
+            + "   or lower(c.name) like lower(concat('%', :keyword, '%'))"
+            + "   or lower(c.code) like lower(concat('%', :keyword, '%'))"
+            + "   or lower(coalesce(c.email, '')) like lower(concat('%', :keyword, '%')))"
+            + " and o.createdDate >= :from and o.createdDate < :to";
+
+    /** Rows of [PlanOrder, company name, company email, plan name] for the super admin orders page. */
+    @Query(value = "select o, c.name, c.email, p.name" + FILTER + " and (:status is null or o.status = :status)",
+            countQuery = "select count(o)" + FILTER + " and (:status is null or o.status = :status)")
+    Page<Object[]> searchWithNames(String keyword, java.time.Instant from, java.time.Instant to, EOrderStatus status,
+                                   Pageable pageable);
+
+    @Query("select o.status, count(o)" + FILTER + " group by o.status")
+    java.util.List<Object[]> countByStatus(String keyword, java.time.Instant from, java.time.Instant to);
 }

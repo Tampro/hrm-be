@@ -15,7 +15,7 @@ public class I18nConfig {
     public LocaleResolver localeResolver() {
         Locale vi = Locale.forLanguageTag("vi");
         AcceptHeaderLocaleResolver resolver = new AcceptHeaderLocaleResolver();
-        resolver.setSupportedLocales(List.of(vi, Locale.ENGLISH, Locale.KOREAN));
+        resolver.setSupportedLocales(Nulls.nonNull(List.of(vi, Locale.ENGLISH, Locale.KOREAN)));
         resolver.setDefaultLocale(vi);
         return resolver;
     }

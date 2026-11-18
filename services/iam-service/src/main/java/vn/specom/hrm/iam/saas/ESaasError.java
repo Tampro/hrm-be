@@ -21,7 +21,11 @@ public enum ESaasError implements ErrorCode {
     SAAS_011("The plan user limit ({0}) is reached. Upgrade the plan to add accounts."),
     SAAS_012("A percentage discount must be between 0 and 100."),
     SAAS_013("The default plan cannot be deleted."),
-    SAAS_014("The plan is not available.");
+    SAAS_014("The plan is not available."),
+    SAAS_015("The default plan cannot be made inactive."),
+    SAAS_016("The plan request does not exist."),
+    SAAS_017("Only a pending plan request can be approved, rejected or cancelled."),
+    SAAS_018("The company already has a pending plan request.");
 
     private final String message;
 }

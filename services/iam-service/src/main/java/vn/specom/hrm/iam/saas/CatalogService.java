@@ -70,6 +70,22 @@ public class CatalogService {
         authorityCache.evictAll();
     }
 
+    /** Active / Inactive toggle on the plan card. Companies already on an inactive plan keep it until it ends. */
+    @Transactional
+    public PlanDto setEnabled(Long id, boolean enabled) {
+        Plan p = requirePlan(id);
+        if (!enabled && p.isDefaultPlan()) {
+            throw ApiException.badRequest(ESaasError.SAAS_015);
+        }
+        p.setEnabled(enabled);
+        return PlanDto.of(p);
+    }
+
+    /** Plan by id including deleted ones — for showing names on old orders. */
+    public Plan findAny(Long id) {
+        return plans.findById(id).orElse(null);
+    }
+
     public Plan requirePlan(Long id) {
         return plans.findByIdAndDeletedFalse(id).orElseThrow(() -> ApiException.notFound(ESaasError.SAAS_001));
     }
@@ -90,6 +106,7 @@ public class CatalogService {
         p.setMaxEmployees(f.maxEmployees());
         p.setStorageLimitGb(f.storageLimitGb());
         p.setTrialDays(f.trialDays());
+        p.setAiIntegration(f.aiIntegration());
         p.setDefaultPlan(f.defaultPlan());
         p.setEnabled(f.enabled() || f.defaultPlan());
     }

@@ -20,7 +20,7 @@ public class PermissionChecker {
     }
 
     public boolean isSuperAdmin() {
-        return CurrentUser.find().map(HrmPrincipal::superAdmin).orElse(false);
+        return CurrentUser.find().map(p -> p.superAdmin()).orElse(false);
     }
 
     /** A company user (not a super admin) holding the permission — for endpoints that act on "my company". */

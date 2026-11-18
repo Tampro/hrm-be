@@ -48,6 +48,10 @@ public class Plan extends BaseAuditableEntity {
     @Column(name = "trial_days", nullable = false)
     private int trialDays;
 
+    /** Feature add-on shown on the plan card (docs/analysis/06 §3.2.3). Not enforced by any service yet. */
+    @Column(name = "ai_integration", nullable = false)
+    private boolean aiIntegration;
+
     @Column(name = "is_default", nullable = false)
     private boolean defaultPlan;
 
