@@ -31,7 +31,8 @@ public enum EIamError implements ErrorCode {
     IAM_012("The permissions of the company administrator role cannot be reduced."),
     IAM_013("You cannot change your own roles or status."),
     IAM_014("The user could not be created in the authentication server."),
-    IAM_015("You cannot grant permissions you do not hold: {0}.");
+    IAM_015("You cannot grant permissions you do not hold: {0}."),
+    IAM_016("The company has no active administrator account.");
 
     private final String message;
 }

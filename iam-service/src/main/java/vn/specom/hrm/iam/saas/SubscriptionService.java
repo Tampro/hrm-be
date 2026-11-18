@@ -45,7 +45,25 @@ public class SubscriptionService {
         if (company.getPlanId() == null) {
             return new Effective(ESubscriptionStatus.NONE, null, null, false);
         }
-        Optional<Plan> current = plans.findByIdAndDeletedFalse(company.getPlanId());
+        return effective(company, plans.findByIdAndDeletedFalse(company.getPlanId()),
+                () -> plans.findFirstByDefaultPlanTrueAndDeletedFalse());
+    }
+
+    /**
+     * Same rule for a page of companies without one query per row: the caller loads the live plans once.
+     *
+     * @param livePlans every non-deleted plan by id
+     */
+    public Effective effective(Company company, java.util.Map<Long, Plan> livePlans) {
+        if (company.getPlanId() == null) {
+            return new Effective(ESubscriptionStatus.NONE, null, null, false);
+        }
+        return effective(company, Optional.ofNullable(livePlans.get(company.getPlanId())),
+                () -> livePlans.values().stream().filter(Plan::isDefaultPlan).findFirst());
+    }
+
+    private Effective effective(Company company, Optional<Plan> current,
+                                java.util.function.Supplier<Optional<Plan>> defaultPlan) {
         Instant now = clock.instant();
         boolean expired = company.getPlanExpiresAt() != null && !company.getPlanExpiresAt().isAfter(now);
         if (current.isPresent() && !expired) {
@@ -54,7 +72,7 @@ public class SubscriptionService {
         }
         // Expired (or its plan was deleted): fall back to the default plan — but not to the plan whose trial just
         // ended, or a trial would never end.
-        Optional<Plan> fallback = plans.findFirstByDefaultPlanTrueAndDeletedFalse()
+        Optional<Plan> fallback = defaultPlan.get()
                 .filter(d -> !Objects.equals(d.getId(), company.getPlanId()));
         return fallback.map(d -> new Effective(ESubscriptionStatus.ACTIVE, d, null, true))
                 .orElseGet(() -> new Effective(ESubscriptionStatus.EXPIRED, null, company.getPlanExpiresAt(), false));
