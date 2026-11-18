@@ -27,11 +27,11 @@ public final class SaasDtos {
 
     public record PlanDto(String id, String code, String name, String description, BigDecimal monthlyPrice,
                           BigDecimal yearlyPrice, Integer maxUsers, Integer maxEmployees, BigDecimal storageLimitGb,
-                          int trialDays, boolean defaultPlan, boolean enabled) {
+                          int trialDays, boolean aiIntegration, boolean defaultPlan, boolean enabled) {
         public static PlanDto of(Plan p) {
             return p == null ? null : new PlanDto(SaasDtos.str(p.getId()), p.getCode(), p.getName(), p.getDescription(),
                     p.getMonthlyPrice(), p.getYearlyPrice(), p.getMaxUsers(), p.getMaxEmployees(),
-                    p.getStorageLimitGb(), p.getTrialDays(), p.isDefaultPlan(), p.isEnabled());
+                    p.getStorageLimitGb(), p.getTrialDays(), p.isAiIntegration(), p.isDefaultPlan(), p.isEnabled());
         }
     }
 
@@ -53,9 +53,16 @@ public final class SaasDtos {
             @DecimalMin("0") BigDecimal storageLimitGb,
             @Schema(description = "Trial days when given as the default plan to a new company", example = "14")
             @Min(0) int trialDays,
+            @Schema(description = "Feature add-on: AI integration enabled for companies on this plan (flag only for now)",
+                    example = "false") boolean aiIntegration,
             @Schema(description = "The plan new companies get and expired ones fall back to; setting it unsets the previous default",
                     example = "false") boolean defaultPlan,
             @Schema(description = "Offered to companies", example = "true") boolean enabled) {
+    }
+
+    public record PlanStatusForm(
+            @Schema(description = "Active = offered to companies", example = "false", requiredMode = Schema.RequiredMode.REQUIRED)
+            @NotNull Boolean enabled) {
     }
 
     // ------------------------------------------------------------------ coupons
@@ -122,6 +129,40 @@ public final class SaasDtos {
                     o.getBillingCycle(), o.getCouponCode(), o.getOriginalPrice(), o.getDiscountAmount(),
                     o.getFinalPrice(), o.getPaymentMethod(), o.getPaymentReference(), o.getStatus(),
                     o.getCreatedDate(), o.getProcessedAt(), o.getNotes(), bank);
+        }
+    }
+
+    @Schema(description = "Admin orders list row: the order plus the names the table shows")
+    public record AdminOrderDto(OrderDto order, String companyName, String companyEmail, String planName) {
+    }
+
+    @Schema(description = "Counts for the status tabs, with the same filters as the list")
+    public record StatusCountsDto(long all, long pending, long approved, long rejected, long cancelled) {
+        public static StatusCountsDto of(java.util.List<Object[]> rows) {
+            java.util.Map<String, Long> m = new java.util.HashMap<>();
+            rows.forEach(r -> m.put(String.valueOf(r[0]), (Long) r[1]));
+            long p = m.getOrDefault("PENDING", 0L), a = m.getOrDefault("APPROVED", 0L),
+                    rj = m.getOrDefault("REJECTED", 0L), c = m.getOrDefault("CANCELLED", 0L);
+            return new StatusCountsDto(p + a + rj + c, p, a, rj, c);
+        }
+    }
+
+    public record PlanRequestForm(
+            @Schema(description = "Requested plan id", example = "4", requiredMode = Schema.RequiredMode.REQUIRED) @NotNull Long planId,
+            @Schema(description = "MONTHLY or YEARLY", example = "MONTHLY", requiredMode = Schema.RequiredMode.REQUIRED)
+            @NotNull EBillingCycle billingCycle,
+            @Schema(description = "Optional note to the super admin", example = "We grow to 30 accounts next month")
+            @Size(max = 500) String message) {
+    }
+
+    public record PlanRequestDto(String id, String companyId, String companyName, String companyEmail, String planId,
+                                 String planName, EBillingCycle billingCycle, String message, EPlanRequestStatus status,
+                                 Instant createdDate, Instant processedAt, String notes, String orderId) {
+        public static PlanRequestDto of(vn.specom.hrm.iam.model.PlanRequest r, String companyName, String companyEmail,
+                                        String planName) {
+            return new PlanRequestDto(str(r.getId()), str(r.getCompanyId()), companyName, companyEmail,
+                    str(r.getPlanId()), planName, r.getBillingCycle(), r.getMessage(), r.getStatus(),
+                    r.getCreatedDate(), r.getProcessedAt(), r.getNotes(), str(r.getOrderId()));
         }
     }
 

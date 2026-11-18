@@ -32,6 +32,9 @@ import vn.specom.hrm.iam.saas.SaasDtos.PlanForm;
 import vn.specom.hrm.iam.saas.SaasDtos.SubscriptionAssignForm;
 import vn.specom.hrm.iam.saas.SaasDtos.SubscriptionDto;
 
+import org.springframework.format.annotation.DateTimeFormat;
+
+import java.time.LocalDate;
 import java.util.List;
 
 @Tag(name = "SaaS — administration (super admin)")
@@ -43,6 +46,7 @@ import java.util.List;
 public class SaasAdminController {
     private final CatalogService catalog;
     private final OrderService orderService;
+    private final PlanRequestService planRequestService;
 
     @Operation(summary = "All plans (enabled or not)")
     @GetMapping("/plans")
@@ -108,12 +112,79 @@ public class SaasAdminController {
         return ApiMessageDto.ok(null);
     }
 
-    @Operation(summary = "Orders of every company")
+    @Operation(summary = "Plan Orders page", description = "keyword matches order number or company name/code/email; "
+            + "dateFrom/dateTo are inclusive UTC order days; status = tab (omitted = All). Rows carry company and plan names.")
     @GetMapping("/orders")
-    public ApiMessageDto<ResponseListDto<OrderDto>> orders(
+    public ApiMessageDto<ResponseListDto<SaasDtos.AdminOrderDto>> orders(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
             @RequestParam(required = false) EOrderStatus status,
             @ParameterObject @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ApiMessageDto.ok(ResponseListDto.of(orderService.all(status, pageable)));
+        return ApiMessageDto.ok(ResponseListDto.of(orderService.all(keyword, dateFrom, dateTo, status, pageable)));
+    }
+
+    @Operation(summary = "Counts for the order status tabs (same filters as the list)")
+    @GetMapping("/orders/status-counts")
+    public ApiMessageDto<SaasDtos.StatusCountsDto> orderCounts(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo) {
+        return ApiMessageDto.ok(orderService.counts(keyword, dateFrom, dateTo));
+    }
+
+    @Operation(summary = "View an order")
+    @ApiResponses(@ApiResponse(responseCode = "404", description = "No such order (SAAS_008)"))
+    @GetMapping("/orders/{id}")
+    public ApiMessageDto<SaasDtos.AdminOrderDto> order(@PathVariable Long id) {
+        return ApiMessageDto.ok(orderService.adminGet(id));
+    }
+
+    @Operation(summary = "Plan Requests page", description = "keyword matches company name/code/email or plan name; "
+            + "status = tab (omitted = All).")
+    @GetMapping("/plan-requests")
+    public ApiMessageDto<ResponseListDto<SaasDtos.PlanRequestDto>> planRequests(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) EPlanRequestStatus status,
+            @ParameterObject @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ApiMessageDto.ok(ResponseListDto.of(planRequestService.search(keyword, status, pageable)));
+    }
+
+    @Operation(summary = "Counts for the plan request status tabs")
+    @GetMapping("/plan-requests/status-counts")
+    public ApiMessageDto<SaasDtos.StatusCountsDto> planRequestCounts(@RequestParam(required = false) String keyword) {
+        return ApiMessageDto.ok(planRequestService.counts(keyword));
+    }
+
+    @Operation(summary = "Approve a plan request", description = "Activates the plan for one billing cycle (extends the "
+            + "running period of the same plan) and records an APPROVED MANUAL order.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "400", description = "Not pending (SAAS_017), no yearly price (SAAS_003)"),
+            @ApiResponse(responseCode = "404", description = "No such request (SAAS_016), plan deleted (SAAS_001)")})
+    @PostMapping("/plan-requests/{id}/approve")
+    public ApiMessageDto<SaasDtos.PlanRequestDto> approveRequest(@PathVariable Long id,
+                                                                @Valid @RequestBody(required = false) OrderDecisionForm form) {
+        return ApiMessageDto.ok(planRequestService.approve(id, form == null ? null : form.notes()));
+    }
+
+    @Operation(summary = "Reject a plan request")
+    @ApiResponses({
+            @ApiResponse(responseCode = "400", description = "Not pending (SAAS_017)"),
+            @ApiResponse(responseCode = "404", description = "No such request (SAAS_016)")})
+    @PostMapping("/plan-requests/{id}/reject")
+    public ApiMessageDto<SaasDtos.PlanRequestDto> rejectRequest(@PathVariable Long id,
+                                                               @Valid @RequestBody(required = false) OrderDecisionForm form) {
+        return ApiMessageDto.ok(planRequestService.reject(id, form == null ? null : form.notes()));
+    }
+
+    @Operation(summary = "Active / Inactive toggle of a plan", description = "Inactive plans are not offered; companies "
+            + "already on one keep it until it ends.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "400", description = "Default plan made inactive (SAAS_015)"),
+            @ApiResponse(responseCode = "404", description = "No such plan (SAAS_001)")})
+    @PutMapping("/plans/{id}/status")
+    public ApiMessageDto<PlanDto> planStatus(@PathVariable Long id, @Valid @RequestBody SaasDtos.PlanStatusForm form) {
+        return ApiMessageDto.ok(catalog.setEnabled(id, form.enabled()));
     }
 
     @Operation(summary = "Approve a paid order", description = "Activates the plan for 1 month / 1 year, or extends "

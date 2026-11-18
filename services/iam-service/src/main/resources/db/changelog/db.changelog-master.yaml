@@ -15,3 +15,5 @@ databaseChangeLog:
       file: db/changelog/changes/20261118150000_company_email_changelog.mysql.sql
   - include:
       file: db/changelog/changes/20261119090100_media_permission_init_data.mysql.sql
+  - include:
+      file: db/changelog/changes/20261119140000_plan_request_changelog.mysql.sql

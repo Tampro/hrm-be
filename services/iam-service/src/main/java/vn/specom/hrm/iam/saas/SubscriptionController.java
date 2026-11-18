@@ -42,6 +42,7 @@ import java.util.List;
 public class SubscriptionController {
     private final CatalogService catalog;
     private final OrderService orderService;
+    private final PlanRequestService planRequests;
 
     @Operation(summary = "Plans offered to companies")
     @PreAuthorize("@PermissionChecker.has('SAAS_SUBSCRIPTION_VIEW')")
@@ -88,6 +89,35 @@ public class SubscriptionController {
             @Parameter(description = "Super admin only") @RequestParam(required = false) Long companyId,
             @ParameterObject @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         return ApiMessageDto.ok(ResponseListDto.of(orderService.myOrders(companyId, pageable)));
+    }
+
+    @Operation(summary = "Request a plan (no online payment)", description = "A super admin approves or rejects it. "
+            + "One pending request per company.")
+    @ApiResponses(@ApiResponse(responseCode = "400", description = "Pending request exists (SAAS_018), plan not "
+            + "offered (SAAS_014), no yearly price (SAAS_003)"))
+    @PreAuthorize("@PermissionChecker.hasInCompany('SAAS_ORDER_CREATE')")
+    @PostMapping("/plan-requests")
+    public ApiMessageDto<SaasDtos.PlanRequestDto> requestPlan(@Valid @RequestBody SaasDtos.PlanRequestForm form) {
+        return ApiMessageDto.ok(planRequests.create(form));
+    }
+
+    @Operation(summary = "Plan requests of my company")
+    @PreAuthorize("@PermissionChecker.has('SAAS_ORDER_VIEW')")
+    @GetMapping("/plan-requests")
+    public ApiMessageDto<ResponseListDto<SaasDtos.PlanRequestDto>> myRequests(
+            @Parameter(description = "Super admin only") @RequestParam(required = false) Long companyId,
+            @ParameterObject @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ApiMessageDto.ok(ResponseListDto.of(planRequests.mine(companyId, pageable)));
+    }
+
+    @Operation(summary = "Cancel a pending plan request")
+    @ApiResponses({
+            @ApiResponse(responseCode = "400", description = "Not pending (SAAS_017)"),
+            @ApiResponse(responseCode = "404", description = "No such request in your company (SAAS_016)")})
+    @PreAuthorize("@PermissionChecker.has('SAAS_ORDER_CREATE')")
+    @PostMapping("/plan-requests/{id}/cancel")
+    public ApiMessageDto<SaasDtos.PlanRequestDto> cancelRequest(@PathVariable Long id) {
+        return ApiMessageDto.ok(planRequests.cancel(id));
     }
 
     @Operation(summary = "Cancel a pending order")

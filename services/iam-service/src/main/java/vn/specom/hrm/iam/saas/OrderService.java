@@ -106,9 +106,39 @@ public class OrderService {
 
     // ------------------------------------------------------------------ super admin side
 
+    /** Plan Orders page: keyword (order number, company name/code/email), order-date range, status tab. */
     @Transactional(readOnly = true)
-    public Page<OrderDto> all(EOrderStatus status, Pageable pageable) {
-        return (status == null ? orders.findAll(pageable) : orders.findByStatus(status, pageable)).map(this::dto);
+    public Page<SaasDtos.AdminOrderDto> all(String keyword, java.time.LocalDate from, java.time.LocalDate to,
+                                           EOrderStatus status, Pageable pageable) {
+        return orders.searchWithNames(kw(keyword), start(from), end(to), status, pageable)
+                .map(r -> new SaasDtos.AdminOrderDto(dto((PlanOrder) r[0]), (String) r[1], (String) r[2], (String) r[3]));
+    }
+
+    @Transactional(readOnly = true)
+    public SaasDtos.StatusCountsDto counts(String keyword, java.time.LocalDate from, java.time.LocalDate to) {
+        return SaasDtos.StatusCountsDto.of(orders.countByStatus(kw(keyword), start(from), end(to)));
+    }
+
+    /** View: one order with its company and plan names (super admin). */
+    @Transactional(readOnly = true)
+    public SaasDtos.AdminOrderDto adminGet(Long id) {
+        PlanOrder o = orders.findById(id).orElseThrow(() -> ApiException.notFound(ESaasError.SAAS_008));
+        Company c = companies.findById(o.getCompanyId()).orElse(null);
+        Plan p = catalog.findAny(o.getPlanId());
+        return new SaasDtos.AdminOrderDto(dto(o), c == null ? null : c.getName(), c == null ? null : c.getEmail(),
+                p == null ? null : p.getName());
+    }
+
+    static String kw(String keyword) {
+        return keyword == null ? "" : keyword.trim();
+    }
+
+    static Instant start(java.time.LocalDate from) {
+        return from == null ? Instant.EPOCH : from.atStartOfDay(ZoneOffset.UTC).toInstant();
+    }
+
+    static Instant end(java.time.LocalDate to) {
+        return to == null ? Instant.parse("9999-01-01T00:00:00Z") : to.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
     }
 
     /** Activates or extends the ordered plan from the price frozen in the order. */
@@ -136,6 +166,12 @@ public class OrderService {
      */
     @Transactional
     public OrderDto upgradeByAdmin(Long companyId, Long planId, EBillingCycle cycle) {
+        return activateManually(companyId, planId, cycle, "Plan set by super admin");
+    }
+
+    /** Shared by "Upgrade Plan" and approved plan requests: one cycle, an APPROVED MANUAL order for history. */
+    @Transactional
+    public OrderDto activateManually(Long companyId, Long planId, EBillingCycle cycle, String note) {
         Company c = company(companyId);
         Plan plan = catalog.requirePlan(planId);
         var q = pricing.quote(plan, cycle, null, companyId);
@@ -151,7 +187,7 @@ public class OrderService {
         o.setStatus(EOrderStatus.APPROVED);
         o.setProcessedAt(clock.instant());
         o.setProcessedBy(CurrentUser.get().keycloakId());
-        o.setNotes("Plan set by super admin");
+        o.setNotes(note);
         subscriptions.activate(c, plan, cycle);
         authorityCache.evictAll();
         return dto(orders.save(o));
