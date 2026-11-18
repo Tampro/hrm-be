@@ -90,6 +90,7 @@ public class BootstrapAdminRunner implements ApplicationRunner {
         c.setName(props.companyName());
         c.setStatus(ECompanyStatus.ACTIVE);
         c = companies.save(c);
+        c.setReferralCode(vn.specom.hrm.iam.referral.ReferralService.codeFor(c.getId()));
         roleService.createDefaultRoles(c.getId());
         log.info("Bootstrap company {} created with default roles", c.getCode());
         return c;

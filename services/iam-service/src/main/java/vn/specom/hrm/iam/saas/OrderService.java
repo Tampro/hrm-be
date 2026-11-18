@@ -46,6 +46,7 @@ public class OrderService {
     private final SubscriptionService subscriptions;
     private final BankTransferProperties bank;
     private final LocalAuthorityResolver authorityCache;
+    private final vn.specom.hrm.iam.referral.ReferralService referral;
     private final Clock clock;
 
     // ------------------------------------------------------------------ company side
@@ -148,6 +149,7 @@ public class OrderService {
         decide(o, EOrderStatus.APPROVED, notes);
         Company c = company(o.getCompanyId());
         subscriptions.activate(c, catalog.requirePlan(o.getPlanId()), o.getBillingCycle());
+        referral.onOrderApproved(o, c);
         authorityCache.evictAll();
         return dto(o);
     }

@@ -23,3 +23,7 @@ databaseChangeLog:
       file: db/changelog/changes/20261119180000_currency_changelog.mysql.sql
   - include:
       file: db/changelog/changes/20261119180100_currency_init_data.mysql.sql
+  - include:
+      file: db/changelog/changes/20261119200000_referral_changelog.mysql.sql
+  - include:
+      file: db/changelog/changes/20261119200100_referral_setting_init_data.mysql.sql
