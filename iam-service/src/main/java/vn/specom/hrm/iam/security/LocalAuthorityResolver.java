@@ -31,12 +31,17 @@ import java.util.stream.Collectors;
 public class LocalAuthorityResolver implements AuthorityResolver {
     private final UserAccountRepository users;
     private final CompanyRepository companies;
+    private final RevokedSessionStore revokedSessions;
 
     private final Cache<String, Optional<HrmPrincipal>> cache =
             Caffeine.newBuilder().expireAfterWrite(Duration.ofSeconds(30)).maximumSize(10_000).build();
 
     @Override
     public HrmPrincipal resolve(Jwt jwt) {
+        // Checked before the cache: a logged-out session must stop working on the next request.
+        if (revokedSessions.isRevoked(jwt.getClaimAsString("sid"))) {
+            throw new InvalidBearerTokenException("Session logged out");
+        }
         boolean superAdmin = HrmJwtAuthenticationConverter.isSuperAdmin(jwt);
         Optional<HrmPrincipal> local = cache.get(jwt.getSubject(), this::load);
         if (local.isPresent()) {

@@ -16,6 +16,7 @@ import vn.specom.hrm.iam.keycloak.KeycloakTokens;
 import vn.specom.hrm.iam.model.UserAccount;
 import vn.specom.hrm.iam.repository.CompanyRepository;
 import vn.specom.hrm.iam.repository.UserAccountRepository;
+import vn.specom.hrm.iam.security.RevokedSessionStore;
 import vn.specom.hrm.security.HrmJwtAuthenticationConverter;
 
 import java.util.Optional;
@@ -33,6 +34,7 @@ public class AuthService {
     private final JwtDecoder jwtDecoder;
     private final UserAccountRepository users;
     private final CompanyRepository companies;
+    private final RevokedSessionStore revokedSessions;
 
     @Transactional(readOnly = true)
     public TokenDto login(String username, String password) {
@@ -49,8 +51,15 @@ public class AuthService {
         return toDto(tokens);
     }
 
+    /**
+     * Ends the Keycloak session and revokes its access tokens at once. The sid is revoked only after Keycloak
+     * accepted the refresh token — otherwise anyone could send a forged token carrying another user's sid and
+     * log them out.
+     */
     public void logout(String refreshToken) {
-        keycloak.logout(refreshToken);
+        if (keycloak.logout(refreshToken)) {
+            revokedSessions.revoke(keycloak.sessionIdOf(refreshToken));
+        }
     }
 
     /**

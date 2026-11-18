@@ -38,6 +38,12 @@ public class RestExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, ECommonError.COMMON_001, fields);
     }
 
+    /** Malformed JSON or a wrong type in the body is the client's mistake: 400, not 500. */
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiMessageDto<Object>> handleUnreadable(Exception ex) {
+        return build(HttpStatus.BAD_REQUEST, ECommonError.COMMON_001, null);
+    }
+
     // @PreAuthorize failures are thrown inside the handler, so they arrive here, not at the AccessDeniedHandler.
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiMessageDto<Object>> handleDenied(AccessDeniedException ex) {

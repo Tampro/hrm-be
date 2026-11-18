@@ -37,6 +37,7 @@ class AuthServiceTest {
     private UserAccountRepository users;
     private CompanyRepository companies;
     private AuthService service;
+    private vn.specom.hrm.iam.security.RevokedSessionStore revoked;
 
     @BeforeEach
     void setUp() {
@@ -44,7 +45,8 @@ class AuthServiceTest {
         decoder = mock(JwtDecoder.class);
         users = mock(UserAccountRepository.class);
         companies = mock(CompanyRepository.class);
-        service = new AuthService(keycloak, decoder, users, companies);
+        revoked = new vn.specom.hrm.iam.security.RevokedSessionStore(java.time.Duration.ofMinutes(15));
+        service = new AuthService(keycloak, decoder, users, companies, revoked);
         when(keycloak.passwordGrant("demo", "pw")).thenReturn(TOKENS);
     }
 
@@ -108,6 +110,20 @@ class AuthServiceTest {
 
         assertThat(service.setInitialPassword("demo", "temp", "NewPassw0rd!").accessToken()).isEqualTo("access");
         verify(keycloak).setPermanentPassword("kc-1", "NewPassw0rd!");
+    }
+
+    @Test
+    void logoutRevokesTheSessionOnlyWhenKeycloakAcceptedTheToken() {
+        when(keycloak.logout("good")).thenReturn(true);
+        when(keycloak.sessionIdOf("good")).thenReturn("sid-1");
+        when(keycloak.logout("forged")).thenReturn(false);
+        when(keycloak.sessionIdOf("forged")).thenReturn("sid-victim");
+
+        service.logout("forged");
+        assertThat(revoked.isRevoked("sid-victim")).isFalse();
+
+        service.logout("good");
+        assertThat(revoked.isRevoked("sid-1")).isTrue();
     }
 
     private void token(String sub, List<String> realmRoles) {
