@@ -50,7 +50,7 @@ public final class EmployeeDtos {
                                  String profileImageId, String profileImageUrl,
                                  Ref branch, Ref department, Ref designation, LocalDate dateOfJoining,
                                  EEmploymentType employmentType, EEmployeeStatus status, String shiftId,
-                                 String attendancePolicyId,
+                                 String attendancePolicyId, Ref reportsTo,
                                  String addressLine1, String addressLine2, String city, String state, String country,
                                  String postalCode, String emergencyName, String emergencyRelationship,
                                  String emergencyPhone, BankingDto banking,
@@ -98,7 +98,9 @@ public final class EmployeeDtos {
             @Size(max = 255) String emergencyName,
             @Schema(example = "Spouse") @Size(max = 50) String emergencyRelationship,
             @Size(max = 30) String emergencyPhone,
-            @Schema(description = "Ignored without EMPLOYEE_BANKING_VIEW") @Valid BankingForm banking) {
+            @Schema(description = "Ignored without EMPLOYEE_BANKING_VIEW") @Valid BankingForm banking,
+            @Schema(description = "Employee this one reports to (Organization Chart); same company, no cycle")
+            Long reportsToId) {
     }
 
     public record DocumentForm(
@@ -133,6 +135,16 @@ public final class EmployeeDtos {
     }
 
     public record VerifyForm(@Schema(requiredMode = Schema.RequiredMode.REQUIRED) @NotNull Boolean verified) {
+    }
+
+    /** Node of the Organization Chart; children = direct reports. */
+    public record ChartNode(String id, String fullName, String designation, String profileImageUrl,
+                            @Schema(description = "green dot: ACTIVE or PROBATION; red: INACTIVE") boolean active,
+                            List<ChartNode> children) {
+    }
+
+    /** Company node at the top; members = everyone in the chart. */
+    public record OrgChart(String companyName, int members, List<ChartNode> children) {
     }
 
     /** List filters, shared by the list, the status tabs and the export. */

@@ -31,6 +31,7 @@ import vn.specom.hrm.employee.employee.EmployeeDtos.EmployeeDetail;
 import vn.specom.hrm.employee.employee.EmployeeDtos.EmployeeListItem;
 import vn.specom.hrm.employee.employee.EmployeeDtos.Filter;
 import vn.specom.hrm.employee.employee.EmployeeDtos.LoginForm;
+import vn.specom.hrm.employee.employee.EmployeeDtos.OrgChart;
 import vn.specom.hrm.employee.employee.EmployeeDtos.PasswordForm;
 import vn.specom.hrm.employee.employee.EmployeeDtos.ProfileForm;
 import vn.specom.hrm.employee.employee.EmployeeDtos.StatusCounts;
@@ -49,6 +50,7 @@ public class EmployeeController {
     static final String KEYWORD = "Matches full name, email, employee ID or employee code";
 
     private final EmployeeService service;
+    private final OrgChartService chart;
 
     @Operation(summary = "Employees of the company",
             description = "Filters combine; sort by employeeNo, fullName, dateOfJoining, createdDate. "
@@ -80,6 +82,16 @@ public class EmployeeController {
             @RequestParam(required = false) Long departmentId,
             @RequestParam(required = false) Long designationId) {
         return ApiMessageDto.ok(service.statusCounts(companyId, new Filter(keyword, branchId, departmentId, designationId, null)));
+    }
+
+    @Operation(summary = "Organization Chart: company on top, employees under the person they report to",
+            description = "members = people in the chart (terminated employees are left out). active = green dot "
+                    + "(ACTIVE, PROBATION), false = red (INACTIVE). Set the line with profile.reportsToId.")
+    @ApiResponses(@ApiResponse(responseCode = "400", description = "Super admin without companyId (EMP_019)"))
+    @PreAuthorize("@PermissionChecker.has('EMPLOYEE_VIEW')")
+    @GetMapping("/org-chart")
+    public ApiMessageDto<OrgChart> orgChart(@Parameter(description = COMPANY) @RequestParam(required = false) Long companyId) {
+        return ApiMessageDto.ok(chart.chart(companyId));
     }
 
     @Operation(summary = "Employee profile with documents",
@@ -114,7 +126,7 @@ public class EmployeeController {
                     + "login and are not changed here. banking is applied only with EMPLOYEE_BANKING_VIEW.")
     @ApiResponses({
             @ApiResponse(responseCode = "400", description = "Code used (EMP_008), branch/department/designation "
-                    + "(EMP_002/003/004/023), profile image (EMP_012, EMP_018)"),
+                    + "(EMP_002/003/004/023), profile image (EMP_012, EMP_018), manager (EMP_027, EMP_028)"),
             @ApiResponse(responseCode = "404", description = "No such employee in your company (EMP_001)")})
     @PreAuthorize("@PermissionChecker.has('EMPLOYEE_UPDATE')")
     @PutMapping("/{id}")

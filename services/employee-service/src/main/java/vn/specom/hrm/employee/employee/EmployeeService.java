@@ -193,6 +193,10 @@ public class EmployeeService {
         }
         e.setLoginEnabled(false);
         e.setDeleted(true);
+        // Direct reports move up to the deleted employee's manager, so the chart keeps its shape.
+        for (Employee r : employees.findByReportsToIdAndDeletedFalse(e.getId())) {
+            r.setReportsToId(e.getReportsToId());
+        }
     }
 
     // ------------------------------------------------------------------ documents (employee checked here)
@@ -248,12 +252,44 @@ public class EmployeeService {
             throw ApiException.badRequest(EEmployeeError.EMP_008);
         }
         orgs.assertChain(companyId, p.branchId(), p.departmentId(), p.designationId());
+        assertReportsTo(companyId, p.reportsToId(), selfId);
         if (p.profileImageId() != null) {
             MediaFile f = media.require(p.profileImageId(), companyId);
             if (!"IMAGE".equals(f.kind()) || f.sizeBytes() > MAX_PROFILE_IMAGE_BYTES) {
                 throw ApiException.badRequest(EEmployeeError.EMP_018, "2 MB");
             }
         }
+    }
+
+    /**
+     * The manager must be a live employee of the same company, and the line must not loop back: walking up from the
+     * manager must never reach the employee being edited (chains are short; bounded to be safe on bad data).
+     */
+    void assertReportsTo(Long companyId, Long reportsToId, Long selfId) {
+        if (reportsToId == null) {
+            return;
+        }
+        if (Objects.equals(reportsToId, selfId)) {
+            throw ApiException.badRequest(EEmployeeError.EMP_028);
+        }
+        Employee m = employees.findByIdAndDeletedFalse(reportsToId)
+                .filter(x -> Objects.equals(x.getCompanyId(), companyId))
+                .orElseThrow(() -> ApiException.badRequest(EEmployeeError.EMP_027));
+        Long up = m.getReportsToId();
+        for (int i = 0; up != null && i < 1000; i++) {
+            if (Objects.equals(up, selfId)) {
+                throw ApiException.badRequest(EEmployeeError.EMP_028);
+            }
+            up = employees.findByIdAndDeletedFalse(up).map(Employee::getReportsToId).orElse(null);
+        }
+    }
+
+    private Ref reportsTo(Employee e) {
+        if (e.getReportsToId() == null) {
+            return null;
+        }
+        return employees.findByIdAndDeletedFalse(e.getReportsToId())
+                .map(m -> new Ref(m.getId().toString(), m.getFullName())).orElse(null);
     }
 
     private void apply(Employee e, ProfileForm p) {
@@ -271,6 +307,7 @@ public class EmployeeService {
         e.setStatus(p.status());
         e.setShiftId(p.shiftId());
         e.setAttendancePolicyId(p.attendancePolicyId());
+        e.setReportsToId(p.reportsToId());
         e.setAddressLine1(blankToNull(p.addressLine1()));
         e.setAddressLine2(blankToNull(p.addressLine2()));
         e.setCity(blankToNull(p.city()));
@@ -333,7 +370,7 @@ public class EmployeeService {
                 str(e.getProfileMediaId()), photo == null ? null : photo.viewUrl(),
                 ref(e.getBranchId(), n.branches()), ref(e.getDepartmentId(), n.departments()),
                 ref(e.getDesignationId(), n.designations()), e.getDateOfJoining(), e.getEmploymentType(),
-                e.getStatus(), str(e.getShiftId()), str(e.getAttendancePolicyId()),
+                e.getStatus(), str(e.getShiftId()), str(e.getAttendancePolicyId()), reportsTo(e),
                 e.getAddressLine1(), e.getAddressLine2(), e.getCity(), e.getState(), e.getCountry(), e.getPostalCode(),
                 e.getEmergencyName(), e.getEmergencyRelationship(), e.getEmergencyPhone(), banking,
                 str(e.getUserId()), e.getUserId() != null && e.isLoginEnabled(),
