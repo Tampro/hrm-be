@@ -32,6 +32,7 @@ public class PlanRequestService {
     private final CatalogService catalog;
     private final OrderService orders;
     private final Clock clock;
+    private final vn.specom.hrm.iam.email.EmailNotifier notifier;
 
     // ------------------------------------------------------------------ company side
 
@@ -91,6 +92,7 @@ public class PlanRequestService {
         var order = orders.activateManually(r.getCompanyId(), r.getPlanId(), r.getBillingCycle(),
                 "Plan request #" + r.getId());
         r.setOrderId(Long.valueOf(order.id()));
+        notifyDecision(true, r, notes);
         return dto(r, catalog.findAny(r.getPlanId()));
     }
 
@@ -98,7 +100,15 @@ public class PlanRequestService {
     public PlanRequestDto reject(Long id, String notes) {
         PlanRequest r = require(id);
         decide(r, EPlanRequestStatus.REJECTED, notes);
+        notifyDecision(false, r, notes);
         return dto(r, catalog.findAny(r.getPlanId()));
+    }
+
+    private void notifyDecision(boolean approved, PlanRequest r, String notes) {
+        companies.findById(r.getCompanyId()).ifPresent(c -> {
+            Plan p = catalog.findAny(r.getPlanId());
+            notifier.planRequestDecided(approved, c, p == null ? "" : p.getName(), r.getBillingCycle().name(), notes);
+        });
     }
 
     // ------------------------------------------------------------------ helpers

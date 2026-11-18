@@ -63,6 +63,7 @@ public class ReferralService {
     private final CompanyRepository companies;
     private final PlanRepository plans;
     private final Clock clock;
+    private final vn.specom.hrm.iam.email.EmailNotifier notifier;
 
     // ------------------------------------------------------------------ hooks used by companies and orders
 
@@ -237,6 +238,9 @@ public class ReferralService {
         p.setProcessedAt(clock.instant());
         p.setProcessedBy(CurrentUser.get().keycloakId());
         Company c = companies.findById(p.getCompanyId()).orElse(null);
+        if (c != null) {
+            notifier.payoutDecided(approve, c, p.getAmount(), notes);
+        }
         return PayoutDto.of(p, c == null ? null : c.getName(), c == null ? null : c.getEmail());
     }
 

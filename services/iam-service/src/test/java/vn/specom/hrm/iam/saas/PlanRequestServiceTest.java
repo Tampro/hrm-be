@@ -44,7 +44,8 @@ class PlanRequestServiceTest {
         requests = mock(PlanRequestRepository.class);
         catalog = mock(CatalogService.class);
         orders = mock(OrderService.class);
-        service = new PlanRequestService(requests, mock(CompanyRepository.class), catalog, orders, Clock.systemUTC());
+        service = new PlanRequestService(requests, mock(CompanyRepository.class), catalog, orders, Clock.systemUTC(),
+                mock(vn.specom.hrm.iam.email.EmailNotifier.class));
         pro = new Plan();
         pro.setId(4L);
         pro.setName("Pro");

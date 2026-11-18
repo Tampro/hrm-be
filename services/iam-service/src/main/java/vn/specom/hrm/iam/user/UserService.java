@@ -42,6 +42,7 @@ public class UserService {
     private final LocalAuthorityResolver authorityCache;
     private final vn.specom.hrm.iam.repository.CompanyRepository companies;
     private final vn.specom.hrm.iam.saas.SubscriptionService subscriptions;
+    private final vn.specom.hrm.iam.email.EmailNotifier notifier;
 
     @Transactional(readOnly = true)
     public Page<UserDto> search(Long requestedCompanyId, String keyword, Pageable pageable) {
@@ -68,11 +69,18 @@ public class UserService {
 
     @Transactional
     public CreatedUserDto createInCompany(Long companyId, UserCreateForm form) {
+        return createInCompany(companyId, form, false);
+    }
+
+    /** @param firstAdminOfNewCompany sends COMPANY_CREATE instead of USER_CREATE */
+    @Transactional
+    public CreatedUserDto createInCompany(Long companyId, UserCreateForm form, boolean firstAdminOfNewCompany) {
         if (users.existsByUsernameAndDeletedFalse(form.username())) {
             throw ApiException.badRequest(EIamError.IAM_010);
         }
-        subscriptions.assertCanAddUser(companies.findByIdAndDeletedFalse(companyId)
-                .orElseThrow(() -> ApiException.notFound(EIamError.IAM_001)));
+        var company = companies.findByIdAndDeletedFalse(companyId)
+                .orElseThrow(() -> ApiException.notFound(EIamError.IAM_001));
+        subscriptions.assertCanAddUser(company);
         Set<Role> assigned = resolveAssignable(companyId, form.roleIds());
         String temporaryPassword = generatePassword();
         String keycloakId = keycloak.createUser(form.username(), form.email(), form.fullName(), temporaryPassword);
@@ -85,7 +93,14 @@ public class UserService {
         u.setFullName(form.fullName());
         u.setStatus(EUserStatus.ACTIVE);
         u.setRoles(assigned);
-        return new CreatedUserDto(UserDto.of(users.save(u)), temporaryPassword);
+        UserAccount saved = users.save(u);
+        // Sent after commit; the temporary password only travels in this email and the response.
+        if (firstAdminOfNewCompany) {
+            notifier.companyCreated(saved, company, temporaryPassword);
+        } else {
+            notifier.userCreated(saved, company, temporaryPassword);
+        }
+        return new CreatedUserDto(UserDto.of(saved), temporaryPassword);
     }
 
     @Transactional
