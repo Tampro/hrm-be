@@ -35,6 +35,14 @@ public class Coupon extends BaseAuditableEntity {
     @Column(name = "minimum_spend", precision = 15, scale = 2)
     private BigDecimal minimumSpend;
 
+    /** Orders above this price cannot use the coupon; null = no upper bound. */
+    @Column(name = "maximum_spend", precision = 15, scale = 2)
+    private BigDecimal maximumSpend;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "code_type", nullable = false, length = 10)
+    private vn.specom.hrm.iam.saas.ECouponCodeType codeType;
+
     @Column(name = "use_limit_total")
     private Integer useLimitTotal;
 

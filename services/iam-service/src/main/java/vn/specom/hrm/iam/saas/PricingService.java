@@ -45,6 +45,9 @@ public class PricingService {
         if (c.getMinimumSpend() != null && original.compareTo(c.getMinimumSpend()) < 0) {
             throw ApiException.badRequest(ESaasError.SAAS_007);
         }
+        if (c.getMaximumSpend() != null && original.compareTo(c.getMaximumSpend()) > 0) {
+            throw ApiException.badRequest(ESaasError.SAAS_019);
+        }
         BigDecimal discount = c.getType() == ECouponType.PERCENTAGE
                 ? original.multiply(c.getDiscountValue()).divide(HUNDRED, 2, RoundingMode.HALF_UP)
                 : c.getDiscountValue().setScale(2, RoundingMode.HALF_UP);

@@ -90,6 +90,13 @@ class PricingServiceTest {
         assertError(() -> pricing.quote(plan, EBillingCycle.MONTHLY, "MIN", 10L), ESaasError.SAAS_007);
     }
 
+    @Test
+    void maximumSpendIsChecked() {
+        coupon("MAX", ECouponType.FLAT, "10000").setMaximumSpend(new BigDecimal("1000000"));
+        assertThat(pricing.quote(plan, EBillingCycle.MONTHLY, "MAX", 10L).finalPrice()).isEqualByComparingTo("480000");
+        assertError(() -> pricing.quote(plan, EBillingCycle.YEARLY, "MAX", 10L), ESaasError.SAAS_019);
+    }
+
     private Coupon coupon(String code, ECouponType type, String value) {
         Coupon c = new Coupon();
         c.setId(7L);
