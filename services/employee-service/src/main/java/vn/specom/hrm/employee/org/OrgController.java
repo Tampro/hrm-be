@@ -19,8 +19,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import vn.specom.hrm.common.ApiMessageDto;
-import vn.specom.hrm.employee.org.OrgDtos.DesignationDto;
-import vn.specom.hrm.employee.org.OrgDtos.DesignationForm;
 import vn.specom.hrm.employee.org.OrgDtos.DocumentTypeDto;
 import vn.specom.hrm.employee.org.OrgDtos.NameForm;
 
@@ -35,48 +33,6 @@ public class OrgController {
     private static final String COMPANY = "Super admin only: the company to act on. Ignored for company users.";
 
     private final OrgService orgs;
-
-    @Operation(summary = "Designations of the company, optionally of one department")
-    @ApiResponses(@ApiResponse(responseCode = "400", description = "Super admin without companyId (EMP_019)"))
-    @PreAuthorize("@PermissionChecker.has('ORG_VIEW')")
-    @GetMapping("/designations")
-    public ApiMessageDto<List<DesignationDto>> designations(
-            @Parameter(description = COMPANY) @RequestParam(required = false) Long companyId,
-            @RequestParam(required = false) Long departmentId) {
-        return ApiMessageDto.ok(orgs.designations(companyId, departmentId));
-    }
-
-    @Operation(summary = "Create a designation in a department")
-    @ApiResponses({
-            @ApiResponse(responseCode = "400", description = "Name taken in the department (EMP_011)"),
-            @ApiResponse(responseCode = "404", description = "No such department in your company (EMP_003)")})
-    @PreAuthorize("@PermissionChecker.has('ORG_MANAGE')")
-    @PostMapping("/designations")
-    public ApiMessageDto<DesignationDto> createDesignation(@Valid @RequestBody DesignationForm form) {
-        return ApiMessageDto.ok(orgs.createDesignation(form.departmentId(), form.name()));
-    }
-
-    @Operation(summary = "Update a designation (full replacement)",
-            description = "Moving it to another department is refused while an employee uses it.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "400", description = "Name taken (EMP_011), still in use (EMP_010)"),
-            @ApiResponse(responseCode = "404", description = "No such designation (EMP_004) or department (EMP_003)")})
-    @PreAuthorize("@PermissionChecker.has('ORG_MANAGE')")
-    @PutMapping("/designations/{id}")
-    public ApiMessageDto<DesignationDto> updateDesignation(@PathVariable Long id, @Valid @RequestBody DesignationForm form) {
-        return ApiMessageDto.ok(orgs.updateDesignation(id, form.departmentId(), form.name()));
-    }
-
-    @Operation(summary = "Delete a designation", description = "Refused while an employee uses it.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "400", description = "Still in use (EMP_010)"),
-            @ApiResponse(responseCode = "404", description = "No such designation in your company (EMP_004)")})
-    @PreAuthorize("@PermissionChecker.has('ORG_MANAGE')")
-    @DeleteMapping("/designations/{id}")
-    public ApiMessageDto<Void> deleteDesignation(@PathVariable Long id) {
-        orgs.deleteDesignation(id);
-        return ApiMessageDto.ok(null);
-    }
 
     @Operation(summary = "Document types: the system ones and the company's own",
             description = "defaultSlot types are pre-filled in the documents step of Add Employee.")

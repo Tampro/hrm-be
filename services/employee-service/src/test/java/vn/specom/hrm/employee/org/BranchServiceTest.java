@@ -78,8 +78,8 @@ class BranchServiceTest {
     void inactiveBranchCannotBeChosenButCanBeKept() {
         TestLogin.as(10L, "EMPLOYEE_UPDATE");
         when(branches.findByIdAndDeletedFalse(1L)).thenReturn(Optional.of(branch(1L, 10L, EOrgStatus.INACTIVE)));
-        assertError(() -> orgs.assertChain(10L, 1L, null, null, null, null), EEmployeeError.EMP_029);
-        orgs.assertChain(10L, 1L, null, null, 1L, null);
+        assertError(() -> orgs.assertChain(10L, 1L, null, null, null, null, null), EEmployeeError.EMP_029);
+        orgs.assertChain(10L, 1L, null, null, 1L, null, null);
         var deps = new DepartmentService(departments, branches, mock(DesignationRepository.class), employees);
         assertError(() -> deps.create(new DepartmentDtos.DepartmentForm("IT", 1L, null, null)), EEmployeeError.EMP_029);
     }

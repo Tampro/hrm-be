@@ -6,7 +6,6 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.specom.hrm.employee.common.EEmployeeError;
 import vn.specom.hrm.employee.document.EmployeeDocumentRepository;
 import vn.specom.hrm.employee.employee.EmployeeRepository;
-import vn.specom.hrm.employee.org.OrgDtos.DesignationDto;
 import vn.specom.hrm.employee.org.OrgDtos.DocumentTypeDto;
 import vn.specom.hrm.exception.ApiException;
 import vn.specom.hrm.security.TenantGuard;
@@ -31,62 +30,6 @@ public class OrgService {
     private final DocumentTypeRepository documentTypes;
     private final EmployeeRepository employees;
     private final EmployeeDocumentRepository documents;
-
-    // ------------------------------------------------------------------ designations
-
-    @Transactional(readOnly = true)
-    public List<DesignationDto> designations(Long requestedCompanyId, Long departmentId) {
-        Long companyId = company(requestedCompanyId);
-        List<Designation> list = departmentId == null
-                ? designations.findByCompanyIdAndDeletedFalseOrderByNameAsc(companyId)
-                : designations.findByCompanyIdAndDepartmentIdAndDeletedFalseOrderByNameAsc(companyId, departmentId);
-        return list.stream().map(DesignationDto::of).toList();
-    }
-
-    @Transactional
-    public DesignationDto createDesignation(Long departmentId, String name) {
-        Department dep = requireDepartment(departmentId);
-        if (dep.getStatus() == EOrgStatus.INACTIVE) {
-            throw ApiException.badRequest(EEmployeeError.EMP_030);
-        }
-        String n = name.trim();
-        if (designations.existsByDepartmentIdAndNameAndDeletedFalseAndIdNot(departmentId, n, -1L)) {
-            throw ApiException.badRequest(EEmployeeError.EMP_011);
-        }
-        Designation d = new Designation();
-        d.setCompanyId(dep.getCompanyId());
-        d.setDepartmentId(departmentId);
-        d.setName(n);
-        return DesignationDto.of(designations.save(d));
-    }
-
-    @Transactional
-    public DesignationDto updateDesignation(Long id, Long departmentId, String name) {
-        Designation d = requireDesignation(id);
-        Department dep = requireDepartment(departmentId);
-        if (!Objects.equals(dep.getCompanyId(), d.getCompanyId())) {
-            throw ApiException.notFound(EEmployeeError.EMP_003);
-        }
-        if (!Objects.equals(d.getDepartmentId(), departmentId) && employees.existsByDesignationIdAndDeletedFalse(id)) {
-            throw ApiException.badRequest(EEmployeeError.EMP_010);
-        }
-        String n = name.trim();
-        if (designations.existsByDepartmentIdAndNameAndDeletedFalseAndIdNot(departmentId, n, id)) {
-            throw ApiException.badRequest(EEmployeeError.EMP_011);
-        }
-        d.setDepartmentId(departmentId);
-        d.setName(n);
-        return DesignationDto.of(d);
-    }
-
-    @Transactional
-    public void deleteDesignation(Long id) {
-        Designation d = requireDesignation(id);
-        if (employees.existsByDesignationIdAndDeletedFalse(id)) {
-            throw ApiException.badRequest(EEmployeeError.EMP_010);
-        }
-        d.setDeleted(true);
-    }
 
     // ------------------------------------------------------------------ document types
 
@@ -136,16 +79,17 @@ public class OrgService {
      */
     @Transactional(readOnly = true)
     public void assertChain(Long companyId, Long branchId, Long departmentId, Long designationId) {
-        assertChain(companyId, branchId, departmentId, designationId, null, null);
+        assertChain(companyId, branchId, departmentId, designationId, null, null, null);
     }
 
     /**
      * @param currentBranchId     the employee's branch today: keeping an inactive branch is allowed, choosing one is not
      * @param currentDepartmentId same for the department
+     * @param currentDesignationId same for the designation
      */
     @Transactional(readOnly = true)
     public void assertChain(Long companyId, Long branchId, Long departmentId, Long designationId, Long currentBranchId,
-                            Long currentDepartmentId) {
+                            Long currentDepartmentId, Long currentDesignationId) {
         if ((departmentId != null && branchId == null) || (designationId != null && departmentId == null)) {
             throw ApiException.badRequest(EEmployeeError.EMP_023);
         }
@@ -164,9 +108,12 @@ public class OrgService {
                     throw ApiException.badRequest(EEmployeeError.EMP_030);
                 }
                 if (designationId != null) {
-                    designations.findByIdAndDeletedFalse(designationId)
+                    Designation g = designations.findByIdAndDeletedFalse(designationId)
                             .filter(x -> Objects.equals(x.getDepartmentId(), d.getId()))
                             .orElseThrow(() -> ApiException.badRequest(EEmployeeError.EMP_004));
+                    if (g.getStatus() == EOrgStatus.INACTIVE && !Objects.equals(designationId, currentDesignationId)) {
+                        throw ApiException.badRequest(EEmployeeError.EMP_031);
+                    }
                 }
             }
         }
@@ -215,20 +162,6 @@ public class OrgService {
 
     private static Long company(Long requested) {
         return TenantGuard.resolveCompany(requested, EEmployeeError.EMP_019);
-    }
-
-    private Department requireDepartment(Long id) {
-        Department d = departments.findByIdAndDeletedFalse(id)
-                .orElseThrow(() -> ApiException.notFound(EEmployeeError.EMP_003));
-        TenantGuard.assertSameCompany(d.getCompanyId(), EEmployeeError.EMP_003);
-        return d;
-    }
-
-    private Designation requireDesignation(Long id) {
-        Designation d = designations.findByIdAndDeletedFalse(id)
-                .orElseThrow(() -> ApiException.notFound(EEmployeeError.EMP_004));
-        TenantGuard.assertSameCompany(d.getCompanyId(), EEmployeeError.EMP_004);
-        return d;
     }
 
     /** System types (company null) are read-only for everyone, the super admin included: they are seeded. */
