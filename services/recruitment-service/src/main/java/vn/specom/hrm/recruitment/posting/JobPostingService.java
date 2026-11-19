@@ -57,6 +57,7 @@ public class JobPostingService {
     private final CustomQuestionRepository questions;
     private final OrgClient org;
     private final Clock clock;
+    private final vn.specom.hrm.recruitment.candidate.CandidateRepository candidates;
 
     @Transactional(readOnly = true)
     public Page<PostingDto> search(Long requestedCompanyId, String keyword, JobPosting.EStatus status, Boolean published,
@@ -68,8 +69,14 @@ public class JobPostingService {
         Map<Long, String> locationNames = locations.findAllById(page.getContent().stream()
                         .map(JobPosting::getLocationId).collect(Collectors.toSet())).stream()
                 .collect(Collectors.toMap(JobLocation::getId, JobLocation::getName));
+        Map<Long, Long> applications = new java.util.HashMap<>();
+        if (!page.isEmpty()) {
+            for (Object[] r : candidates.countByPosting(page.getContent().stream().map(JobPosting::getId).toList())) {
+                applications.put((Long) r[0], (Long) r[1]);
+            }
+        }
         return page.map(p -> dto(p, typeNames.get(p.getJobTypeId()), locationNames.get(p.getLocationId()), null, null,
-                false));
+                false, applications.getOrDefault(p.getId(), 0L)));
     }
 
     @Transactional(readOnly = true)
@@ -115,7 +122,11 @@ public class JobPostingService {
 
     @Transactional
     public void delete(Long id) {
-        require(id).setDeleted(true);
+        JobPosting p = require(id);
+        if (candidates.existsByJobPostingIdAndDeletedFalse(id)) {
+            throw ApiException.badRequest(ERecruitmentError.REC_013);
+        }
+        p.setDeleted(true);
     }
 
     private void apply(JobPosting p, PostingForm f) {
@@ -200,11 +211,12 @@ public class JobPostingService {
     private PostingDto detail(JobPosting p) {
         String type = catalogItems.findById(p.getJobTypeId()).map(CatalogItem::getName).orElse(null);
         String location = locations.findById(p.getLocationId()).map(JobLocation::getName).orElse(null);
-        return dto(p, type, location, org.branchName(p.getBranchId()), org.departmentName(p.getDepartmentId()), true);
+        return dto(p, type, location, org.branchName(p.getBranchId()), org.departmentName(p.getDepartmentId()), true,
+                candidates.countByJobPostingIdAndDeletedFalse(p.getId()));
     }
 
     private PostingDto dto(JobPosting p, String type, String location, String branch, String department,
-                           boolean detail) {
+                           boolean detail, long applications) {
         List<QuestionRef> qs = !detail ? null : questions.findAllById(p.getCustomQuestionIds()).stream()
                 .filter(q -> !q.isDeleted()).sorted(Comparator.comparing(CustomQuestion::getId))
                 .map(q -> new QuestionRef(q.getId().toString(), q.getQuestion(), q.isRequired())).toList();
@@ -217,7 +229,7 @@ public class JobPostingService {
                 p.getMaxExperience(), p.getMinSalary(), p.getMaxSalary(), detail ? p.getDescription() : null,
                 detail ? p.getRequirements() : null, detail ? p.getBenefits() : null, qs, p.isAskGender(),
                 p.isAskDateOfBirth(), p.isShowCoverLetter(), p.isShowTerms(), p.getStatus(), p.isPublished(),
-                p.getPublishDate(), p.getCreatedDate(), p.getUpdatedDate());
+                p.getPublishDate(), applications, p.getCreatedDate(), p.getUpdatedDate());
     }
 
     public JobPosting require(Long id) {

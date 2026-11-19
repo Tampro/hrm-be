@@ -21,6 +21,11 @@ spring:
     basename: language/common,language/messages
     encoding: UTF-8
     fallback-to-system-locale: false
+  servlet:
+    multipart:
+      # Resumes and cover letters: 5 MB each (checked by the service with a message).
+      max-file-size: 6MB
+      max-request-size: 12MB
   security:
     oauth2:
       resourceserver:
@@ -32,6 +37,7 @@ hrm:
   recruitment:
     iam-service-url: ${IAM_SERVICE_URL:http://localhost:8081}
     employee-service-url: ${EMPLOYEE_SERVICE_URL:http://localhost:8083}
+    storage-dir: ${RECRUITMENT_STORAGE_DIR:./recruitment-data}
 
 management:
   endpoints:

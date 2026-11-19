@@ -118,7 +118,8 @@ public class JobPostingController {
     }
 
     @Operation(summary = "Delete a job posting")
-    @ApiResponses(@ApiResponse(responseCode = "404", description = "No such posting in your company (REC_006)"))
+    @ApiResponses({@ApiResponse(responseCode = "400", description = "It still has candidates (REC_013)"),
+            @ApiResponse(responseCode = "404", description = "No such posting in your company (REC_006)")})
     @PreAuthorize("@PermissionChecker.has('RECRUITMENT_MANAGE')")
     @DeleteMapping("/{id}")
     public ApiMessageDto<Void> delete(@PathVariable Long id) {
