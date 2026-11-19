@@ -11,3 +11,5 @@ databaseChangeLog:
       file: db/changelog/changes/20261120130000_branch_details_changelog.mysql.sql
   - include:
       file: db/changelog/changes/20261120140000_department_details_changelog.mysql.sql
+  - include:
+      file: db/changelog/changes/20261120150000_designation_details_changelog.mysql.sql

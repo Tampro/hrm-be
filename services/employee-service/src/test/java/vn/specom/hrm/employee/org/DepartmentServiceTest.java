@@ -87,9 +87,11 @@ class DepartmentServiceTest {
         TestLogin.as(10L, "EMPLOYEE_UPDATE", "ORG_MANAGE");
         when(branches.findByIdAndDeletedFalse(1L)).thenReturn(Optional.of(branch(1L, 10L, EOrgStatus.ACTIVE)));
         when(departments.findByIdAndDeletedFalse(5L)).thenReturn(Optional.of(department(5L, 1L, EOrgStatus.INACTIVE)));
-        assertError(() -> orgs.assertChain(10L, 1L, 5L, null, null, null), EEmployeeError.EMP_030);
-        orgs.assertChain(10L, 1L, 5L, null, 1L, 5L);
-        assertError(() -> orgs.createDesignation(5L, "Dev"), EEmployeeError.EMP_030);
+        assertError(() -> orgs.assertChain(10L, 1L, 5L, null, null, null, null), EEmployeeError.EMP_030);
+        orgs.assertChain(10L, 1L, 5L, null, 1L, 5L, null);
+        var designationService = new DesignationService(designations, departments, branches, employees);
+        assertError(() -> designationService.create(new DesignationDtos.DesignationForm("Dev", 5L, null, null)),
+                EEmployeeError.EMP_030);
     }
 
     private static Branch branch(Long id, Long companyId, EOrgStatus status) {

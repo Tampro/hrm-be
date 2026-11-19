@@ -26,6 +26,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long>, JpaSp
 
     boolean existsByDesignationIdAndDeletedFalse(Long designationId);
 
+    long countByDesignationIdAndDeletedFalse(Long designationId);
+
     /** Takes the next "EMP" number of the company; the row lock serialises concurrent creates. */
     @Query(value = "SELECT next_value FROM employee_sequence WHERE company_id = :companyId FOR UPDATE",
             nativeQuery = true)
