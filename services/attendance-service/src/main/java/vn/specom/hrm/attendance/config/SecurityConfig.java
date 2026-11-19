@@ -37,13 +37,13 @@ public class SecurityConfig {
     /** Device punches: authenticated by the per-device key, never by a Keycloak token. */
     @Bean
     @Order(1)
-    SecurityFilterChain deviceChain(HttpSecurity http, BiometricDeviceRepository devices, ObjectMapper mapper)
-            throws Exception {
+    SecurityFilterChain deviceChain(HttpSecurity http, BiometricDeviceRepository devices, ObjectMapper mapper,
+                                    DeviceRateLimitProperties limits, java.time.Clock clock) throws Exception {
         return http
                 .securityMatcher(r -> "POST".equals(r.getMethod()) && PUNCHES.equals(r.getRequestURI()))
                 .csrf(c -> c.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(new DeviceKeyFilter(devices, mapper), AnonymousAuthenticationFilter.class)
+                .addFilterBefore(new DeviceKeyFilter(devices, mapper, limits, clock), AnonymousAuthenticationFilter.class)
                 .authorizeHttpRequests(a -> a.anyRequest().hasRole("BIOMETRIC_DEVICE"))
                 .build();
     }

@@ -17,6 +17,7 @@ import vn.specom.hrm.attendance.client.EmployeeClient;
 import vn.specom.hrm.attendance.client.EmployeeClient.Employee;
 import vn.specom.hrm.attendance.common.EAttendanceError;
 import vn.specom.hrm.attendance.common.EStatus;
+import vn.specom.hrm.attendance.config.DeviceRateLimitProperties;
 import vn.specom.hrm.attendance.record.AttendanceRecord;
 import vn.specom.hrm.attendance.record.AttendanceRecordRepository;
 import vn.specom.hrm.attendance.record.AttendanceRecordService;
@@ -88,7 +89,8 @@ class BiometricServiceTest {
         BiometricDevice active = device(10L, EStatus.ACTIVE);
         active.setApiKeyHash(DeviceKeys.hash(key));
         when(devices.findByApiKeyHashAndDeletedFalse(DeviceKeys.hash(key))).thenReturn(Optional.of(active));
-        DeviceKeyFilter filter = new DeviceKeyFilter(devices, new ObjectMapper());
+        DeviceKeyFilter filter = new DeviceKeyFilter(devices, new ObjectMapper(),
+                new DeviceRateLimitProperties(100, 100, 100, false), Clock.systemUTC());
 
         MockHttpServletRequest ok = new MockHttpServletRequest("POST", "/api/v1/attendance/biometric/punches");
         ok.addHeader(DeviceKeyFilter.HEADER, key);
@@ -109,6 +111,49 @@ class BiometricServiceTest {
         MockHttpServletResponse off = new MockHttpServletResponse();
         filter.doFilter(ok, off, new MockFilterChain());
         assertThat(off.getStatus()).isEqualTo(401);
+    }
+
+    @Test
+    void tooManyRequestsOfADeviceAndTooManyWrongKeysFromAnIpGet429() throws Exception {
+        String key = DeviceKeys.generate();
+        BiometricDevice active = device(10L, EStatus.ACTIVE);
+        active.setApiKeyHash(DeviceKeys.hash(key));
+        when(devices.findByApiKeyHashAndDeletedFalse(DeviceKeys.hash(key))).thenReturn(Optional.of(active));
+        DeviceKeyFilter filter = new DeviceKeyFilter(devices, new ObjectMapper(),
+                new DeviceRateLimitProperties(60, 2, 2, true), Clock.systemUTC());
+        int[] statuses = new int[3];
+        for (int i = 0; i < 3; i++) {
+            MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/v1/attendance/biometric/punches");
+            req.addHeader(DeviceKeyFilter.HEADER, key);
+            MockHttpServletResponse res = new MockHttpServletResponse();
+            filter.doFilter(req, res, new MockFilterChain());
+            statuses[i] = res.getStatus();
+        }
+        assertThat(statuses).containsExactly(200, 200, 429);
+
+        int[] wrong = new int[4];
+        for (int i = 0; i < 4; i++) {
+            MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/v1/attendance/biometric/punches");
+            req.addHeader(DeviceKeyFilter.HEADER, "bk_guess" + i);
+            req.addHeader("X-Forwarded-For", "6.6.6.6, 10.0.0.5");
+            MockHttpServletResponse res = new MockHttpServletResponse();
+            filter.doFilter(req, res, new MockFilterChain());
+            wrong[i] = res.getStatus();
+            if (i == 2) {
+                assertThat(res.getHeader("Retry-After")).isNotBlank();
+                assertThat(res.getContentAsString()).contains("COMMON_006");
+            }
+        }
+        assertThat(wrong).containsExactly(401, 401, 429, 429);
+
+        // Another client IP behind the same gateway is not affected.
+        MockHttpServletRequest other = new MockHttpServletRequest("POST", "/api/v1/attendance/biometric/punches");
+        other.addHeader(DeviceKeyFilter.HEADER, "bk_typo");
+        other.addHeader("X-Forwarded-For", "10.0.0.6");
+        MockHttpServletResponse res = new MockHttpServletResponse();
+        filter.doFilter(other, res, new MockFilterChain());
+        assertThat(res.getStatus()).isEqualTo(401);
+        assertThat(filter.clientIp(other)).isEqualTo("10.0.0.6");
     }
 
     @Test

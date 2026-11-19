@@ -141,6 +141,8 @@ services:
       KEYCLOAK_ISSUER: http://localhost:8180/realms/hrm
       IAM_SERVICE_URL: http://iam-service:8081
       EMPLOYEE_SERVICE_URL: http://employee-service:8083
+      # Reached through the gateway: the client IP of the device limits is the last X-Forwarded-For entry.
+      DEVICE_RATE_TRUST_FORWARDED_FOR: "true"
     ports:
       - "8084:8084"
     depends_on:
