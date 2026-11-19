@@ -44,7 +44,16 @@ public enum ERecruitmentError implements ErrorCode {
     REC_034("Fill in the variable: {0}"),
     REC_035("The offer does not exist."),
     REC_036("A hired or rejected candidate cannot receive a new offer."),
-    REC_037("The expiration date cannot be after the start date.");
+    REC_037("The expiration date cannot be after the start date."),
+    REC_038("The onboarding checklist does not exist."),
+    REC_039("The checklist item does not exist."),
+    REC_040("The onboarding does not exist."),
+    REC_041("The assessment does not exist."),
+    REC_042("The buddy cannot be the employee being onboarded."),
+    REC_043("This employee already has an onboarding."),
+    REC_044("Only a hired candidate can be linked to an onboarding."),
+    REC_045("The candidate is already linked to another employee."),
+    REC_046("The score cannot be more than the maximum score.");
 
     private final String message;
 }
