@@ -143,7 +143,7 @@ public class AnnouncementService {
                         && EAnnouncementState.of(x.getStartDate(), x.getEndDate(), today()) == EAnnouncementState.ACTIVE)
                 .orElseThrow(() -> ApiException.notFound(EEmployeeError.EMP_037));
         views.recordFirstView(a.getId(), me.getId(), clock.instant());
-        return detail(a, null);
+        return detailForAudience(a);
     }
 
     static boolean reaches(Announcement a, Employee e) {
@@ -308,29 +308,38 @@ public class AnnouncementService {
 
     private Page<AnnouncementDto> rows(Long companyId, Page<Announcement> page) {
         Names n = names(companyId, page.getContent());
-        return page.map(a -> dto(a, n, false, null));
+        return page.map(a -> dto(a, n, false, null, false));
     }
 
     private AnnouncementDto detail(Announcement a, Stats stats) {
-        return dto(a, names(a.getCompanyId(), List.of(a)), true, stats);
+        return dto(a, names(a.getCompanyId(), List.of(a)), true, stats, false);
     }
 
-    private AnnouncementDto dto(Announcement a, Names n, boolean detail, Stats stats) {
+    /** Detail for an employee of the audience: attachment links through the service account. */
+    private AnnouncementDto detailForAudience(Announcement a) {
+        return dto(a, names(a.getCompanyId(), List.of(a)), true, null, true);
+    }
+
+    private AnnouncementDto dto(Announcement a, Names n, boolean detail, Stats stats, boolean asService) {
         AnnouncementCategory c = n.categories().get(a.getCategoryId());
         return new AnnouncementDto(a.getId().toString(), a.getCompanyId().toString(), a.getTitle(),
                 c == null ? null : CategoryDto.of(c), a.getShortDescription(),
                 HtmlSanitizer.preview(a.getContent(), PREVIEW_CHARS), detail ? a.getContent() : null,
                 a.getStartDate(), a.getEndDate(), EAnnouncementState.of(a.getStartDate(), a.getEndDate(), today()),
                 a.isFeatured(), a.isHighPriority(), a.isCompanyWide(), refs(a.getBranchIds(), n.branches()),
-                refs(a.getDepartmentIds(), n.departments()), attachmentDtos(a, detail), stats, a.getCreatedDate(),
+                refs(a.getDepartmentIds(), n.departments()), attachmentDtos(a, detail, asService), stats, a.getCreatedDate(),
                 a.getUpdatedDate());
     }
 
-    /** Signed links only for callers who may open the media library, and only on the detail. */
-    private List<AttachmentDto> attachmentDtos(Announcement a, boolean detail) {
-        boolean links = detail && CurrentUser.find().map(p -> p.has("MEDIA_VIEW")).orElse(false);
+    /**
+     * Signed links on the detail only. Callers with MEDIA_VIEW get them as themselves; an employee reading the feed
+     * (audience already checked in read) gets them through the service account.
+     */
+    private List<AttachmentDto> attachmentDtos(Announcement a, boolean detail, boolean asService) {
+        boolean asCaller = detail && !asService && CurrentUser.find().map(p -> p.has("MEDIA_VIEW")).orElse(false);
         return a.getAttachments().stream().map(x -> {
-            MediaFile m = links ? media.find(x.getMediaFileId()) : null;
+            MediaFile m = asCaller ? media.find(x.getMediaFileId())
+                    : detail && asService ? media.linksAsService(x.getMediaFileId(), a.getCompanyId()) : null;
             return new AttachmentDto(x.getMediaFileId().toString(), x.getFileName(), x.getMimeType(), x.getSizeBytes(),
                     m == null ? null : m.viewUrl(), m == null ? null : m.downloadUrl());
         }).toList();

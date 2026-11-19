@@ -19,6 +19,7 @@ import vn.specom.hrm.exception.ErrorCode;
 
 import java.time.Duration;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Calls another HRM service as the caller (their own token, their language), so that service applies its own
@@ -31,8 +32,14 @@ class CallerHttp {
     private final ObjectMapper mapper;
     private final ErrorCode unavailable;
     private final String name;
+    private final Supplier<String> tokenSource;
 
     CallerHttp(String baseUrl, ObjectMapper mapper, ErrorCode unavailable, String name) {
+        this(baseUrl, mapper, unavailable, name, CallerHttp::callerToken);
+    }
+
+    /** tokenSource = the service account instead of the caller (see ServiceTokenProvider). */
+    CallerHttp(String baseUrl, ObjectMapper mapper, ErrorCode unavailable, String name, Supplier<String> tokenSource) {
         SimpleClientHttpRequestFactory rf = new SimpleClientHttpRequestFactory();
         rf.setConnectTimeout(Nulls.nonNull(Duration.ofSeconds(2)));
         rf.setReadTimeout(Nulls.nonNull(Duration.ofSeconds(10)));
@@ -40,13 +47,14 @@ class CallerHttp {
         this.mapper = mapper;
         this.unavailable = unavailable;
         this.name = name;
+        this.tokenSource = tokenSource;
     }
 
     /** 4xx with the HRM envelope: RemoteApiException (relayed as is). Anything else: 503 of this module. */
     JsonNode call(Function<RestClient, RestClient.RequestHeadersSpec<?>> request) {
         try {
             RestClient.RequestHeadersSpec<?> spec = request.apply(client)
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token())
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenSource.get())
                     .header(HttpHeaders.ACCEPT_LANGUAGE, LocaleContextHolder.getLocale().toLanguageTag());
             JsonNode body = spec.retrieve().body(JsonNode.class);
             return body == null ? mapper.createObjectNode() : body;
@@ -77,7 +85,7 @@ class CallerHttp {
         }
     }
 
-    private static String token() {
+    private static String callerToken() {
         if (SecurityContextHolder.getContext().getAuthentication() instanceof JwtAuthenticationToken jwt) {
             return jwt.getToken().getTokenValue();
         }

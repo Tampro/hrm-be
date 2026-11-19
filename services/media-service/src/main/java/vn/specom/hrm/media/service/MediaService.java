@@ -196,6 +196,21 @@ public class MediaService {
         storage.delete(m.getStorageKey());
     }
 
+    // ------------------------------------------------------------------ internal (service account)
+
+    /**
+     * Signed links of a file for another HRM service that has already authorized its own caller (e.g. an employee
+     * reading an announcement). The file must belong to the named company: a service cannot reach across companies
+     * by guessing ids.
+     */
+    @Transactional(readOnly = true)
+    public MediaFileDto internalFile(Long id, Long companyId) {
+        MediaFile m = files.findById(id)
+                .filter(f -> Objects.equals(f.getCompanyId(), companyId))
+                .orElseThrow(() -> ApiException.notFound(EMediaError.MEDIA_001));
+        return dto(m);
+    }
+
     // ------------------------------------------------------------------ signed content
 
     public record Content(Path path, String mimeType, String downloadName, boolean download) {
