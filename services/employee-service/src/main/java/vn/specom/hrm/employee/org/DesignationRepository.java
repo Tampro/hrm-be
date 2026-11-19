@@ -18,4 +18,6 @@ public interface DesignationRepository extends JpaRepository<Designation, Long> 
     boolean existsByDepartmentIdAndNameAndDeletedFalseAndIdNot(Long departmentId, String name, Long id);
 
     boolean existsByDepartmentIdAndDeletedFalse(Long departmentId);
+
+    long countByDepartmentIdAndDeletedFalse(Long departmentId);
 }

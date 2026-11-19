@@ -11,10 +11,10 @@ public interface BranchRepository extends JpaRepository<Branch, Long> {
     @org.springframework.data.jpa.repository.Query("select b from Branch b where b.companyId = :companyId and b.deleted = false "
             + "and (:status is null or b.status = :status) and (:kw = '' or lower(b.name) like :kw escape '\\' "
             + "or lower(b.email) like :kw escape '\\' or b.phone like :kw escape '\\')")
-    org.springframework.data.domain.Page<Branch> search(Long companyId, EBranchStatus status, String kw,
+    org.springframework.data.domain.Page<Branch> search(Long companyId, EOrgStatus status, String kw,
                                                          org.springframework.data.domain.Pageable pageable);
 
-    List<Branch> findByCompanyIdAndStatusAndDeletedFalseOrderByNameAsc(Long companyId, EBranchStatus status);
+    List<Branch> findByCompanyIdAndStatusAndDeletedFalseOrderByNameAsc(Long companyId, EOrgStatus status);
 
     Optional<Branch> findByIdAndDeletedFalse(Long id);
 

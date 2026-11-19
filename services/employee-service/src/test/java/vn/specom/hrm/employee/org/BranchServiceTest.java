@@ -47,7 +47,7 @@ class BranchServiceTest {
         var d = service.create(null, new BranchForm(" HQ ", "  ", "Ha Noi", null, null, null, "024", "hq@example.com", null));
         assertThat(d.name()).isEqualTo("HQ");
         assertThat(d.address()).isNull();
-        assertThat(d.status()).isEqualTo(EBranchStatus.ACTIVE);
+        assertThat(d.status()).isEqualTo(EOrgStatus.ACTIVE);
         assertThat(d.companyId()).isEqualTo("10");
     }
 
@@ -62,7 +62,7 @@ class BranchServiceTest {
     @Test
     void branchInUseCannotBeDeleted() {
         TestLogin.as(10L, "ORG_MANAGE");
-        when(branches.findByIdAndDeletedFalse(1L)).thenReturn(Optional.of(branch(1L, 10L, EBranchStatus.ACTIVE)));
+        when(branches.findByIdAndDeletedFalse(1L)).thenReturn(Optional.of(branch(1L, 10L, EOrgStatus.ACTIVE)));
         when(employees.existsByBranchIdAndDeletedFalse(1L)).thenReturn(true);
         assertError(() -> service.delete(1L), EEmployeeError.EMP_010);
     }
@@ -70,28 +70,29 @@ class BranchServiceTest {
     @Test
     void branchOfAnotherCompanyIsNotFound() {
         TestLogin.as(10L, "ORG_VIEW");
-        when(branches.findByIdAndDeletedFalse(1L)).thenReturn(Optional.of(branch(1L, 11L, EBranchStatus.ACTIVE)));
+        when(branches.findByIdAndDeletedFalse(1L)).thenReturn(Optional.of(branch(1L, 11L, EOrgStatus.ACTIVE)));
         assertError(() -> service.get(1L), EEmployeeError.EMP_002);
     }
 
     @Test
     void inactiveBranchCannotBeChosenButCanBeKept() {
         TestLogin.as(10L, "EMPLOYEE_UPDATE");
-        when(branches.findByIdAndDeletedFalse(1L)).thenReturn(Optional.of(branch(1L, 10L, EBranchStatus.INACTIVE)));
-        assertError(() -> orgs.assertChain(10L, 1L, null, null, null), EEmployeeError.EMP_029);
-        orgs.assertChain(10L, 1L, null, null, 1L);
-        assertError(() -> orgs.createDepartment(1L, "IT"), EEmployeeError.EMP_029);
+        when(branches.findByIdAndDeletedFalse(1L)).thenReturn(Optional.of(branch(1L, 10L, EOrgStatus.INACTIVE)));
+        assertError(() -> orgs.assertChain(10L, 1L, null, null, null, null), EEmployeeError.EMP_029);
+        orgs.assertChain(10L, 1L, null, null, 1L, null);
+        var deps = new DepartmentService(departments, branches, mock(DesignationRepository.class), employees);
+        assertError(() -> deps.create(new DepartmentDtos.DepartmentForm("IT", 1L, null, null)), EEmployeeError.EMP_029);
     }
 
     @Test
     void optionsListOnlyActiveBranches() {
         TestLogin.as(10L, "EMPLOYEE_VIEW");
-        when(branches.findByCompanyIdAndStatusAndDeletedFalseOrderByNameAsc(10L, EBranchStatus.ACTIVE))
-                .thenReturn(List.of(branch(2L, 10L, EBranchStatus.ACTIVE)));
+        when(branches.findByCompanyIdAndStatusAndDeletedFalseOrderByNameAsc(10L, EOrgStatus.ACTIVE))
+                .thenReturn(List.of(branch(2L, 10L, EOrgStatus.ACTIVE)));
         assertThat(service.options(null)).extracting(BranchDtos.BranchOption::id).containsExactly("2");
     }
 
-    private static Branch branch(Long id, Long companyId, EBranchStatus status) {
+    private static Branch branch(Long id, Long companyId, EOrgStatus status) {
         Branch b = new Branch();
         b.setId(id);
         b.setCompanyId(companyId);

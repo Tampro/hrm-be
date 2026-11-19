@@ -14,7 +14,7 @@ public final class BranchDtos {
 
     /** List row and detail; the counts are filled only on the detail (View). */
     public record BranchDto(String id, String companyId, String name, String address, String city, String state,
-                            String country, String postalCode, String phone, String email, EBranchStatus status,
+                            String country, String postalCode, String phone, String email, EOrgStatus status,
                             Instant createdDate, Instant updatedDate, Long departmentCount, Long employeeCount) {
         static BranchDto of(Branch b, Long departments, Long employees) {
             return new BranchDto(b.getId().toString(), b.getCompanyId().toString(), b.getName(), b.getAddress(),
@@ -42,9 +42,9 @@ public final class BranchDtos {
             @Schema(example = "0240000000") @Size(max = 30) String phone,
             @Schema(example = "hq@example.com") @Email @Size(max = 255) String email,
             @Schema(description = "Omitted on create = ACTIVE; required meaning on update (full replacement)")
-            EBranchStatus status) {
+            EOrgStatus status) {
     }
 
-    public record BranchStatusForm(@Schema(requiredMode = Schema.RequiredMode.REQUIRED) @NotNull EBranchStatus status) {
+    public record BranchStatusForm(@Schema(requiredMode = Schema.RequiredMode.REQUIRED) @NotNull EOrgStatus status) {
     }
 }
