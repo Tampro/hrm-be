@@ -13,3 +13,7 @@ databaseChangeLog:
       file: db/changelog/changes/20261120140000_department_details_changelog.mysql.sql
   - include:
       file: db/changelog/changes/20261120150000_designation_details_changelog.mysql.sql
+  - include:
+      file: db/changelog/changes/20261120160000_holiday_changelog.mysql.sql
+  - include:
+      file: db/changelog/changes/20261120160100_holiday_category_init_data.mysql.sql

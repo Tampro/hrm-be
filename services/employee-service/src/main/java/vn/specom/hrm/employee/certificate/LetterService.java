@@ -37,8 +37,8 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 public class LetterService {
-    private static final String FONT = "/liberation/LiberationSans-Regular.ttf";
-    private static final String FONT_BOLD = "/liberation/LiberationSans-Bold.ttf";
+    public static final String FONT = "/liberation/LiberationSans-Regular.ttf";
+    public static final String FONT_BOLD = "/liberation/LiberationSans-Bold.ttf";
     private static final Set<String> LANGS = Set.of("vi", "en");
 
     public record Letter(String fileName, byte[] pdf) {
@@ -105,7 +105,7 @@ public class LetterService {
     }
 
     /** Embedded TTF: the image has no system fonts and the built-in PDF fonts have no Vietnamese glyphs. */
-    private static BaseFont font(String path) throws IOException {
+    public static BaseFont font(String path) throws IOException {
         try (InputStream in = LetterService.class.getResourceAsStream(path)) {
             if (in == null) {
                 throw new IOException("font missing: " + path);
