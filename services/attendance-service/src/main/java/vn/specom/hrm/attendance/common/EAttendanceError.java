@@ -35,7 +35,12 @@ public enum EAttendanceError implements ErrorCode {
     ATT_025("Send between 1 and {0} punches."),
     ATT_026("No punches for this employee on this date."),
     ATT_027("The device user id does not match any employee of the company."),
-    ATT_028("This serial number is already registered.");
+    ATT_028("This serial number is already registered."),
+    ATT_029("The timesheet entry does not exist."),
+    ATT_030("An approved timesheet entry cannot be changed."),
+    ATT_031("The hours of one day cannot exceed 24."),
+    ATT_032("Work cannot be logged for a future date."),
+    ATT_033("Row {0}: several employees are named {1}; use the employee code.");
 
     private final String message;
 }

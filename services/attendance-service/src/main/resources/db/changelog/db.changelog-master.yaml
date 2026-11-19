@@ -9,3 +9,5 @@ databaseChangeLog:
       file: db/changelog/changes/20261120220000_regularization_changelog.mysql.sql
   - include:
       file: db/changelog/changes/20261120230000_biometric_changelog.mysql.sql
+  - include:
+      file: db/changelog/changes/20261120240000_time_entry_changelog.mysql.sql

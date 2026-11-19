@@ -57,8 +57,14 @@ public class EmployeeClient {
 
     /** One page of the company's employees, by employee number (the grid rows). */
     public EmployeePage page(Long companyId, int page, int size) {
+        return page(companyId, null, page, size);
+    }
+
+    /** keyword = employee-service's own search (name, email, number, code). */
+    public EmployeePage page(Long companyId, String keyword, int page, int size) {
         JsonNode data = http.call(c -> c.get().uri(u -> u.path("/api/v1/employees")
                 .queryParamIfPresent("companyId", java.util.Optional.ofNullable(companyId))
+                .queryParamIfPresent("keyword", java.util.Optional.ofNullable(keyword).filter(k -> !k.isBlank()))
                 .queryParam("page", page).queryParam("size", size).queryParam("sort", "employeeNo,asc").build()))
                 .path("data");
         List<Employee> list = new ArrayList<>();
