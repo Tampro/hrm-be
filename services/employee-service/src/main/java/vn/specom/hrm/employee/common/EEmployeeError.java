@@ -48,7 +48,8 @@ public enum EEmployeeError implements ErrorCode {
     EMP_038("The announcement category does not exist."),
     EMP_039("A system announcement category cannot be changed."),
     EMP_040("Choose at least one target branch or department, or make the announcement company-wide."),
-    EMP_041("You have no employee profile in this company.");
+    EMP_041("You have no employee profile in this company."),
+    EMP_042("The award type does not exist.");
 
     private final String message;
 }
