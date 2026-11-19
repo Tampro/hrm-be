@@ -90,6 +90,7 @@ mvn -DskipTests package            # builds the jars the Dockerfiles copy
 #   MEDIA_DB_PASSWORD, MEDIA_LINK_SECRET  (media-service; the link secret is random, ≥ 32 chars)
 #   EMPLOYEE_DB_PASSWORD, EMPLOYEE_ENC_KEY (employee-service; key = openssl rand -base64 32)
 #   ATTENDANCE_DB_PASSWORD               (attendance-service)
+#   RECRUITMENT_DB_PASSWORD              (recruitment-service)
 #   EMPLOYEE_SERVICE_CLIENT_SECRET        (secret of client hrm-employee-service; realm import and employee-service)
 #   HRM_SETTINGS_ENC_KEY                  (optional; base64 of 32 random bytes — needed to save the SMTP password
 #                                          or reCAPTCHA secret in Settings: openssl rand -base64 32)

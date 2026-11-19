@@ -44,6 +44,10 @@ spring:
               uri: ${ATTENDANCE_SERVICE_URL:http://localhost:8084}
               predicates:
                 - Path=/api/v1/attendance/**
+            - id: recruitment-service
+              uri: ${RECRUITMENT_SERVICE_URL:http://localhost:8085}
+              predicates:
+                - Path=/api/v1/recruitment/**
 
 management:
   endpoints:
