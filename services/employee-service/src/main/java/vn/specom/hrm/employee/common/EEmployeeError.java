@@ -38,7 +38,12 @@ public enum EEmployeeError implements ErrorCode {
     EMP_028("An employee cannot report to themselves or to someone who reports to them."),
     EMP_029("The branch is inactive and cannot be assigned."),
     EMP_030("The department is inactive and cannot be assigned."),
-    EMP_031("The designation is inactive and cannot be assigned.");
+    EMP_031("The designation is inactive and cannot be assigned."),
+    EMP_032("The holiday does not exist."),
+    EMP_033("The holiday category does not exist."),
+    EMP_034("The end date must not be before the start date."),
+    EMP_035("A system holiday category cannot be changed."),
+    EMP_036("The date range must not exceed {0} days.");
 
     private final String message;
 }

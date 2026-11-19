@@ -163,7 +163,7 @@ public class DepartmentService {
     }
 
     /** "!" is the LIKE escape character of the query. */
-    static String kw(String keyword) {
+    public static String kw(String keyword) {
         if (keyword == null || keyword.isBlank()) {
             return "";
         }
