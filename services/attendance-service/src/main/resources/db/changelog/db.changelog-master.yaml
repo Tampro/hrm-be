@@ -1,0 +1,5 @@
+# Schema of the attendance service only (own database hrm_attendance).
+# Never edit a change file once it has run on a shared database — add a new one.
+databaseChangeLog:
+  - include:
+      file: db/changelog/changes/20261120200000_shift_policy_changelog.mysql.sql
