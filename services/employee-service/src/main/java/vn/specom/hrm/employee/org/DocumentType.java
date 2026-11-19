@@ -19,6 +19,13 @@ public class DocumentType extends BaseAuditableEntity {
     @Column(name = "name", nullable = false, length = 150)
     private String name;
 
+    @Column(name = "description", length = 500)
+    private String description;
+
+    /** Company type: the company's choice. System type: default until a company sets DocumentTypeSetting. */
+    @Column(name = "required", nullable = false)
+    private boolean required;
+
     @Column(name = "is_default", nullable = false)
     private boolean defaultSlot;
 

@@ -23,3 +23,7 @@ databaseChangeLog:
       file: db/changelog/changes/20261120170100_announcement_category_init_data.mysql.sql
   - include:
       file: db/changelog/changes/20261120180000_award_type_changelog.mysql.sql
+  - include:
+      file: db/changelog/changes/20261120190000_document_type_details_changelog.mysql.sql
+  - include:
+      file: db/changelog/changes/20261120190100_document_type_description_init_data.mysql.sql

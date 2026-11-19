@@ -4,9 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.specom.hrm.employee.common.EEmployeeError;
-import vn.specom.hrm.employee.document.EmployeeDocumentRepository;
-import vn.specom.hrm.employee.employee.EmployeeRepository;
-import vn.specom.hrm.employee.org.OrgDtos.DocumentTypeDto;
 import vn.specom.hrm.exception.ApiException;
 import vn.specom.hrm.security.TenantGuard;
 
@@ -28,48 +25,6 @@ public class OrgService {
     private final DepartmentRepository departments;
     private final DesignationRepository designations;
     private final DocumentTypeRepository documentTypes;
-    private final EmployeeRepository employees;
-    private final EmployeeDocumentRepository documents;
-
-    // ------------------------------------------------------------------ document types
-
-    @Transactional(readOnly = true)
-    public List<DocumentTypeDto> documentTypes(Long requestedCompanyId) {
-        return documentTypes.visibleTo(company(requestedCompanyId)).stream().map(DocumentTypeDto::of).toList();
-    }
-
-    @Transactional
-    public DocumentTypeDto createDocumentType(Long requestedCompanyId, String name) {
-        Long companyId = company(requestedCompanyId);
-        String n = name.trim();
-        if (documentTypes.nameTaken(companyId, n, -1L)) {
-            throw ApiException.badRequest(EEmployeeError.EMP_011);
-        }
-        DocumentType t = new DocumentType();
-        t.setCompanyId(companyId);
-        t.setName(n);
-        return DocumentTypeDto.of(documentTypes.save(t));
-    }
-
-    @Transactional
-    public DocumentTypeDto renameDocumentType(Long id, String name) {
-        DocumentType t = requireOwnDocumentType(id);
-        String n = name.trim();
-        if (documentTypes.nameTaken(t.getCompanyId(), n, id)) {
-            throw ApiException.badRequest(EEmployeeError.EMP_011);
-        }
-        t.setName(n);
-        return DocumentTypeDto.of(t);
-    }
-
-    @Transactional
-    public void deleteDocumentType(Long id) {
-        DocumentType t = requireOwnDocumentType(id);
-        if (documents.existsByDocumentTypeId(id)) {
-            throw ApiException.badRequest(EEmployeeError.EMP_010);
-        }
-        t.setDeleted(true);
-    }
 
     // ------------------------------------------------------------------ used by the employee module
 
@@ -162,17 +117,6 @@ public class OrgService {
 
     private static Long company(Long requested) {
         return TenantGuard.resolveCompany(requested, EEmployeeError.EMP_019);
-    }
-
-    /** System types (company null) are read-only for everyone, the super admin included: they are seeded. */
-    private DocumentType requireOwnDocumentType(Long id) {
-        DocumentType t = documentTypes.findByIdAndDeletedFalse(id)
-                .orElseThrow(() -> ApiException.notFound(EEmployeeError.EMP_005));
-        if (t.getCompanyId() == null) {
-            throw ApiException.badRequest(EEmployeeError.EMP_021);
-        }
-        TenantGuard.assertSameCompany(t.getCompanyId(), EEmployeeError.EMP_005);
-        return t;
     }
 
     private static <T> Map<Long, String> toMap(List<T> rows, Function<T, Long> id, Function<T, String> name) {

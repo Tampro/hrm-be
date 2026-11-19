@@ -56,6 +56,8 @@ public final class EmployeeDtos {
                                  String emergencyPhone, BankingDto banking,
                                  @Schema(description = "IAM user id of the login account") String userId,
                                  boolean loginEnabled, List<DocumentDto> documents,
+                                 @Schema(description = "Required document types without an uploaded document")
+                                 List<Ref> missingRequiredDocuments,
                                  Instant createdDate, Instant updatedDate) {
     }
 
@@ -148,6 +150,11 @@ public final class EmployeeDtos {
     }
 
     /** List filters, shared by the list, the status tabs and the export. */
-    public record Filter(String keyword, Long branchId, Long departmentId, Long designationId, EEmployeeStatus status) {
+    public record Filter(String keyword, Long branchId, Long departmentId, Long designationId, EEmployeeStatus status,
+                         @Schema(description = "true = only employees missing a Required document type")
+                         Boolean missingRequiredDocuments) {
+        public Filter(String keyword, Long branchId, Long departmentId, Long designationId, EEmployeeStatus status) {
+            this(keyword, branchId, departmentId, designationId, status, null);
+        }
     }
 }

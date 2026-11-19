@@ -32,11 +32,38 @@ public class DocumentService {
     private final OrgService orgs;
     private final MediaClient media;
     private final Clock clock;
+    private final vn.specom.hrm.employee.org.DocumentTypeService documentTypes;
 
     @Transactional(readOnly = true)
     public List<DocumentDto> list(Long companyId, Long employeeId) {
         Map<Long, String> types = orgs.documentTypeNames(companyId);
         return documents.findByEmployeeIdOrderByIdAsc(employeeId).stream().map(d -> toDto(d, types)).toList();
+    }
+
+    /** Ids of the document types Required for the company (effective, system defaults overridden). */
+    @Transactional(readOnly = true)
+    public java.util.Set<Long> requiredTypeIds(Long companyId) {
+        return documentTypes.requiredTypeIds(companyId);
+    }
+
+    /**
+     * Required types the employee has no document of. TODO(assumption): an expired or unverified document still
+     * counts as present (expiry and verification are shown on the document itself) — confirm with BA.
+     */
+    @Transactional(readOnly = true)
+    public List<vn.specom.hrm.employee.employee.EmployeeDtos.Ref> missingRequired(Long companyId, Long employeeId) {
+        java.util.Set<Long> required = documentTypes.requiredTypeIds(companyId);
+        if (required.isEmpty()) {
+            return List.of();
+        }
+        java.util.Set<Long> present = documents.findByEmployeeIdOrderByIdAsc(employeeId).stream()
+                .map(EmployeeDocument::getDocumentTypeId).collect(java.util.stream.Collectors.toSet());
+        Map<Long, String> names = orgs.documentTypeNames(companyId);
+        return required.stream().filter(id -> !present.contains(id))
+                .map(id -> new vn.specom.hrm.employee.employee.EmployeeDtos.Ref(id.toString(), names.get(id)))
+                .sorted(java.util.Comparator.comparing(vn.specom.hrm.employee.employee.EmployeeDtos.Ref::name,
+                        java.util.Comparator.nullsLast(String::compareTo)))
+                .toList();
     }
 
     /** Type usable by the company, file of the company and at most 5 MB. */

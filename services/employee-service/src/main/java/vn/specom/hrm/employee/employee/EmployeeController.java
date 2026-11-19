@@ -65,8 +65,10 @@ public class EmployeeController {
             @RequestParam(required = false) Long departmentId,
             @RequestParam(required = false) Long designationId,
             @RequestParam(required = false) EEmployeeStatus status,
+            @Parameter(description = "true = only employees missing a Required document type")
+            @RequestParam(required = false) Boolean missingRequiredDocuments,
             @ParameterObject @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
-        Filter f = new Filter(keyword, branchId, departmentId, designationId, status);
+        Filter f = new Filter(keyword, branchId, departmentId, designationId, status, missingRequiredDocuments);
         return ApiMessageDto.ok(ResponseListDto.of(service.search(companyId, f, pageable)));
     }
 
