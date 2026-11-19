@@ -35,6 +35,8 @@ public class GatewaySecurityConfig {
                         // Signed, time-limited file links: the signature is checked by media-service.
                         .pathMatchers(HttpMethod.GET, "/api/v1/media/files/*/content").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/v1/settings/public").permitAll()
+                        // Biometric devices cannot log in: attendance-service checks their per-device key instead.
+                        .pathMatchers(HttpMethod.POST, "/api/v1/attendance/biometric/punches").permitAll()
                         .pathMatchers("/actuator/health/**").permitAll()
                         .pathMatchers("/api/**").authenticated()
                         .anyExchange().denyAll())

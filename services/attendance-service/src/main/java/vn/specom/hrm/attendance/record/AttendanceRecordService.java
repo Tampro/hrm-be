@@ -176,7 +176,7 @@ public class AttendanceRecordService {
      * Saves a record of an employee of the company (callers resolve the company: the employee profile for one record,
      * the caller's company for an import).
      */
-    AttendanceRecord save(AttendanceRecord r, Long companyId, Employee e, RecordForm f) {
+    public AttendanceRecord save(AttendanceRecord r, Long companyId, Employee e, RecordForm f) {
         Long employeeId = Long.valueOf(e.id());
         if (f.clockOut() != null && f.clockIn() == null) {
             throw ApiException.badRequest(EAttendanceError.ATT_010);
