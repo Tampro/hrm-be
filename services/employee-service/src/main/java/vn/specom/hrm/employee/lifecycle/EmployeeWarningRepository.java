@@ -1,0 +1,34 @@
+package vn.specom.hrm.employee.lifecycle;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface EmployeeWarningRepository extends JpaRepository<EmployeeWarning, Long> {
+    /** keyword matches the employee's name / email / no. or the subject; the caller escapes with !. */
+    String FILTERS = "from EmployeeWarning w, vn.specom.hrm.employee.employee.Employee e "
+            + "where e.id = w.employeeId and w.companyId = :companyId and w.deleted = false "
+            + "and (:employeeId is null or w.employeeId = :employeeId) "
+            + "and (:typeId is null or w.warningTypeId = :typeId) "
+            + "and (:severityId is null or w.severityId = :severityId) "
+            + "and (:kw = '' or lower(e.fullName) like :kw escape '!' or lower(e.email) like :kw escape '!' "
+            + "or lower(e.employeeNo) like :kw escape '!' or lower(w.subject) like :kw escape '!')";
+
+    @Query(value = "select w " + FILTERS + " and (:status is null or w.status = :status)",
+            countQuery = "select count(w) " + FILTERS + " and (:status is null or w.status = :status)")
+    Page<EmployeeWarning> search(Long companyId, Long employeeId, Long typeId, Long severityId,
+                                 EmployeeWarning.EStatus status, String kw, Pageable pageable);
+
+    @Query("select w.status, count(w) " + FILTERS + " group by w.status")
+    List<Object[]> countByStatus(Long companyId, Long employeeId, Long typeId, Long severityId, String kw);
+
+    Optional<EmployeeWarning> findByIdAndDeletedFalse(Long id);
+
+    boolean existsByWarningTypeIdAndDeletedFalse(Long warningTypeId);
+
+    boolean existsBySeverityIdAndDeletedFalse(Long severityId);
+}
