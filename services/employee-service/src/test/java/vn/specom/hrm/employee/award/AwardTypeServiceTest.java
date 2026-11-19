@@ -19,7 +19,8 @@ import static org.mockito.Mockito.when;
 
 class AwardTypeServiceTest {
     private final AwardTypeRepository types = mock(AwardTypeRepository.class);
-    private final AwardTypeService service = new AwardTypeService(types);
+    private final AwardTypeService service = new AwardTypeService(types,
+            org.mockito.Mockito.mock(vn.specom.hrm.employee.lifecycle.EmployeeAwardRepository.class));
 
     @AfterEach
     void tearDown() {

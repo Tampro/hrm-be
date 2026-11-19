@@ -18,13 +18,13 @@ import java.util.List;
 
 /**
  * Award Types page (docs/analysis/06 §6.3.6): one list per company, unique names (case-insensitive).
- * TODO(assumption): no award records exist yet, so delete is not blocked by usage; when the awards module comes,
- * a type in use must be refused (EMP_010) like the other catalogues.
+ * A type used by an award (§7.2.1) cannot be deleted (EMP_010).
  */
 @Service
 @RequiredArgsConstructor
 public class AwardTypeService {
     private final AwardTypeRepository types;
+    private final vn.specom.hrm.employee.lifecycle.EmployeeAwardRepository awards;
 
     @Transactional(readOnly = true)
     public Page<AwardTypeDto> search(Long requestedCompanyId, String keyword, EOrgStatus status, Pageable pageable) {
@@ -69,7 +69,11 @@ public class AwardTypeService {
 
     @Transactional
     public void delete(Long id) {
-        require(id).setDeleted(true);
+        AwardType t = require(id);
+        if (awards.existsByAwardTypeIdAndDeletedFalse(id)) {
+            throw ApiException.badRequest(EEmployeeError.EMP_010);
+        }
+        t.setDeleted(true);
     }
 
     private void apply(AwardType t, AwardTypeForm f, Long selfId) {

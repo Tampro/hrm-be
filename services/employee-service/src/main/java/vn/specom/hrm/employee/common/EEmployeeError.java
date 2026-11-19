@@ -49,7 +49,14 @@ public enum EEmployeeError implements ErrorCode {
     EMP_039("A system announcement category cannot be changed."),
     EMP_040("Choose at least one target branch or department, or make the announcement company-wide."),
     EMP_041("You have no employee profile in this company."),
-    EMP_042("The award type does not exist.");
+    EMP_042("The award type does not exist."),
+    EMP_043("The award does not exist."),
+    EMP_044("The promotion does not exist."),
+    EMP_045("The transfer does not exist."),
+    EMP_046("It has already been approved or rejected and cannot be changed."),
+    EMP_047("The new designation must differ from the current one and belong to the employee's department."),
+    EMP_048("The transfer does not change the branch, department or designation."),
+    EMP_049("The effective date cannot be before the {0} date.");
 
     private final String message;
 }
