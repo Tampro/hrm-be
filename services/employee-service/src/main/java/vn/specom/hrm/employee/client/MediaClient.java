@@ -30,8 +30,12 @@ public class MediaClient {
     private final Cache<Long, MediaFile> cache = Caffeine.newBuilder()
             .expireAfterWrite(Duration.ofMinutes(5)).maximumSize(5_000).build();
 
-    public MediaClient(EmployeeProperties props, ObjectMapper mapper) {
+    private final CallerHttp internal;
+
+    public MediaClient(EmployeeProperties props, ObjectMapper mapper, ServiceTokenProvider serviceToken) {
         this.http = new CallerHttp(props.mediaServiceUrl(), mapper, EEmployeeError.EMP_015, "media-service");
+        this.internal = new CallerHttp(props.mediaServiceUrl(), mapper, EEmployeeError.EMP_015, "media-service",
+                serviceToken::token);
         this.mapper = mapper;
     }
 
@@ -69,6 +73,21 @@ public class MediaClient {
                 cache.put(fileId, f);
             }
             return f;
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Signed links of a company file through employee-service's service account, for a caller who may not open the
+     * media library. Only after the caller was authorized for the file here (announcement audience). Not cached:
+     * the cache above is filled by callers with MEDIA_VIEW. Null when the file is gone or media is unreachable.
+     */
+    public MediaFile linksAsService(Long fileId, Long companyId) {
+        try {
+            JsonNode data = internal.call(c -> c.get().uri("/api/v1/internal/media/files/{id}?companyId={c}", fileId,
+                    companyId)).path("data");
+            return data.isMissingNode() || data.isNull() ? null : mapper.convertValue(data, MediaFile.class);
         } catch (RuntimeException e) {
             return null;
         }

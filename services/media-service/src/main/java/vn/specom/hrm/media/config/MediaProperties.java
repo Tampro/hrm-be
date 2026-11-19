@@ -14,6 +14,7 @@ import java.time.Duration;
  * @param linkTtl     how long a view/download link works
  * @param maxFileSize largest accepted upload
  * @param publicBaseUrl base the FE uses to open links (the gateway), e.g. http://localhost:8080
+ * @param internalClientId the only Keycloak client (token azp) allowed on /api/v1/internal/**
  */
 @Validated
 @ConfigurationProperties(prefix = "hrm.media")
@@ -24,5 +25,6 @@ public record MediaProperties(
         @NotNull Duration linkTtl,
         @NotNull DataSize maxFileSize,
         @NotBlank String publicBaseUrl,
-        @NotBlank String iamServiceUrl) {
+        @NotBlank String iamServiceUrl,
+        @NotBlank String internalClientId) {
 }

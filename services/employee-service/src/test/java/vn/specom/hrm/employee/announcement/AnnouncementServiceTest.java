@@ -144,6 +144,37 @@ class AnnouncementServiceTest {
     }
 
     @Test
+    void employeeReadingGetsAttachmentLinksThroughTheServiceAccount() {
+        TestLogin.as(10L);
+        Employee me = new Employee();
+        me.setId(7L);
+        me.setCompanyId(10L);
+        when(employees.findFirstByCompanyIdAndUserIdAndDeletedFalse(10L, 5L)).thenReturn(Optional.of(me));
+        Announcement a = announcement(TODAY_VN, TODAY_VN);
+        a.setCompanyWide(true);
+        a.getAttachments().add(new Announcement.Attachment(42L, "policy.pdf", "application/pdf", 9L));
+        when(announcements.findByIdAndDeletedFalse(5L)).thenReturn(Optional.of(a));
+        stubCategory();
+        when(media.linksAsService(42L, 10L)).thenReturn(new MediaClient.MediaFile("42", "10", "policy.pdf", null,
+                "application/pdf", "DOCUMENT", 9L, "https://v", "https://d"));
+        var d = service.read(5L);
+        assertThat(d.attachments().get(0).downloadUrl()).isEqualTo("https://d");
+        verify(media, never()).find(any());
+    }
+
+    @Test
+    void adminListNeverCallsTheServiceAccount() {
+        TestLogin.as(10L, "ANNOUNCEMENT_VIEW");
+        Announcement a = announcement(TODAY_VN, TODAY_VN);
+        a.getAttachments().add(new Announcement.Attachment(42L, "policy.pdf", "application/pdf", 9L));
+        when(announcements.findByIdAndDeletedFalse(5L)).thenReturn(Optional.of(a));
+        stubCategory();
+        var d = service.get(5L);
+        assertThat(d.attachments().get(0).downloadUrl()).isNull();
+        verify(media, never()).linksAsService(anyLong(), anyLong());
+    }
+
+    @Test
     void readOfAnUpcomingAnnouncementIsNotFound() {
         TestLogin.as(10L);
         Employee me = new Employee();
