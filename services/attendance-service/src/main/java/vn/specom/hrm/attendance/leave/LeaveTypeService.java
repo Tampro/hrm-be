@@ -22,6 +22,7 @@ import java.util.List;
 public class LeaveTypeService {
     private final LeaveTypeRepository types;
     private final LeavePolicyRepository policies;
+    private final LeaveApplicationRepository applications;
 
     @Transactional(readOnly = true)
     public Page<LeaveTypeDto> search(Long requestedCompanyId, String keyword, EStatus status, Pageable pageable) {
@@ -63,11 +64,11 @@ public class LeaveTypeService {
         return LeaveTypeDto.of(t);
     }
 
-    /** Refused while a policy uses it (applications will be checked too once they exist). */
+    /** Refused while a policy or an application uses it. */
     @Transactional
     public void delete(Long id) {
         LeaveType t = require(id);
-        if (policies.existsByLeaveTypeIdAndDeletedFalse(id)) {
+        if (policies.existsByLeaveTypeIdAndDeletedFalse(id) || applications.existsByLeaveTypeId(id)) {
             throw ApiException.badRequest(EAttendanceError.ATT_038);
         }
         t.setDeleted(true);

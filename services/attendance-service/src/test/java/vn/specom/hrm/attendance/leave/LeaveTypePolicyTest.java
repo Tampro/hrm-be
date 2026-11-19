@@ -23,7 +23,8 @@ import static org.mockito.Mockito.when;
 class LeaveTypePolicyTest {
     private final LeaveTypeRepository types = mock(LeaveTypeRepository.class);
     private final LeavePolicyRepository policies = mock(LeavePolicyRepository.class);
-    private final LeaveTypeService typeService = new LeaveTypeService(types, policies);
+    private final LeaveApplicationRepository applications = mock(LeaveApplicationRepository.class);
+    private final LeaveTypeService typeService = new LeaveTypeService(types, policies, applications);
     private final LeavePolicyService policyService = new LeavePolicyService(policies, types, typeService);
 
     @AfterEach

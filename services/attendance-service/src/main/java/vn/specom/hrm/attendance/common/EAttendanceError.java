@@ -45,7 +45,19 @@ public enum EAttendanceError implements ErrorCode {
     ATT_035("The leave policy does not exist."),
     ATT_036("The leave type already has an active policy."),
     ATT_037("The minimum days per application cannot be more than the maximum."),
-    ATT_038("It is still in use and cannot be deleted.");
+    ATT_038("It is still in use and cannot be deleted."),
+    ATT_039("The leave application does not exist."),
+    ATT_040("The leave type is inactive."),
+    ATT_041("The end date must not be before the start date."),
+    ATT_042("A leave must start and end in the same year."),
+    ATT_043("There is no working day between these dates."),
+    ATT_044("A leave of this type must be between {0} and {1} working days."),
+    ATT_045("The employee already has a leave on some of these days."),
+    ATT_046("No {0} balance for {1}: sync the leave balances first."),
+    ATT_047("Not enough leave balance: {0} days available."),
+    ATT_048("An approved leave cannot be changed or deleted."),
+    ATT_049("The file does not exist in the media library of the company."),
+    ATT_050("The media service is unavailable. Please try again.");
 
     private final String message;
 }
