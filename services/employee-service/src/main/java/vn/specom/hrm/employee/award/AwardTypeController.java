@@ -103,7 +103,8 @@ public class AwardTypeController {
     }
 
     @Operation(summary = "Delete an award type")
-    @ApiResponses(@ApiResponse(responseCode = "404", description = "No such award type in your company (EMP_042)"))
+    @ApiResponses({@ApiResponse(responseCode = "400", description = "Used by an award (EMP_010)"),
+            @ApiResponse(responseCode = "404", description = "No such award type in your company (EMP_042)")})
     @PreAuthorize("@PermissionChecker.has('ORG_MANAGE')")
     @DeleteMapping("/{id}")
     public ApiMessageDto<Void> delete(@PathVariable Long id) {

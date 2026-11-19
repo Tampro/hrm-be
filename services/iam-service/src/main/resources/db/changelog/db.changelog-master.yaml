@@ -43,3 +43,5 @@ databaseChangeLog:
       file: db/changelog/changes/20261120250000_leave_permission_init_data.mysql.sql
   - include:
       file: db/changelog/changes/20261120270000_recruitment_permission_init_data.mysql.sql
+  - include:
+      file: db/changelog/changes/20261120340000_lifecycle_permission_init_data.mysql.sql
