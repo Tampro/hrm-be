@@ -44,11 +44,13 @@ class JobPostingRoundTest {
     private final CustomQuestionRepository questions = mock(CustomQuestionRepository.class);
     private final InterviewRoundRepository rounds = mock(InterviewRoundRepository.class);
     private final OrgClient org = mock(OrgClient.class);
-    private final CatalogService catalog = new CatalogService(items, postings);
+    private final vn.specom.hrm.recruitment.candidate.CandidateRepository candidates =
+            mock(vn.specom.hrm.recruitment.candidate.CandidateRepository.class);
+    private final CatalogService catalog = new CatalogService(items, postings, candidates);
     private final JobLocationService locationService = new JobLocationService(locations, postings);
     private final JobPostingService service = new JobPostingService(postings, catalog, items, locationService, locations,
             new CustomQuestionService(questions), questions, org,
-            Clock.fixed(Instant.parse("2026-11-19T00:00:00Z"), ZoneOffset.UTC));
+            Clock.fixed(Instant.parse("2026-11-19T00:00:00Z"), ZoneOffset.UTC), candidates);
     private final InterviewRoundService roundService = new InterviewRoundService(rounds, postings, service);
 
     @AfterEach

@@ -35,7 +35,8 @@ public final class JobPostingDtos {
                              BigDecimal minSalary, BigDecimal maxSalary, String description, String requirements,
                              String benefits, List<QuestionRef> customQuestions, boolean askGender,
                              boolean askDateOfBirth, boolean showCoverLetter, boolean showTerms, EStatus status,
-                             boolean published, Instant publishDate, Instant createdDate, Instant updatedDate) {
+                             boolean published, Instant publishDate, long applications, Instant createdDate,
+                             Instant updatedDate) {
     }
 
     public record PostingOption(String id, String jobCode, String title) {
