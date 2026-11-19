@@ -7,3 +7,5 @@ databaseChangeLog:
       file: db/changelog/changes/20261120280000_job_posting_changelog.mysql.sql
   - include:
       file: db/changelog/changes/20261120290000_candidate_changelog.mysql.sql
+  - include:
+      file: db/changelog/changes/20261120300000_interview_changelog.mysql.sql

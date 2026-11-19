@@ -19,7 +19,8 @@ import java.util.List;
 /**
  * Job Categories, Job Types, Candidate Sources and Interview Types pages (docs/analysis/06 §7.1.10, 7.1.11, 7.1.13,
  * 7.1.14). Names are unique per company and kind.
- * A job type used by a job posting, or a source used by a candidate, cannot be deleted (REC_013).
+ * A job type used by a job posting, a source used by a candidate, or an interview type used by an
+ * interview cannot be deleted (REC_013).
  * TODO(assumption): job categories, candidate sources and interview types get the same check when candidates and
  * interviews use them (next PRs).
  */
@@ -29,6 +30,7 @@ public class CatalogService {
     private final CatalogItemRepository items;
     private final vn.specom.hrm.recruitment.posting.JobPostingRepository postings;
     private final vn.specom.hrm.recruitment.candidate.CandidateRepository candidates;
+    private final vn.specom.hrm.recruitment.interview.InterviewRepository interviews;
 
     @Transactional(readOnly = true)
     public Page<CatalogDto> search(ECatalogKind kind, Long requestedCompanyId, String keyword, EStatus status,
@@ -78,6 +80,9 @@ public class CatalogService {
             throw ApiException.badRequest(ERecruitmentError.REC_013);
         }
         if (kind == ECatalogKind.CANDIDATE_SOURCE && candidates.existsBySourceIdAndDeletedFalse(id)) {
+            throw ApiException.badRequest(ERecruitmentError.REC_013);
+        }
+        if (kind == ECatalogKind.INTERVIEW_TYPE && interviews.existsByInterviewTypeIdAndDeletedFalse(id)) {
             throw ApiException.badRequest(ERecruitmentError.REC_013);
         }
         c.setDeleted(true);

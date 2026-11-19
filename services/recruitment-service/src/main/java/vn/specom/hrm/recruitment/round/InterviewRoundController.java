@@ -115,7 +115,8 @@ public class InterviewRoundController {
     }
 
     @Operation(summary = "Delete an interview round")
-    @ApiResponses(@ApiResponse(responseCode = "404", description = "No such round in your company (REC_007)"))
+    @ApiResponses({@ApiResponse(responseCode = "400", description = "Used by an interview (REC_013)"),
+            @ApiResponse(responseCode = "404", description = "No such round in your company (REC_007)")})
     @PreAuthorize("@PermissionChecker.has('RECRUITMENT_MANAGE')")
     @DeleteMapping("/{id}")
     public ApiMessageDto<Void> delete(@PathVariable Long id) {

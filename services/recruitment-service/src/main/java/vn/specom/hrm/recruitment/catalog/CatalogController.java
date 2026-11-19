@@ -114,8 +114,8 @@ public class CatalogController {
 
     @Operation(summary = "Delete an item")
     @ApiResponses({
-            @ApiResponse(responseCode = "400", description = "Job type used by a posting or source used by a "
-                    + "candidate (REC_013)"),
+            @ApiResponse(responseCode = "400", description = "Job type used by a posting, source used by a "
+                    + "candidate or interview type used by an interview (REC_013)"),
             @ApiResponse(responseCode = "404", description = "No such item in your company (REC_001)")})
     @PreAuthorize("@PermissionChecker.has('RECRUITMENT_MANAGE')")
     @DeleteMapping("/{id}")

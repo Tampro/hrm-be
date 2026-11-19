@@ -32,7 +32,8 @@ class RecruitmentCatalogTest {
             mock(vn.specom.hrm.recruitment.posting.JobPostingRepository.class);
     private final vn.specom.hrm.recruitment.candidate.CandidateRepository candidates =
             mock(vn.specom.hrm.recruitment.candidate.CandidateRepository.class);
-    private final CatalogService catalog = new CatalogService(items, postings, candidates);
+    private final vn.specom.hrm.recruitment.interview.InterviewRepository interviews = mock(vn.specom.hrm.recruitment.interview.InterviewRepository.class);
+    private final CatalogService catalog = new CatalogService(items, postings, candidates, interviews);
     private final JobLocationService locationService = new JobLocationService(locations, postings);
     private final CustomQuestionService questionService = new CustomQuestionService(questions);
 
