@@ -148,6 +148,28 @@ public class AttendanceRecordService {
         return records.save(r);
     }
 
+    /**
+     * An approved leave day: no record yet → a new ON_LEAVE record; a record without clock-in (Absent) → ON_LEAVE.
+     * TODO(assumption): a record with clock times is kept as worked — confirm with BA.
+     */
+    @Transactional
+    public void markOnLeave(Long companyId, Long employeeId, LocalDate date) {
+        AttendanceRecord r = records.findByEmployeeIdAndWorkDate(employeeId, date).orElse(null);
+        if (r != null && r.getClockIn() != null) {
+            return;
+        }
+        if (r == null) {
+            r = new AttendanceRecord();
+            r.setCompanyId(companyId);
+            r.setEmployeeId(employeeId);
+            r.setWorkDate(date);
+            r.setWeekend(settings.offDays(companyId).contains(date.getDayOfWeek()));
+        }
+        r.setAbsent(false);
+        r.setStatus(ERecordStatus.ON_LEAVE);
+        records.save(r);
+    }
+
     @Transactional(readOnly = true)
     public RecordDto get(Long id) {
         return RecordDto.of(require(id));

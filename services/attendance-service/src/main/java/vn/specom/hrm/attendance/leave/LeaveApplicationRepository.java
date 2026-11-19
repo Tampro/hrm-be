@@ -1,0 +1,45 @@
+package vn.specom.hrm.attendance.leave;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import vn.specom.hrm.attendance.regularization.ERegularizationStatus;
+
+import java.time.LocalDate;
+import java.util.Collection;
+import java.util.List;
+
+public interface LeaveApplicationRepository extends JpaRepository<LeaveApplication, Long> {
+    /** employeeIds = employees whose name matched the keyword (a placeholder id when there is no keyword). */
+    @Query("select a from LeaveApplication a where a.companyId = :companyId "
+            + "and (:status is null or a.status = :status) "
+            + "and (:employeeId is null or a.employeeId = :employeeId) "
+            + "and (:leaveTypeId is null or a.leaveTypeId = :leaveTypeId) "
+            + "and (:from is null or a.endDate >= :from) and (:to is null or a.startDate <= :to) "
+            + "and (:anyEmployee = true or a.employeeId in :employeeIds)")
+    Page<LeaveApplication> search(Long companyId, ERegularizationStatus status, Long employeeId, Long leaveTypeId,
+                                  LocalDate from, LocalDate to, boolean anyEmployee, Collection<Long> employeeIds,
+                                  Pageable pageable);
+
+    /** Applications of the employee overlapping [from, to] that block the days (pending or approved). */
+    @Query("select count(a) > 0 from LeaveApplication a where a.employeeId = :employeeId and a.id <> :id "
+            + "and a.status <> vn.specom.hrm.attendance.regularization.ERegularizationStatus.REJECTED "
+            + "and a.startDate <= :to and a.endDate >= :from")
+    boolean overlaps(Long employeeId, LocalDate from, LocalDate to, Long id);
+
+    /** Days of the employee's pending applications of a type in a year (reserved on the balance). */
+    @Query("select coalesce(sum(a.totalDays), 0) from LeaveApplication a where a.employeeId = :employeeId "
+            + "and a.leaveTypeId = :leaveTypeId and a.id <> :id "
+            + "and a.status = vn.specom.hrm.attendance.regularization.ERegularizationStatus.PENDING "
+            + "and a.startDate >= :yearStart and a.startDate <= :yearEnd")
+    long pendingDays(Long employeeId, Long leaveTypeId, LocalDate yearStart, LocalDate yearEnd, Long id);
+
+    /** Approved days per employee and type in a year: the balances' Used, recomputed by Sync. */
+    @Query("select a.employeeId, a.leaveTypeId, sum(a.totalDays) from LeaveApplication a where a.companyId = :companyId "
+            + "and a.status = vn.specom.hrm.attendance.regularization.ERegularizationStatus.APPROVED "
+            + "and a.startDate >= :yearStart and a.startDate <= :yearEnd group by a.employeeId, a.leaveTypeId")
+    List<Object[]> approvedDays(Long companyId, LocalDate yearStart, LocalDate yearEnd);
+
+    boolean existsByLeaveTypeId(Long leaveTypeId);
+}
