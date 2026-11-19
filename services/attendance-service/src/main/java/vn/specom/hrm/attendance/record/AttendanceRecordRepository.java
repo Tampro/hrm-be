@@ -11,6 +11,9 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
     List<AttendanceRecord> findByCompanyIdAndEmployeeIdInAndWorkDateBetween(Long companyId, Collection<Long> employeeIds,
                                                                            LocalDate from, LocalDate to);
 
+    org.springframework.data.domain.Page<AttendanceRecord> findByCompanyIdAndEmployeeIdOrderByWorkDateDesc(
+            Long companyId, Long employeeId, org.springframework.data.domain.Pageable pageable);
+
     Optional<AttendanceRecord> findByEmployeeIdAndWorkDate(Long employeeId, LocalDate workDate);
 
     boolean existsByEmployeeIdAndWorkDateAndIdNot(Long employeeId, LocalDate workDate, Long id);

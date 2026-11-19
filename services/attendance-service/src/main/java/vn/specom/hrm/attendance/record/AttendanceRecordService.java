@@ -124,6 +124,30 @@ public class AttendanceRecordService {
 
     // ------------------------------------------------------------------ records
 
+    /** Records of one employee, newest first (the "Attendance Record" choice of a regularization request). */
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<RecordDto> ofEmployee(Long employeeId,
+                                                                    org.springframework.data.domain.Pageable pageable) {
+        Employee e = employees.get(employeeId);
+        return records.findByCompanyIdAndEmployeeIdOrderByWorkDateDesc(companyOf(e), employeeId, pageable)
+                .map(RecordDto::of);
+    }
+
+    /**
+     * New clock times on an existing record (approved regularization): flags and hours are computed again with the
+     * shift and policy kept on the record, not the employee's current ones.
+     */
+    @Transactional
+    public AttendanceRecord applyTimes(AttendanceRecord r, java.time.LocalTime clockIn, java.time.LocalTime clockOut) {
+        r.setClockIn(clockIn);
+        r.setClockOut(clockOut);
+        Shift shift = r.getShiftId() == null ? null : ownShift(r.getCompanyId(), r.getShiftId().toString());
+        AttendancePolicy policy = r.getAttendancePolicyId() == null ? null
+                : ownPolicy(r.getCompanyId(), r.getAttendancePolicyId().toString());
+        AttendanceCalculator.apply(r, shift, policy);
+        return records.save(r);
+    }
+
     @Transactional(readOnly = true)
     public RecordDto get(Long id) {
         return RecordDto.of(require(id));
@@ -199,7 +223,7 @@ public class AttendanceRecordService {
                 .filter(p -> Objects.equals(p.getCompanyId(), companyId)).orElse(null);
     }
 
-    AttendanceRecord require(Long id) {
+    public AttendanceRecord require(Long id) {
         AttendanceRecord r = records.findById(id).orElseThrow(() -> ApiException.notFound(EAttendanceError.ATT_008));
         TenantGuard.assertSameCompany(r.getCompanyId(), EAttendanceError.ATT_008);
         return r;
