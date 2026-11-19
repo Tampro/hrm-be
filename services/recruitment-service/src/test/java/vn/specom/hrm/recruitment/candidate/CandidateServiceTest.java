@@ -52,7 +52,8 @@ class CandidateServiceTest {
     private final OrgClient org = mock(OrgClient.class);
     /** 2026-11-19 17:30 UTC = 2026-11-20 in Vietnam. */
     private final Clock clock = Clock.fixed(Instant.parse("2026-11-19T17:30:00Z"), ZoneOffset.UTC);
-    private final CatalogService catalog = new CatalogService(items, postings, candidates);
+    private final vn.specom.hrm.recruitment.interview.InterviewRepository interviews = mock(vn.specom.hrm.recruitment.interview.InterviewRepository.class);
+    private final CatalogService catalog = new CatalogService(items, postings, candidates, interviews);
     private final JobPostingService postingService = new JobPostingService(postings, catalog, items,
             new JobLocationService(locations, postings), locations, new CustomQuestionService(questions), questions,
             org, clock, candidates);
@@ -63,7 +64,7 @@ class CandidateServiceTest {
     private CandidateService service() {
         FileStore files = new FileStore(new RecruitmentProperties(null, null, dir.toString()));
         return new CandidateService(candidates, postings, postingService, catalog, items, locations, questions, org,
-                files, clock);
+                files, clock, interviews);
     }
 
     @AfterEach

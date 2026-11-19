@@ -35,6 +35,7 @@ public class InterviewRoundService {
     private final InterviewRoundRepository rounds;
     private final JobPostingRepository postings;
     private final JobPostingService postingService;
+    private final vn.specom.hrm.recruitment.interview.InterviewRepository interviews;
 
     public record JobRef(String id, String jobCode, String title) {
     }
@@ -123,7 +124,11 @@ public class InterviewRoundService {
 
     @Transactional
     public void delete(Long id) {
-        require(id).setDeleted(true);
+        InterviewRound r = require(id);
+        if (interviews.existsByRoundIdAndDeletedFalse(id)) {
+            throw ApiException.badRequest(ERecruitmentError.REC_013);
+        }
+        r.setDeleted(true);
     }
 
     private void apply(InterviewRound r, JobPosting p, RoundForm f, Long selfId) {
