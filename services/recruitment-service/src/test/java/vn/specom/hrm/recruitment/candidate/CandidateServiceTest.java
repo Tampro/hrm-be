@@ -64,7 +64,8 @@ class CandidateServiceTest {
     private CandidateService service() {
         FileStore files = new FileStore(new RecruitmentProperties(null, null, dir.toString()));
         return new CandidateService(candidates, postings, postingService, catalog, items, locations, questions, org,
-                files, clock, interviews, mock(vn.specom.hrm.recruitment.offer.OfferRepository.class));
+                files, clock, interviews, mock(vn.specom.hrm.recruitment.offer.OfferRepository.class),
+                mock(vn.specom.hrm.recruitment.assessment.CandidateAssessmentRepository.class));
     }
 
     @AfterEach

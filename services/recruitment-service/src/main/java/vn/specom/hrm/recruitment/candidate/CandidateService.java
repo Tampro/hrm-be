@@ -80,6 +80,7 @@ public class CandidateService {
     private final Clock clock;
     private final vn.specom.hrm.recruitment.interview.InterviewRepository interviews;
     private final vn.specom.hrm.recruitment.offer.OfferRepository offers;
+    private final vn.specom.hrm.recruitment.assessment.CandidateAssessmentRepository assessments;
 
     // ------------------------------------------------------------------ reads
 
@@ -203,12 +204,13 @@ public class CandidateService {
         return detail(c);
     }
 
-    /** Their interviews and offers go too. */
+    /** Their interviews, offers and assessments go too; an onboarding (an employee by then) stays. */
     @Transactional
     public void delete(Long id) {
         require(id).setDeleted(true);
         interviews.deleteByCandidate(id);
         offers.deleteByCandidate(id);
+        assessments.deleteByCandidate(id);
     }
 
     /** The posting's questions only; every required one answered; blank answers not kept. Question texts are copied. */
