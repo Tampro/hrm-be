@@ -13,3 +13,5 @@ databaseChangeLog:
       file: db/changelog/changes/20261120310000_offer_changelog.mysql.sql
   - include:
       file: db/changelog/changes/20261120320000_onboarding_changelog.mysql.sql
+  - include:
+      file: db/changelog/changes/20261120330000_career_changelog.mysql.sql

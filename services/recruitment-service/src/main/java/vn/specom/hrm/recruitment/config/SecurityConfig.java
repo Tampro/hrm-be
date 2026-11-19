@@ -18,7 +18,9 @@ public class SecurityConfig {
             "/actuator/health/**",
             "/v3/api-docs/**",
             "/swagger-ui/**",
-            "/swagger-ui.html"
+            "/swagger-ui.html",
+            // public career page: the company comes from an enabled slug only (PublicCareerService)
+            "/api/v1/public/career/**"
     };
 
     @Bean

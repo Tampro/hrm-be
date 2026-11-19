@@ -37,6 +37,9 @@ public class GatewaySecurityConfig {
                         .pathMatchers(HttpMethod.GET, "/api/v1/settings/public").permitAll()
                         // Biometric devices cannot log in: attendance-service checks their per-device key instead.
                         .pathMatchers(HttpMethod.POST, "/api/v1/attendance/biometric/punches").permitAll()
+                        // Public career page: read and apply only, limited per IP (CareerRateLimitFilter).
+                        .pathMatchers(HttpMethod.GET, "/api/v1/public/career/**").permitAll()
+                        .pathMatchers(HttpMethod.POST, CareerRateLimitFilter.APPLY).permitAll()
                         .pathMatchers("/actuator/health/**").permitAll()
                         .pathMatchers("/api/**").authenticated()
                         .anyExchange().denyAll())

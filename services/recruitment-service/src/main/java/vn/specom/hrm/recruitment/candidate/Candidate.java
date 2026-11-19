@@ -124,6 +124,18 @@ public class Candidate extends BaseAuditableEntity {
     @Column(name = "resume_size")
     private Long resumeSize;
 
+    @Column(name = "cover_letter_key", length = 64)
+    private String coverLetterKey;
+
+    @Column(name = "cover_letter_name", length = 255)
+    private String coverLetterName;
+
+    @Column(name = "cover_letter_mime", length = 127)
+    private String coverLetterMime;
+
+    @Column(name = "cover_letter_size")
+    private Long coverLetterSize;
+
     @ElementCollection
     @CollectionTable(name = "candidate_answer", joinColumns = @JoinColumn(name = "candidate_id"))
     @OrderColumn(name = "position")
