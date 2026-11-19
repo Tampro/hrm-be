@@ -358,7 +358,8 @@ public class EmployeeService {
                 e.getEmail(), photo == null ? null : photo.viewUrl(),
                 ref(e.getBranchId(), n.branches()), ref(e.getDepartmentId(), n.departments()),
                 ref(e.getDesignationId(), n.designations()), e.getStatus(), e.getEmploymentType(),
-                e.getDateOfJoining(), e.getUserId() != null && e.isLoginEnabled());
+                e.getDateOfJoining(), e.getUserId() != null && e.isLoginEnabled(), str(e.getShiftId()),
+                str(e.getAttendancePolicyId()));
     }
 
     /** Required document types, read only when the missing-documents filter is on. */
