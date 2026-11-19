@@ -50,3 +50,10 @@ management:
     web:
       exposure:
         include: health,info,prometheus
+
+hrm:
+  gateway:
+    # The biometric device endpoint is the only one reachable without a token: limit it per client IP.
+    device-rate-limit:
+      per-minute: ${GATEWAY_DEVICE_RATE_PER_MINUTE:60}
+      burst: ${GATEWAY_DEVICE_RATE_BURST:20}
