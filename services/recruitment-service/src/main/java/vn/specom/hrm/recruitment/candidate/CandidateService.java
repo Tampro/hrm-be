@@ -79,6 +79,7 @@ public class CandidateService {
     private final FileStore files;
     private final Clock clock;
     private final vn.specom.hrm.recruitment.interview.InterviewRepository interviews;
+    private final vn.specom.hrm.recruitment.offer.OfferRepository offers;
 
     // ------------------------------------------------------------------ reads
 
@@ -202,11 +203,12 @@ public class CandidateService {
         return detail(c);
     }
 
-    /** Their interviews go too. */
+    /** Their interviews and offers go too. */
     @Transactional
     public void delete(Long id) {
         require(id).setDeleted(true);
         interviews.deleteByCandidate(id);
+        offers.deleteByCandidate(id);
     }
 
     /** The posting's questions only; every required one answered; blank answers not kept. Question texts are copied. */
