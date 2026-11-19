@@ -72,6 +72,18 @@ public class AttendanceRecordController {
         return ApiMessageDto.ok(service.calendar(companyId, year, month, employeeId, page, size));
     }
 
+    @Operation(summary = "Records of one employee, newest first",
+            description = "For choosing the record of a regularization request.")
+    @ApiResponses(@ApiResponse(responseCode = "404", description = "No such employee in your company (EMP_001)"))
+    @PreAuthorize("@PermissionChecker.has('ATTENDANCE_VIEW')")
+    @GetMapping
+    public ApiMessageDto<vn.specom.hrm.common.ResponseListDto<RecordDto>> ofEmployee(
+            @RequestParam Long employeeId,
+            @org.springdoc.core.annotations.ParameterObject
+            @org.springframework.data.web.PageableDefault(size = 31) org.springframework.data.domain.Pageable pageable) {
+        return ApiMessageDto.ok(vn.specom.hrm.common.ResponseListDto.of(service.ofEmployee(employeeId, pageable)));
+    }
+
     @Operation(summary = "Attendance record details")
     @ApiResponses(@ApiResponse(responseCode = "404", description = "No such record in your company (ATT_008)"))
     @PreAuthorize("@PermissionChecker.has('ATTENDANCE_VIEW')")

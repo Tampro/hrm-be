@@ -5,3 +5,5 @@ databaseChangeLog:
       file: db/changelog/changes/20261120200000_shift_policy_changelog.mysql.sql
   - include:
       file: db/changelog/changes/20261120210000_attendance_record_changelog.mysql.sql
+  - include:
+      file: db/changelog/changes/20261120220000_regularization_changelog.mysql.sql
