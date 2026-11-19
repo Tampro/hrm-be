@@ -28,7 +28,9 @@ public final class EmployeeDtos {
                                    String profileImageUrl, Ref branch, Ref department, Ref designation,
                                    EEmployeeStatus status, EEmploymentType employmentType, LocalDate dateOfJoining,
                                    @Schema(description = "false = no login account or the account is locked")
-                                   boolean loginEnabled) {
+                                   boolean loginEnabled,
+                                   @Schema(description = "Shift and attendance policy (attendance-service ids)")
+                                   String shiftId, String attendancePolicyId) {
     }
 
     public record StatusCounts(long all, long active, long inactive, long probation, long terminated) {
