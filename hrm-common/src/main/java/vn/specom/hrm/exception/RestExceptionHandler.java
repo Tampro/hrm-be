@@ -45,6 +45,38 @@ public class RestExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, ECommonError.COMMON_001, null);
     }
 
+    /**
+     * A wrong, missing or invalid query/path parameter or multipart part (month=13, status=BAD, no year) is the
+     * client's mistake: 400, not 500.
+     */
+    @ExceptionHandler({
+            org.springframework.web.bind.MissingServletRequestParameterException.class,
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
+            org.springframework.web.method.annotation.HandlerMethodValidationException.class,
+            jakarta.validation.ConstraintViolationException.class,
+            org.springframework.web.multipart.support.MissingServletRequestPartException.class,
+            org.springframework.web.multipart.MultipartException.class})
+    public ResponseEntity<ApiMessageDto<Object>> handleBadParameter(Exception ex) {
+        return build(HttpStatus.BAD_REQUEST, ECommonError.COMMON_001, null);
+    }
+
+    /** No such endpoint: 404, not 500. */
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ResponseEntity<ApiMessageDto<Object>> handleNoEndpoint(Exception ex) {
+        return build(HttpStatus.NOT_FOUND, ECommonError.COMMON_005, null);
+    }
+
+    /** Wrong HTTP method or content type on an existing endpoint: 405 / 415 with the validation code. */
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiMessageDto<Object>> handleMethod(Exception ex) {
+        return build(HttpStatus.METHOD_NOT_ALLOWED, ECommonError.COMMON_001, null);
+    }
+
+    @ExceptionHandler(org.springframework.web.HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ApiMessageDto<Object>> handleMediaType(Exception ex) {
+        return build(HttpStatus.UNSUPPORTED_MEDIA_TYPE, ECommonError.COMMON_001, null);
+    }
+
     // @PreAuthorize failures are thrown inside the handler, so they arrive here, not at the AccessDeniedHandler.
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiMessageDto<Object>> handleDenied(AccessDeniedException ex) {
