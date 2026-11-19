@@ -49,7 +49,7 @@ public class BranchController {
     public ApiMessageDto<ResponseListDto<BranchDto>> list(
             @Parameter(description = COMPANY) @RequestParam(required = false) Long companyId,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) EBranchStatus status,
+            @RequestParam(required = false) EOrgStatus status,
             @ParameterObject @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         return ApiMessageDto.ok(ResponseListDto.of(service.search(companyId, keyword, status, pageable)));
     }

@@ -36,7 +36,8 @@ public enum EEmployeeError implements ErrorCode {
     EMP_026("The uploaded file is larger than {0}."),
     EMP_027("The manager does not exist in the company."),
     EMP_028("An employee cannot report to themselves or to someone who reports to them."),
-    EMP_029("The branch is inactive and cannot be assigned.");
+    EMP_029("The branch is inactive and cannot be assigned."),
+    EMP_030("The department is inactive and cannot be assigned.");
 
     private final String message;
 }

@@ -19,8 +19,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import vn.specom.hrm.common.ApiMessageDto;
-import vn.specom.hrm.employee.org.OrgDtos.DepartmentDto;
-import vn.specom.hrm.employee.org.OrgDtos.DepartmentForm;
 import vn.specom.hrm.employee.org.OrgDtos.DesignationDto;
 import vn.specom.hrm.employee.org.OrgDtos.DesignationForm;
 import vn.specom.hrm.employee.org.OrgDtos.DocumentTypeDto;
@@ -37,48 +35,6 @@ public class OrgController {
     private static final String COMPANY = "Super admin only: the company to act on. Ignored for company users.";
 
     private final OrgService orgs;
-
-    @Operation(summary = "Departments of the company, optionally of one branch")
-    @ApiResponses(@ApiResponse(responseCode = "400", description = "Super admin without companyId (EMP_019)"))
-    @PreAuthorize("@PermissionChecker.has('ORG_VIEW')")
-    @GetMapping("/departments")
-    public ApiMessageDto<List<DepartmentDto>> departments(
-            @Parameter(description = COMPANY) @RequestParam(required = false) Long companyId,
-            @RequestParam(required = false) Long branchId) {
-        return ApiMessageDto.ok(orgs.departments(companyId, branchId));
-    }
-
-    @Operation(summary = "Create a department in a branch")
-    @ApiResponses({
-            @ApiResponse(responseCode = "400", description = "Name taken in the branch (EMP_011)"),
-            @ApiResponse(responseCode = "404", description = "No such branch in your company (EMP_002)")})
-    @PreAuthorize("@PermissionChecker.has('ORG_MANAGE')")
-    @PostMapping("/departments")
-    public ApiMessageDto<DepartmentDto> createDepartment(@Valid @RequestBody DepartmentForm form) {
-        return ApiMessageDto.ok(orgs.createDepartment(form.branchId(), form.name()));
-    }
-
-    @Operation(summary = "Update a department (full replacement)",
-            description = "Moving it to another branch is refused while a designation or an employee uses it.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "400", description = "Name taken (EMP_011), still in use (EMP_010)"),
-            @ApiResponse(responseCode = "404", description = "No such department (EMP_003) or branch (EMP_002)")})
-    @PreAuthorize("@PermissionChecker.has('ORG_MANAGE')")
-    @PutMapping("/departments/{id}")
-    public ApiMessageDto<DepartmentDto> updateDepartment(@PathVariable Long id, @Valid @RequestBody DepartmentForm form) {
-        return ApiMessageDto.ok(orgs.updateDepartment(id, form.branchId(), form.name()));
-    }
-
-    @Operation(summary = "Delete a department", description = "Refused while a designation or an employee uses it.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "400", description = "Still in use (EMP_010)"),
-            @ApiResponse(responseCode = "404", description = "No such department in your company (EMP_003)")})
-    @PreAuthorize("@PermissionChecker.has('ORG_MANAGE')")
-    @DeleteMapping("/departments/{id}")
-    public ApiMessageDto<Void> deleteDepartment(@PathVariable Long id) {
-        orgs.deleteDepartment(id);
-        return ApiMessageDto.ok(null);
-    }
 
     @Operation(summary = "Designations of the company, optionally of one department")
     @ApiResponses(@ApiResponse(responseCode = "400", description = "Super admin without companyId (EMP_019)"))

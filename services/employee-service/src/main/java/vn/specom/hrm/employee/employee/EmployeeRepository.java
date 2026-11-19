@@ -22,6 +22,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long>, JpaSp
 
     boolean existsByDepartmentIdAndDeletedFalse(Long departmentId);
 
+    long countByDepartmentIdAndDeletedFalse(Long departmentId);
+
     boolean existsByDesignationIdAndDeletedFalse(Long designationId);
 
     /** Takes the next "EMP" number of the company; the row lock serialises concurrent creates. */

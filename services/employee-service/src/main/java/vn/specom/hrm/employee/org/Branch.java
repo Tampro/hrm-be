@@ -41,7 +41,7 @@ public class Branch extends BaseAuditableEntity {
 
     @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
     @Column(name = "status", nullable = false, length = 10)
-    private EBranchStatus status = EBranchStatus.ACTIVE;
+    private EOrgStatus status = EOrgStatus.ACTIVE;
 
     @Column(name = "deleted", nullable = false)
     private boolean deleted;

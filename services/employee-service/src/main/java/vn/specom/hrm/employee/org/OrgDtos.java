@@ -9,13 +9,6 @@ public final class OrgDtos {
     private OrgDtos() {
     }
 
-    public record DepartmentDto(String id, String companyId, String branchId, String name) {
-        static DepartmentDto of(Department d) {
-            return new DepartmentDto(d.getId().toString(), d.getCompanyId().toString(), d.getBranchId().toString(),
-                    d.getName());
-        }
-    }
-
     public record DesignationDto(String id, String companyId, String departmentId, String name) {
         static DesignationDto of(Designation d) {
             return new DesignationDto(d.getId().toString(), d.getCompanyId().toString(),
@@ -32,14 +25,6 @@ public final class OrgDtos {
 
     public record NameForm(
             @Schema(description = "Name, unique within its parent", example = "Head office",
-                    requiredMode = Schema.RequiredMode.REQUIRED)
-            @NotBlank @Size(max = 150) String name) {
-    }
-
-    public record DepartmentForm(
-            @Schema(description = "Branch id", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
-            @NotNull Long branchId,
-            @Schema(description = "Name, unique within the branch", example = "Information Technology",
                     requiredMode = Schema.RequiredMode.REQUIRED)
             @NotBlank @Size(max = 150) String name) {
     }

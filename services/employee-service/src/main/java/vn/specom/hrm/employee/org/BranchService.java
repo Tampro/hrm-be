@@ -28,7 +28,7 @@ public class BranchService {
     private final EmployeeRepository employees;
 
     @Transactional(readOnly = true)
-    public Page<BranchDto> search(Long requestedCompanyId, String keyword, EBranchStatus status, Pageable pageable) {
+    public Page<BranchDto> search(Long requestedCompanyId, String keyword, EOrgStatus status, Pageable pageable) {
         Long companyId = company(requestedCompanyId);
         String kw = keyword == null || keyword.isBlank() ? ""
                 : "%" + escape(keyword.trim().toLowerCase(Locale.ROOT)) + "%";
@@ -37,7 +37,7 @@ public class BranchService {
 
     @Transactional(readOnly = true)
     public List<BranchOption> options(Long requestedCompanyId) {
-        return branches.findByCompanyIdAndStatusAndDeletedFalseOrderByNameAsc(company(requestedCompanyId), EBranchStatus.ACTIVE)
+        return branches.findByCompanyIdAndStatusAndDeletedFalseOrderByNameAsc(company(requestedCompanyId), EOrgStatus.ACTIVE)
                 .stream().map(b -> new BranchOption(b.getId().toString(), b.getName())).toList();
     }
 
@@ -65,7 +65,7 @@ public class BranchService {
     }
 
     @Transactional
-    public BranchDto changeStatus(Long id, EBranchStatus status) {
+    public BranchDto changeStatus(Long id, EOrgStatus status) {
         Branch b = require(id);
         b.setStatus(status);
         return BranchDto.of(b);
