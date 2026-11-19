@@ -39,3 +39,5 @@ databaseChangeLog:
       file: db/changelog/changes/20261120170000_announcement_permission_init_data.mysql.sql
   - include:
       file: db/changelog/changes/20261120200000_attendance_permission_init_data.mysql.sql
+  - include:
+      file: db/changelog/changes/20261120250000_leave_permission_init_data.mysql.sql
