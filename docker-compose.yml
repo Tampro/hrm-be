@@ -1,4 +1,4 @@
-# Local stack: MySQL + Keycloak + IAM + media + employee + attendance + gateway. Secrets come from .env (copy .env.example; .env is gitignored).
+# Local stack: MySQL + Keycloak + IAM + media + employee + attendance + recruitment + gateway. Secrets come from .env (copy .env.example; .env is gitignored).
 # Build the jars first: mvn -DskipTests package
 name: hrm
 
@@ -17,6 +17,8 @@ services:
       EMPLOYEE_DB_PASSWORD: ${EMPLOYEE_DB_PASSWORD:?set in .env}
       ATTENDANCE_DB_USERNAME: ${ATTENDANCE_DB_USERNAME:-hrm_attendance}
       ATTENDANCE_DB_PASSWORD: ${ATTENDANCE_DB_PASSWORD:?set in .env}
+      RECRUITMENT_DB_USERNAME: ${RECRUITMENT_DB_USERNAME:-hrm_recruitment}
+      RECRUITMENT_DB_PASSWORD: ${RECRUITMENT_DB_PASSWORD:?set in .env}
     ports:
       - "3316:3306"
     volumes:
@@ -152,6 +154,23 @@ services:
       keycloak:
         condition: service_healthy
 
+  recruitment-service:
+    build: ./services/recruitment-service
+    environment:
+      RECRUITMENT_DB_URL: jdbc:mysql://mysql:3306/hrm_recruitment?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      RECRUITMENT_DB_USERNAME: ${RECRUITMENT_DB_USERNAME:-hrm_recruitment}
+      RECRUITMENT_DB_PASSWORD: ${RECRUITMENT_DB_PASSWORD}
+      KEYCLOAK_INTERNAL_URL: http://keycloak:8080
+      KEYCLOAK_ISSUER: http://localhost:8180/realms/hrm
+      IAM_SERVICE_URL: http://iam-service:8081
+    ports:
+      - "8085:8085"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+
   gateway-server:
     build: ./services/gateway-server
     environment:
@@ -161,6 +180,7 @@ services:
       MEDIA_SERVICE_URL: http://media-service:8082
       EMPLOYEE_SERVICE_URL: http://employee-service:8083
       ATTENDANCE_SERVICE_URL: http://attendance-service:8084
+      RECRUITMENT_SERVICE_URL: http://recruitment-service:8085
     ports:
       - "8080:8080"
     depends_on:
