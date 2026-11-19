@@ -150,7 +150,7 @@ public class CandidateController {
         return ApiMessageDto.ok(service.changeStatus(id, form.status()));
     }
 
-    @Operation(summary = "Delete a candidate", description = "Their interviews are deleted too.")
+    @Operation(summary = "Delete a candidate", description = "Their interviews and offers are deleted too.")
     @ApiResponses(@ApiResponse(responseCode = "404", description = "No such candidate in your company (REC_015)"))
     @PreAuthorize("@PermissionChecker.has('RECRUITMENT_MANAGE')")
     @DeleteMapping("/{id}")

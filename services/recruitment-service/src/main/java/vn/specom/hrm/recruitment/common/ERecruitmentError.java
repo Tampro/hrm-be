@@ -38,7 +38,13 @@ public enum ERecruitmentError implements ErrorCode {
     REC_028("Feedback can only be given for a completed interview."),
     REC_029("The employee is not an interviewer of this interview."),
     REC_030("This interviewer has already given feedback."),
-    REC_031("The feedback does not exist.");
+    REC_031("The feedback does not exist."),
+    REC_032("The offer template does not exist."),
+    REC_033("Invalid variable name: {0}. Use lowercase letters, digits and underscores."),
+    REC_034("Fill in the variable: {0}"),
+    REC_035("The offer does not exist."),
+    REC_036("A hired or rejected candidate cannot receive a new offer."),
+    REC_037("The expiration date cannot be after the start date.");
 
     private final String message;
 }
