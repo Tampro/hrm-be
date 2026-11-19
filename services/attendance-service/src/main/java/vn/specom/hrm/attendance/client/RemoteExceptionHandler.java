@@ -25,19 +25,6 @@ public class RemoteExceptionHandler {
         return common.handleApi(ApiException.badRequest(EAttendanceError.ATT_016, "5 MB"));
     }
 
-    /**
-     * Invalid or missing query parameters (year=13, month=abc, no year) are the client's mistake: 400 COMMON_001.
-     * TODO: the common RestExceptionHandler answers these with 500 in every service — fix it there (hrm-common).
-     */
-    @ExceptionHandler({jakarta.validation.ConstraintViolationException.class,
-            org.springframework.web.method.annotation.HandlerMethodValidationException.class,
-            org.springframework.web.bind.MissingServletRequestParameterException.class,
-            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
-            org.springframework.web.multipart.support.MissingServletRequestPartException.class})
-    public ResponseEntity<ApiMessageDto<Object>> badParameter() {
-        return common.handleApi(ApiException.badRequest(vn.specom.hrm.exception.ECommonError.COMMON_001));
-    }
-
     @ExceptionHandler(RemoteApiException.class)
     public ResponseEntity<ApiMessageDto<Object>> handle(RemoteApiException ex) {
         return ResponseEntity.status(ex.getStatus()).body(ApiMessageDto.builder()
