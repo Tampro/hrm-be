@@ -10,6 +10,8 @@ import java.util.Optional;
 public interface EmployeeRepository extends JpaRepository<Employee, Long>, JpaSpecificationExecutor<Employee> {
     Optional<Employee> findByIdAndDeletedFalse(Long id);
 
+    Optional<Employee> findFirstByCompanyIdAndUserIdAndDeletedFalse(Long companyId, Long userId);
+
     boolean existsByCompanyIdAndEmailAndDeletedFalseAndIdNot(Long companyId, String email, Long id);
 
     boolean existsByCompanyIdAndEmployeeCodeAndDeletedFalseAndIdNot(Long companyId, String code, Long id);
