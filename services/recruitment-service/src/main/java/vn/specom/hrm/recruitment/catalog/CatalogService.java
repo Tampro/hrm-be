@@ -19,13 +19,15 @@ import java.util.List;
 /**
  * Job Categories, Job Types, Candidate Sources and Interview Types pages (docs/analysis/06 §7.1.10, 7.1.11, 7.1.13,
  * 7.1.14). Names are unique per company and kind.
- * TODO(assumption): delete is not yet blocked by usage — postings and candidates come in the next PRs, which add the
- * check (as the other catalogues of the system do).
+ * A job type used by a job posting cannot be deleted (REC_013).
+ * TODO(assumption): job categories, candidate sources and interview types get the same check when candidates and
+ * interviews use them (next PRs).
  */
 @Service
 @RequiredArgsConstructor
 public class CatalogService {
     private final CatalogItemRepository items;
+    private final vn.specom.hrm.recruitment.posting.JobPostingRepository postings;
 
     @Transactional(readOnly = true)
     public Page<CatalogDto> search(ECatalogKind kind, Long requestedCompanyId, String keyword, EStatus status,
@@ -70,7 +72,11 @@ public class CatalogService {
 
     @Transactional
     public void delete(ECatalogKind kind, Long id) {
-        require(kind, id).setDeleted(true);
+        CatalogItem c = require(kind, id);
+        if (kind == ECatalogKind.JOB_TYPE && postings.existsByJobTypeIdAndDeletedFalse(id)) {
+            throw ApiException.badRequest(ERecruitmentError.REC_013);
+        }
+        c.setDeleted(true);
     }
 
     private void apply(CatalogItem c, CatalogForm f, Long selfId) {

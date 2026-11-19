@@ -26,6 +26,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class JobLocationService {
     private final JobLocationRepository locations;
+    private final vn.specom.hrm.recruitment.posting.JobPostingRepository postings;
 
     public record LocationDto(String id, String name, boolean remote, String address, String city, String state,
                               String country, String postalCode, EStatus status, Instant createdDate,
@@ -107,9 +108,14 @@ public class JobLocationService {
         return LocationDto.of(l);
     }
 
+    /** Refused while a job posting uses it (REC_013). */
     @Transactional
     public void delete(Long id) {
-        require(id).setDeleted(true);
+        JobLocation l = require(id);
+        if (postings.existsByLocationIdAndDeletedFalse(id)) {
+            throw ApiException.badRequest(ERecruitmentError.REC_013);
+        }
+        l.setDeleted(true);
     }
 
     private void apply(JobLocation l, LocationForm f, Long selfId) {
