@@ -47,7 +47,7 @@ spring:
             - id: recruitment-service
               uri: ${RECRUITMENT_SERVICE_URL:http://localhost:8085}
               predicates:
-                - Path=/api/v1/recruitment/**
+                - Path=/api/v1/recruitment/**,/api/v1/public/career/**
 
 management:
   endpoints:
@@ -61,3 +61,9 @@ hrm:
     device-rate-limit:
       per-minute: ${GATEWAY_DEVICE_RATE_PER_MINUTE:60}
       burst: ${GATEWAY_DEVICE_RATE_BURST:20}
+    # Public career page (no token): reads and applications limited per client IP, applications much tighter.
+    career-rate-limit:
+      read-per-minute: ${GATEWAY_CAREER_READ_PER_MINUTE:120}
+      read-burst: ${GATEWAY_CAREER_READ_BURST:40}
+      apply-per-minute: ${GATEWAY_CAREER_APPLY_PER_MINUTE:10}
+      apply-burst: ${GATEWAY_CAREER_APPLY_BURST:5}

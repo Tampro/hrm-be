@@ -116,6 +116,15 @@ public class JobPostingService {
         p.setStatus(published ? JobPosting.EStatus.PUBLISHED : JobPosting.EStatus.DRAFT);
         if (published) {
             p.setPublishDate(clock.instant());
+            // refresh the copies shown on the career page; a renamed branch shows its new name from here
+            String branch = org.branchName(p.getBranchId());
+            if (branch != null) {
+                p.setBranchName(branch);
+            }
+            String department = org.departmentName(p.getDepartmentId());
+            if (department != null) {
+                p.setDepartmentName(department);
+            }
         }
         return detail(p);
     }
@@ -145,13 +154,17 @@ public class JobPostingService {
         if (appType == JobPosting.EApplicationType.CUSTOM && Texts.blankToNull(f.applicationUrl()) == null) {
             throw ApiException.badRequest(ERecruitmentError.REC_009);
         }
+        String branchName = null;
+        String departmentName = null;
         if (f.departmentId() != null) {
             OrgClient.Department d = org.department(f.departmentId());
             if (f.branchId() == null || d.branch() == null || !String.valueOf(f.branchId()).equals(d.branch().id())) {
                 throw ApiException.badRequest(ERecruitmentError.REC_010);
             }
+            branchName = d.branch().name();
+            departmentName = d.name();
         } else if (f.branchId() != null) {
-            org.branch(f.branchId());
+            branchName = org.branch(f.branchId()).name();
         }
         List<Long> questionIds = f.customQuestionIds() == null ? List.of() : List.copyOf(new LinkedHashSet<>(f.customQuestionIds()));
         questionIds.forEach(questionService::require);
@@ -160,6 +173,8 @@ public class JobPostingService {
         p.setLocationId(loc.getId());
         p.setBranchId(f.branchId());
         p.setDepartmentId(f.departmentId());
+        p.setBranchName(branchName);
+        p.setDepartmentName(departmentName);
         p.setPriority(f.priority() == null ? JobPosting.EPriority.MEDIUM : f.priority());
         p.setSkills(new ArrayList<>(f.skills() == null ? List.of()
                 : f.skills().stream().map(String::trim).distinct().toList()));

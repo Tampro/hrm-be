@@ -129,6 +129,16 @@ public class CandidateService {
         return new Resume(files.path(c.getResumeKey()), c.getResumeName(), c.getResumeMime());
     }
 
+    /** The cover letter file sent with the application, for the download. */
+    @Transactional(readOnly = true)
+    public Resume coverLetter(Long id) {
+        Candidate c = require(id);
+        if (c.getCoverLetterKey() == null) {
+            throw ApiException.notFound(ERecruitmentError.REC_053);
+        }
+        return new Resume(files.path(c.getCoverLetterKey()), c.getCoverLetterName(), c.getCoverLetterMime());
+    }
+
     public record Resume(Path path, String name, String mimeType) {
     }
 
@@ -140,7 +150,7 @@ public class CandidateService {
         if (form.sourceId() != null) {
             catalog.require(ECatalogKind.CANDIDATE_SOURCE, form.sourceId());
         }
-        return detail(register(p, form, null));
+        return detail(register(p, form, null, null));
     }
 
     /**
@@ -148,7 +158,7 @@ public class CandidateService {
      * one per email and posting, the posting's required questions answered.
      */
     @Transactional
-    public Candidate register(JobPosting p, CandidateForm f, MultipartFile resume) {
+    public Candidate register(JobPosting p, CandidateForm f, MultipartFile resume, MultipartFile coverLetter) {
         String email = f.email().trim().toLowerCase(Locale.ROOT);
         if (candidates.alreadyApplied(p.getId(), email)) {
             throw ApiException.badRequest(ERecruitmentError.REC_016);
@@ -180,6 +190,13 @@ public class CandidateService {
         c.setAnswers(answers(p, f.answers()));
         if (resume != null && !resume.isEmpty()) {
             attach(c, files.store(resume));
+        }
+        if (coverLetter != null && !coverLetter.isEmpty()) {
+            StoredFile cl = files.store(coverLetter);
+            c.setCoverLetterKey(cl.key());
+            c.setCoverLetterName(cl.name());
+            c.setCoverLetterMime(cl.mimeType());
+            c.setCoverLetterSize(cl.size());
         }
         return candidates.save(c);
     }
@@ -286,6 +303,9 @@ public class CandidateService {
                 c.getExperienceYears(), c.getCurrentSalary(), c.getExpectedSalary(), c.getNoticePeriod(),
                 c.getGender(), c.getDateOfBirth(), c.getCoverLetterMessage(), c.getResumeName(), c.getResumeSize(),
                 c.getResumeKey() == null ? null : "/api/v1/recruitment/candidates/" + c.getId() + "/resume",
+                c.getCoverLetterName(),
+                c.getCoverLetterKey() == null ? null
+                        : "/api/v1/recruitment/candidates/" + c.getId() + "/cover-letter",
                 c.getAnswers().stream().map(a -> new AnswerDto(a.getCustomQuestionId().toString(), a.getQuestion(),
                         a.getAnswer())).toList(), c.isTermsAccepted(), c.getStatus(),
                 c.getEmployeeId() == null ? null : c.getEmployeeId().toString(), c.getApplicationDate(),

@@ -109,13 +109,25 @@ public class CandidateController {
     @PreAuthorize("@PermissionChecker.has('RECRUITMENT_VIEW')")
     @GetMapping("/{id}/resume")
     public ResponseEntity<FileSystemResource> resume(@PathVariable Long id) {
-        CandidateService.Resume r = service.resume(id);
+        return download(service.resume(id));
+    }
+
+    private static ResponseEntity<FileSystemResource> download(CandidateService.Resume r) {
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(r.mimeType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         ContentDisposition.attachment().filename(r.name(), StandardCharsets.UTF_8).build().toString())
                 .header("X-Content-Type-Options", "nosniff")
                 .body(new FileSystemResource(r.path()));
+    }
+
+    @Operation(summary = "Download the cover letter file sent from the career page")
+    @ApiResponses(@ApiResponse(responseCode = "404", description = "No such candidate (REC_015) or no cover letter "
+            + "(REC_053)"))
+    @PreAuthorize("@PermissionChecker.has('RECRUITMENT_VIEW')")
+    @GetMapping("/{id}/cover-letter")
+    public ResponseEntity<FileSystemResource> coverLetter(@PathVariable Long id) {
+        return download(service.coverLetter(id));
     }
 
     @Operation(summary = "Add a candidate by hand (status NEW)",

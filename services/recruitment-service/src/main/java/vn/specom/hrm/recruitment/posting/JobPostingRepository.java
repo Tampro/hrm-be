@@ -18,6 +18,39 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Long> {
 
     List<JobPosting> findByCompanyIdAndDeletedFalseOrderByTitleAsc(Long companyId);
 
+    /** Published and not past its deadline: what the public career page shows. */
+    String OPEN = "from JobPosting p where p.companyId = :companyId and p.deleted = false and p.published = true "
+            + "and p.status = vn.specom.hrm.recruitment.posting.JobPosting.EStatus.PUBLISHED "
+            + "and (p.applicationDeadline is null or p.applicationDeadline >= :today) ";
+
+    /**
+     * Career page search. kw matches the title or a skill; anyType = false filters on jobTypeIds; the salary band
+     * overlaps [minSalary, maxSalary]; positions within [minPositions, maxPositions].
+     */
+    @Query("select p " + OPEN
+            + "and (:kw = '' or lower(p.title) like :kw escape '!' or exists (select s from JobPosting p2 "
+            + "join p2.skills s where p2 = p and lower(s) like :kw escape '!')) "
+            + "and (:locationId is null or p.locationId = :locationId) "
+            + "and (:anyType = true or p.jobTypeId in :jobTypeIds) "
+            + "and (:minSalary is null or p.maxSalary is null or p.maxSalary >= :minSalary) "
+            + "and (:maxSalary is null or p.minSalary is null or p.minSalary <= :maxSalary) "
+            + "and (:minPositions is null or p.positions >= :minPositions) "
+            + "and (:maxPositions is null or p.positions <= :maxPositions)")
+    Page<JobPosting> openJobs(Long companyId, java.time.LocalDate today, String kw, Long locationId, boolean anyType,
+                              java.util.Collection<Long> jobTypeIds, java.math.BigDecimal minSalary,
+                              java.math.BigDecimal maxSalary, Integer minPositions, Integer maxPositions,
+                              Pageable pageable);
+
+    @Query("select count(p) " + OPEN)
+    long countOpen(Long companyId, java.time.LocalDate today);
+
+    /** Similar Jobs: other open postings of the same job type or department. */
+    @Query("select p " + OPEN + "and p.id <> :id and (p.jobTypeId = :jobTypeId "
+            + "or (:departmentId is not null and p.departmentId = :departmentId)) order by p.featured desc, "
+            + "p.publishDate desc")
+    List<JobPosting> similarOpen(Long companyId, java.time.LocalDate today, Long id, Long jobTypeId, Long departmentId,
+                                 Pageable pageable);
+
     Optional<JobPosting> findByIdAndDeletedFalse(Long id);
 
     boolean existsByJobTypeIdAndDeletedFalse(Long jobTypeId);

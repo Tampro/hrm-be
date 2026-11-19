@@ -59,6 +59,13 @@ public class JobPosting extends BaseAuditableEntity {
     @Column(name = "department_id")
     private Long departmentId;
 
+    /** Copied from employee-service when an admin saves or publishes (the public career page has no token). */
+    @Column(name = "branch_name", length = 150)
+    private String branchName;
+
+    @Column(name = "department_name", length = 150)
+    private String departmentName;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "priority", nullable = false, length = 10)
     private EPriority priority = EPriority.MEDIUM;

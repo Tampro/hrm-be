@@ -39,14 +39,15 @@ public final class CandidateDtos {
     public record AnswerDto(String questionId, String question, String answer) {
     }
 
-    /** resumeUrl = the admin download endpoint (needs a token), null without a resume. */
+    /** resumeUrl / coverLetterUrl = the admin download endpoints (need a token), null without a file. */
     public record CandidateDetail(String id, String firstName, String lastName, String email, String phone,
                                   String address, String city, String state, String country, String zipCode,
                                   JobRef job, Ref branch, Ref location, Ref jobType, Ref department, Ref source,
                                   String currentCompany, String currentPosition, int experienceYears,
                                   BigDecimal currentSalary, BigDecimal expectedSalary, String noticePeriod,
                                   EGender gender, LocalDate dateOfBirth, String coverLetterMessage,
-                                  String resumeName, Long resumeSize, String resumeUrl, List<AnswerDto> answers,
+                                  String resumeName, Long resumeSize, String resumeUrl, String coverLetterName,
+                                  String coverLetterUrl, List<AnswerDto> answers,
                                   boolean termsAccepted, EStatus status, String employeeId, LocalDate applicationDate,
                                   Instant createdDate, Instant updatedDate) {
     }
