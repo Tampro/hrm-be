@@ -7,7 +7,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.context.SecurityContextHolder;
 import vn.specom.hrm.employee.TestLogin;
 import vn.specom.hrm.employee.common.EEmployeeError;
-import vn.specom.hrm.employee.document.EmployeeDocumentRepository;
 import vn.specom.hrm.employee.employee.EmployeeRepository;
 import vn.specom.hrm.employee.org.BranchDtos.BranchForm;
 import vn.specom.hrm.exception.ApiException;
@@ -29,7 +28,7 @@ class BranchServiceTest {
     private final EmployeeRepository employees = mock(EmployeeRepository.class);
     private final BranchService service = new BranchService(branches, departments, employees);
     private final OrgService orgs = new OrgService(branches, departments, mock(DesignationRepository.class),
-            mock(DocumentTypeRepository.class), employees, mock(EmployeeDocumentRepository.class));
+            mock(DocumentTypeRepository.class));
 
     @AfterEach
     void tearDown() {

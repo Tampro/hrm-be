@@ -63,7 +63,8 @@ public class EmployeeService {
     @Transactional(readOnly = true)
     public Page<EmployeeListItem> search(Long requestedCompanyId, Filter filter, Pageable pageable) {
         Long companyId = company(requestedCompanyId);
-        Page<Employee> page = employees.findAll(EmployeeSpecs.of(companyId, filter, true), pageable);
+        Page<Employee> page = employees.findAll(EmployeeSpecs.of(companyId, filter, true, required(companyId, filter)),
+                pageable);
         Names names = namesOf(companyId, page.getContent());
         return page.map(e -> toListItem(e, names, true));
     }
@@ -71,7 +72,7 @@ public class EmployeeService {
     /** Rows of the export: same filters, no paging, no photo links. */
     @Transactional(readOnly = true)
     public List<EmployeeListItem> searchAll(Long companyId, Filter filter) {
-        List<Employee> rows = employees.findAll(EmployeeSpecs.of(companyId, filter, true),
+        List<Employee> rows = employees.findAll(EmployeeSpecs.of(companyId, filter, true, required(companyId, filter)),
                 org.springframework.data.domain.Sort.by("employeeNo"));
         Names names = namesOf(companyId, rows);
         return rows.stream().map(e -> toListItem(e, names, false)).toList();
@@ -85,7 +86,7 @@ public class EmployeeService {
         CriteriaQuery<Object[]> q = cb.createQuery(Object[].class);
         Root<Employee> root = q.from(Employee.class);
         q.multiselect(root.get("status"), cb.count(root))
-                .where(EmployeeSpecs.of(companyId, filter, false).toPredicate(root, q, cb))
+                .where(EmployeeSpecs.of(companyId, filter, false, required(companyId, filter)).toPredicate(root, q, cb))
                 .groupBy(root.get("status"));
         Map<EEmployeeStatus, Long> by = new EnumMap<>(EEmployeeStatus.class);
         for (Object[] row : em.createQuery(q).getResultList()) {
@@ -360,6 +361,11 @@ public class EmployeeService {
                 e.getDateOfJoining(), e.getUserId() != null && e.isLoginEnabled());
     }
 
+    /** Required document types, read only when the missing-documents filter is on. */
+    private Set<Long> required(Long companyId, Filter f) {
+        return Boolean.TRUE.equals(f.missingRequiredDocuments()) ? documents.requiredTypeIds(companyId) : Set.of();
+    }
+
     private EmployeeDetail toDetail(Employee e) {
         Names n = namesOf(e.getCompanyId(), List.of(e));
         MediaFile photo = media.find(e.getProfileMediaId());
@@ -377,6 +383,7 @@ public class EmployeeService {
                 e.getEmergencyName(), e.getEmergencyRelationship(), e.getEmergencyPhone(), banking,
                 str(e.getUserId()), e.getUserId() != null && e.isLoginEnabled(),
                 e.getId() == null ? List.of() : documents.list(e.getCompanyId(), e.getId()),
+                e.getId() == null ? List.of() : documents.missingRequired(e.getCompanyId(), e.getId()),
                 e.getCreatedDate(), e.getUpdatedDate());
     }
 

@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.core.context.SecurityContextHolder;
 import vn.specom.hrm.employee.TestLogin;
 import vn.specom.hrm.employee.common.EEmployeeError;
-import vn.specom.hrm.employee.document.EmployeeDocumentRepository;
 import vn.specom.hrm.employee.employee.EmployeeRepository;
 import vn.specom.hrm.employee.org.DepartmentDtos.DepartmentForm;
 import vn.specom.hrm.exception.ApiException;
@@ -26,7 +25,7 @@ class DepartmentServiceTest {
     private final EmployeeRepository employees = mock(EmployeeRepository.class);
     private final DepartmentService service = new DepartmentService(departments, branches, designations, employees);
     private final OrgService orgs = new OrgService(branches, departments, designations,
-            mock(DocumentTypeRepository.class), employees, mock(EmployeeDocumentRepository.class));
+            mock(DocumentTypeRepository.class));
 
     @AfterEach
     void tearDown() {
