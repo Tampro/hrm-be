@@ -49,6 +49,12 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <!-- Sanitizes the rich-text job description, requirements and benefits (shown on the public career page). -->
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>${jsoup.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>

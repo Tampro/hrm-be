@@ -12,7 +12,16 @@ public enum ERecruitmentError implements ErrorCode {
     REC_002("The job location does not exist."),
     REC_003("The custom question does not exist."),
     REC_004("This name already exists."),
-    REC_005("Choose the company to act on.");
+    REC_005("Choose the company to act on."),
+    REC_006("The job posting does not exist."),
+    REC_007("The interview round does not exist."),
+    REC_008("The minimum {0} cannot be more than the maximum."),
+    REC_009("Give the application URL when applications are received elsewhere."),
+    REC_010("The department does not belong to this branch."),
+    REC_011("This sequence number is already used by another round of the job."),
+    REC_012("The employee service is unavailable. Please try again."),
+    REC_013("It is still in use and cannot be deleted."),
+    REC_014("The {0} is inactive and cannot be chosen.");
 
     private final String message;
 }
