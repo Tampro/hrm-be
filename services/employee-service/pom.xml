@@ -50,6 +50,12 @@
         </dependency>
         <!-- Letters (joining, experience, NOC). fonts-extra ships Liberation, which has the Vietnamese glyphs. -->
         <dependency>
+            <!-- Sanitizes the rich-text content of announcements (stored HTML is shown to every employee). -->
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>${jsoup.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.github.librepdf</groupId>
             <artifactId>openpdf</artifactId>
             <version>${openpdf.version}</version>
