@@ -34,7 +34,8 @@ class AssetServiceTest {
     private final AssetRepository assets = mock(AssetRepository.class);
     private final AssetTypeRepository types = mock(AssetTypeRepository.class);
     private final MediaClient media = mock(MediaClient.class);
-    private final AssetService service = new AssetService(assets, types, media);
+    private final AssetService service = new AssetService(assets, types, media,
+            mock(vn.specom.hrm.asset.assignment.CurrentAssignments.class));
     private final AssetTypeService typeService = new AssetTypeService(types, assets);
     private final AssetType laptop = new AssetType();
 
