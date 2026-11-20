@@ -8,7 +8,14 @@ import java.util.Locale;
 public final class Texts {
     public static final String COMPANY = "Super admin only: the company to act on. Ignored for company users.";
 
+    /** TODO(assumption): "today" is the Vietnam date until companies carry a time zone. */
+    public static final java.time.ZoneId ZONE = java.time.ZoneId.of("Asia/Ho_Chi_Minh");
+
     private Texts() {
+    }
+
+    public static java.time.LocalDate today(java.time.Clock clock) {
+        return java.time.LocalDate.now(clock.withZone(ZONE));
     }
 
     public static Long company(Long requested) {

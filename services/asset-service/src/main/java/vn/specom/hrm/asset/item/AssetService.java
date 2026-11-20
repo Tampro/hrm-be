@@ -13,6 +13,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import vn.specom.hrm.asset.assignment.AssetAssignmentService.AssignmentDto;
+import vn.specom.hrm.asset.assignment.CurrentAssignments;
 import vn.specom.hrm.asset.client.MediaClient;
 import vn.specom.hrm.asset.client.MediaClient.MediaFile;
 import vn.specom.hrm.asset.common.EAssetError;
@@ -49,6 +51,7 @@ public class AssetService {
     private final AssetRepository assets;
     private final AssetTypeRepository types;
     private final MediaClient media;
+    private final CurrentAssignments current;
 
     public record AssetForm(
             @Schema(example = "Dell Latitude 5440", requiredMode = Schema.RequiredMode.REQUIRED) @NotBlank
@@ -81,13 +84,17 @@ public class AssetService {
     public record FileRef(String id, String name, String mimeType, String viewUrl, String downloadUrl) {
     }
 
-    /** image and documents only on the details (links from media-service). */
+    /**
+     * image and documents only on the details (links from media-service); currentAssignment = the Assigned To column
+     * and the Currently Assigned panel (null when not assigned).
+     */
     public record AssetDto(String id, String name, TypeRef assetType, String assetCode, String serialNumber,
                            LocalDate purchaseDate, BigDecimal purchaseCost, EStatus status, ECondition condition,
                            String description, String location, String supplier, String warrantyInfo,
                            LocalDate warrantyExpiryDate, EDepreciationMethod depreciationMethod, int usefulLifeYears,
                            int usefulLifeMonths, BigDecimal salvageValue, String imageFileId, FileRef image,
-                           List<String> documentFileIds, List<FileRef> documents, Instant createdDate) {
+                           List<String> documentFileIds, List<FileRef> documents, AssignmentDto currentAssignment,
+                           Instant createdDate) {
     }
 
     public record StatusCounts(long all, Map<EStatus, Long> byStatus) {
@@ -103,7 +110,9 @@ public class AssetService {
         Page<Asset> page = assets.search(companyId, f.assetTypeId(), f.condition(), f.purchaseFrom(), f.purchaseTo(),
                 status, Texts.kw(f.keyword()), pageable);
         Map<Long, AssetType> byType = typesOf(page.map(Asset::getAssetTypeId).toSet());
-        return page.map(a -> dto(a, byType.get(a.getAssetTypeId()), false));
+        Map<Long, AssignmentDto> holders = current.of(page.stream().filter(a -> a.getStatus() == EStatus.ASSIGNED)
+                .map(Asset::getId).toList(), companyId);
+        return page.map(a -> dto(a, byType.get(a.getAssetTypeId()), false, holders.get(a.getId())));
     }
 
     @Transactional(readOnly = true)
@@ -121,8 +130,7 @@ public class AssetService {
 
     @Transactional(readOnly = true)
     public AssetDto get(Long id) {
-        Asset a = require(id);
-        return dto(a, types.findById(a.getAssetTypeId()).orElse(null), true);
+        return detail(require(id));
     }
 
     @Transactional
@@ -216,7 +224,9 @@ public class AssetService {
     }
 
     private AssetDto detail(Asset a) {
-        return dto(a, types.findById(a.getAssetTypeId()).orElse(null), true);
+        AssignmentDto holder = a.getStatus() != EStatus.ASSIGNED ? null
+                : current.of(List.of(a.getId()), a.getCompanyId()).get(a.getId());
+        return dto(a, types.findById(a.getAssetTypeId()).orElse(null), true, holder);
     }
 
     private Map<Long, AssetType> typesOf(Set<Long> ids) {
@@ -224,7 +234,7 @@ public class AssetService {
                 .collect(Collectors.toMap(AssetType::getId, Function.identity()));
     }
 
-    private AssetDto dto(Asset a, AssetType t, boolean withFiles) {
+    private AssetDto dto(Asset a, AssetType t, boolean withFiles, AssignmentDto holder) {
         FileRef image = withFiles ? file(a.getImageFileId()) : null;
         List<FileRef> docs = withFiles ? a.getDocumentFileIds().stream().map(this::file).filter(Objects::nonNull)
                 .toList() : null;
@@ -234,7 +244,7 @@ public class AssetService {
                 a.getDescription(), a.getLocation(), a.getSupplier(), a.getWarrantyInfo(), a.getWarrantyExpiryDate(),
                 a.getDepreciationMethod(), a.getUsefulLifeYears(), a.getUsefulLifeYears() * 12, a.getSalvageValue(),
                 a.getImageFileId() == null ? null : a.getImageFileId().toString(), image,
-                a.getDocumentFileIds().stream().map(String::valueOf).toList(), docs, a.getCreatedDate());
+                a.getDocumentFileIds().stream().map(String::valueOf).toList(), docs, holder, a.getCreatedDate());
     }
 
     /** A file the caller cannot see (or a deleted one) is simply not linked. */
