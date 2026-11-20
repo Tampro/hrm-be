@@ -5,3 +5,5 @@ databaseChangeLog:
       file: db/changelog/changes/20261120520000_meeting_type_room_changelog.mysql.sql
   - include:
       file: db/changelog/changes/20261120530000_meeting_changelog.mysql.sql
+  - include:
+      file: db/changelog/changes/20261120540000_action_item_changelog.mysql.sql
