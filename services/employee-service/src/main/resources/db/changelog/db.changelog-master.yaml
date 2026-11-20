@@ -37,3 +37,5 @@ databaseChangeLog:
       file: db/changelog/changes/20261120370000_lifecycle_trip_changelog.mysql.sql
   - include:
       file: db/changelog/changes/20261120380000_lifecycle_complaint_changelog.mysql.sql
+  - include:
+      file: db/changelog/changes/20261120390000_performance_setup_changelog.mysql.sql
