@@ -31,6 +31,11 @@ public interface EmployeeTrainingRepository extends JpaRepository<EmployeeTraini
 
     boolean existsByProgramIdAndEmployeeIdAndDeletedFalseAndIdNot(Long programId, Long employeeId, Long id);
 
+    /** The program's trainees for session attendance: every assignment except failed ones. */
+    @Query("select t from EmployeeTraining t where t.programId = :programId and t.deleted = false "
+            + "and t.status <> vn.specom.hrm.employee.training.EmployeeTraining.EStatus.FAILED")
+    List<EmployeeTraining> trainees(Long programId);
+
     List<EmployeeTraining> findByProgramIdAndEmployeeIdInAndDeletedFalse(Long programId, Collection<Long> employeeIds);
 
     /** Seats taken: every assignment except failed ones. */
