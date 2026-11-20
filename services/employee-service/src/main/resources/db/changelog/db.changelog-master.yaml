@@ -43,3 +43,5 @@ databaseChangeLog:
       file: db/changelog/changes/20261120400000_performance_goal_changelog.mysql.sql
   - include:
       file: db/changelog/changes/20261120410000_performance_review_changelog.mysql.sql
+  - include:
+      file: db/changelog/changes/20261120420000_training_program_changelog.mysql.sql

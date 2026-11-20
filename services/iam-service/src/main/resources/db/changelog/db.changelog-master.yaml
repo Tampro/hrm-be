@@ -47,3 +47,5 @@ databaseChangeLog:
       file: db/changelog/changes/20261120340000_lifecycle_permission_init_data.mysql.sql
   - include:
       file: db/changelog/changes/20261120390000_performance_permission_init_data.mysql.sql
+  - include:
+      file: db/changelog/changes/20261120420000_training_permission_init_data.mysql.sql
