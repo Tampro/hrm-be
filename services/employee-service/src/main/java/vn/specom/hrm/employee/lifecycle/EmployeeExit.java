@@ -40,7 +40,7 @@ public class EmployeeExit {
     }
 
     /** No new resignation / termination for an employee who has already left (EMP_058). */
-    static void assertEmployed(Employee e) {
+    public static void assertEmployed(Employee e) {
         if (e.getStatus() == EEmployeeStatus.TERMINATED) {
             throw ApiException.badRequest(EEmployeeError.EMP_058);
         }
