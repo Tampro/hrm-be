@@ -41,5 +41,12 @@ public interface LeaveApplicationRepository extends JpaRepository<LeaveApplicati
             + "and a.startDate >= :yearStart and a.startDate <= :yearEnd group by a.employeeId, a.leaveTypeId")
     List<Object[]> approvedDays(Long companyId, LocalDate yearStart, LocalDate yearEnd);
 
+    /** Approved applications of the employees overlapping [from, to] (payroll summary). */
+    @Query("select a from LeaveApplication a where a.companyId = :companyId and a.employeeId in :employeeIds "
+            + "and a.status = vn.specom.hrm.attendance.regularization.ERegularizationStatus.APPROVED "
+            + "and a.startDate <= :to and a.endDate >= :from")
+    List<LeaveApplication> approvedOverlapping(Long companyId, java.util.Collection<Long> employeeIds, LocalDate from,
+                                               LocalDate to);
+
     boolean existsByLeaveTypeId(Long leaveTypeId);
 }
