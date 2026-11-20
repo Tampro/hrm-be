@@ -37,7 +37,8 @@ class TripTest {
     private final LifecycleCatalogRepository items = mock(LifecycleCatalogRepository.class);
     private final LifecycleSupport support = new LifecycleSupport(employees, mock(MediaClient.class));
     private final LifecycleCatalogService catalogs = new LifecycleCatalogService(items,
-            mock(EmployeeWarningRepository.class), mock(EmployeeTerminationRepository.class), expenseRepo);
+            mock(EmployeeWarningRepository.class), mock(EmployeeTerminationRepository.class), expenseRepo,
+            mock(EmployeeComplaintRepository.class));
     private final TripService trips = new TripService(tripRepo, expenseRepo, support);
     private final TripExpenseService expenses = new TripExpenseService(expenseRepo, trips, catalogs, items, support);
 
