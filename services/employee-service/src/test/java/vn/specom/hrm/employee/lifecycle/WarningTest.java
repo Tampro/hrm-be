@@ -38,7 +38,8 @@ class WarningTest {
     private final LifecycleCatalogRepository items = mock(LifecycleCatalogRepository.class);
     private final EmployeeWarningRepository warnings = mock(EmployeeWarningRepository.class);
     private final LifecycleSupport support = new LifecycleSupport(employees, mock(MediaClient.class));
-    private final LifecycleCatalogService catalogs = new LifecycleCatalogService(items, warnings);
+    private final LifecycleCatalogService catalogs = new LifecycleCatalogService(items, warnings,
+            mock(EmployeeTerminationRepository.class));
     private final WarningService service = new WarningService(warnings, catalogs, items, support,
             Clock.fixed(Instant.parse("2026-11-19T17:30:00Z"), ZoneOffset.UTC));
 
