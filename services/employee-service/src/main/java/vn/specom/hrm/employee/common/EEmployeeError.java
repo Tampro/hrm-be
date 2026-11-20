@@ -80,7 +80,8 @@ public enum EEmployeeError implements ErrorCode {
     EMP_070("The complaint has not been resolved yet."),
     EMP_071("The goal type or indicator category does not exist."),
     EMP_072("The indicator does not exist."),
-    EMP_073("The review cycle does not exist.");
+    EMP_073("The review cycle does not exist."),
+    EMP_074("The goal does not exist.");
 
     private final String message;
 }

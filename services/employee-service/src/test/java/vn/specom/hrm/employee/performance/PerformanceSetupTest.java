@@ -29,7 +29,8 @@ class PerformanceSetupTest {
     private final PerformanceCatalogRepository items = mock(PerformanceCatalogRepository.class);
     private final PerformanceIndicatorRepository indicatorRepo = mock(PerformanceIndicatorRepository.class);
     private final ReviewCycleRepository cycleRepo = mock(ReviewCycleRepository.class);
-    private final PerformanceCatalogService catalogs = new PerformanceCatalogService(items, indicatorRepo);
+    private final PerformanceCatalogService catalogs = new PerformanceCatalogService(items, indicatorRepo,
+            mock(EmployeeGoalRepository.class));
     private final IndicatorService indicators = new IndicatorService(indicatorRepo, items, catalogs);
     private final ReviewCycleService cycles = new ReviewCycleService(cycleRepo);
 

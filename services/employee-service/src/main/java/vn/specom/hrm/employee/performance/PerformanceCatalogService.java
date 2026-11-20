@@ -23,13 +23,14 @@ import java.util.Objects;
 
 /**
  * Goal Types (§7.3.5) and Indicator Categories (§7.3.6). An entry used by a record cannot be deleted (EMP_010);
- * goal types are checked here once goals exist.
+ * indicators use the categories, goals the goal types.
  */
 @Service
 @RequiredArgsConstructor
 public class PerformanceCatalogService {
     private final PerformanceCatalogRepository items;
     private final PerformanceIndicatorRepository indicators;
+    private final EmployeeGoalRepository goals;
 
     public record CatalogDto(String id, EPerformanceCatalogKind kind, String name, String description,
                              EOrgStatus status, Instant createdDate, Instant updatedDate) {
@@ -103,7 +104,7 @@ public class PerformanceCatalogService {
         PerformanceCatalog c = require(kind, id);
         boolean used = switch (kind) {
             case INDICATOR_CATEGORY -> indicators.existsByCategoryIdAndDeletedFalse(id);
-            case GOAL_TYPE -> false;
+            case GOAL_TYPE -> goals.existsByGoalTypeIdAndDeletedFalse(id);
         };
         if (used) {
             throw ApiException.badRequest(EEmployeeError.EMP_010);
