@@ -22,7 +22,7 @@ import java.util.Objects;
 
 /**
  * The company-managed lifecycle lists (PO, 2026-11-20). An entry used by a record cannot be deleted (EMP_010); the
- * pages using a list check "in use" here as they are built (warnings and terminations so far).
+ * pages using a list check "in use" here as they are built (warnings, terminations and trip expenses so far).
  */
 @Service
 @RequiredArgsConstructor
@@ -30,6 +30,7 @@ public class LifecycleCatalogService {
     private final LifecycleCatalogRepository items;
     private final EmployeeWarningRepository warnings;
     private final EmployeeTerminationRepository terminations;
+    private final TripExpenseRepository tripExpenses;
 
     public record CatalogDto(String id, ELifecycleCatalogKind kind, String name, String description,
                              EOrgStatus status, Instant createdDate, Instant updatedDate) {
@@ -99,6 +100,7 @@ public class LifecycleCatalogService {
             case WARNING_TYPE -> warnings.existsByWarningTypeIdAndDeletedFalse(id);
             case WARNING_SEVERITY -> warnings.existsBySeverityIdAndDeletedFalse(id);
             case TERMINATION_TYPE -> terminations.existsByTerminationTypeIdAndDeletedFalse(id);
+            case EXPENSE_TYPE -> tripExpenses.existsByExpenseTypeIdAndDeletedFalse(id);
             default -> false;
         };
         if (used) {

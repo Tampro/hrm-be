@@ -45,7 +45,7 @@ class SeparationTest {
     private final EmployeeExit exit = new EmployeeExit(iam);
     private final Clock clock = Clock.fixed(Instant.parse("2026-11-20T03:00:00Z"), ZoneOffset.UTC);
     private final LifecycleCatalogService catalogs = new LifecycleCatalogService(items,
-            mock(EmployeeWarningRepository.class), terminations);
+            mock(EmployeeWarningRepository.class), terminations, mock(TripExpenseRepository.class));
     private final ResignationService resignationService = new ResignationService(resignations, support, exit, clock);
     private final TerminationService terminationService = new TerminationService(terminations, catalogs, items,
             support, exit, clock);

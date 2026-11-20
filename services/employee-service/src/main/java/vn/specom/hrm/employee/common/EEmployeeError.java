@@ -65,7 +65,15 @@ public enum EEmployeeError implements ErrorCode {
     EMP_055("The resignation does not exist."),
     EMP_056("The termination does not exist."),
     EMP_057("It has been completed and cannot be changed."),
-    EMP_058("The employee has already been terminated.");
+    EMP_058("The employee has already been terminated."),
+    EMP_059("The trip does not exist."),
+    EMP_060("The trip is cancelled and cannot be changed."),
+    EMP_061("The trip has no advance."),
+    EMP_062("The advance has been approved and its amount cannot be changed."),
+    EMP_063("The expenses have been reimbursed and cannot be changed."),
+    EMP_064("The trip has no expenses."),
+    EMP_065("The expense date must be within the trip period."),
+    EMP_066("The expense does not exist.");
 
     private final String message;
 }

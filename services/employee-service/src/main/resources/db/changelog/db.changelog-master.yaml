@@ -33,3 +33,5 @@ databaseChangeLog:
       file: db/changelog/changes/20261120350000_lifecycle_warning_changelog.mysql.sql
   - include:
       file: db/changelog/changes/20261120360000_lifecycle_separation_changelog.mysql.sql
+  - include:
+      file: db/changelog/changes/20261120370000_lifecycle_trip_changelog.mysql.sql
