@@ -91,6 +91,8 @@ mvn -DskipTests package            # builds the jars the Dockerfiles copy
 #   EMPLOYEE_DB_PASSWORD, EMPLOYEE_ENC_KEY (employee-service; key = openssl rand -base64 32)
 #   ATTENDANCE_DB_PASSWORD               (attendance-service)
 #   RECRUITMENT_DB_PASSWORD              (recruitment-service)
+#   PAYROLL_DB_PASSWORD                  (payroll-service; an existing MySQL volume needs the database
+#                                          and user created by hand — the init script runs only once)
 #   EMPLOYEE_SERVICE_CLIENT_SECRET        (secret of client hrm-employee-service; realm import and employee-service)
 #   HRM_SETTINGS_ENC_KEY                  (optional; base64 of 32 random bytes — needed to save the SMTP password
 #                                          or reCAPTCHA secret in Settings: openssl rand -base64 32)

@@ -48,6 +48,10 @@ spring:
               uri: ${RECRUITMENT_SERVICE_URL:http://localhost:8085}
               predicates:
                 - Path=/api/v1/recruitment/**,/api/v1/public/career/**
+            - id: payroll-service
+              uri: ${PAYROLL_SERVICE_URL:http://localhost:8086}
+              predicates:
+                - Path=/api/v1/payroll/**
 
 management:
   endpoints:
