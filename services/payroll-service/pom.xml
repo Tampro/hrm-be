@@ -49,6 +49,17 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <!-- Payslip PDF; the extra fonts carry Vietnamese glyphs. -->
+            <groupId>com.github.librepdf</groupId>
+            <artifactId>openpdf</artifactId>
+            <version>${openpdf.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.librepdf</groupId>
+            <artifactId>openpdf-fonts-extra</artifactId>
+            <version>${openpdf.version}</version>
+        </dependency>
+        <dependency>
             <!-- Payroll run import template, import and export. -->
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>

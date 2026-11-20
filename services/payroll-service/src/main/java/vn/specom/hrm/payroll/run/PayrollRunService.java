@@ -18,6 +18,7 @@ import vn.specom.hrm.payroll.common.EPayrollError;
 import vn.specom.hrm.payroll.common.Texts;
 import vn.specom.hrm.payroll.component.SalaryComponent;
 import vn.specom.hrm.payroll.component.SalaryComponentRepository;
+import vn.specom.hrm.payroll.payslip.PayslipRepository;
 import vn.specom.hrm.payroll.run.PayrollRun.EFrequency;
 import vn.specom.hrm.payroll.run.PayrollRun.EStatus;
 import vn.specom.hrm.payroll.salary.EmployeeSalary;
@@ -53,6 +54,7 @@ public class PayrollRunService {
     private final SalaryComponentRepository components;
     private final AttendanceClient attendance;
     private final EmployeeClient employees;
+    private final PayslipRepository payslips;
     private final Clock clock;
 
     public record RunForm(
@@ -134,12 +136,15 @@ public class PayrollRunService {
         requireDraft(id).setDeleted(true);
     }
 
-    /** A DRAFT or COMPLETED run; the entries stay for the record. */
+    /** A DRAFT or COMPLETED run without payslips (PAY_025); the entries stay for the record. */
     @Transactional
     public RunDto cancel(Long id) {
         PayrollRun r = require(id);
         if (r.getStatus() == EStatus.CANCELLED) {
             throw ApiException.badRequest(EPayrollError.PAY_023);
+        }
+        if (payslips.existsByRunId(r.getId())) {
+            throw ApiException.badRequest(EPayrollError.PAY_025);
         }
         r.setStatus(EStatus.CANCELLED);
         return dto(r);
@@ -199,9 +204,7 @@ public class PayrollRunService {
 
     @Transactional(readOnly = true)
     public EntryDto entry(Long runId, Long entryId) {
-        PayrollEntry e = requireEntry(require(runId), entryId);
-        Employee person = employees.byIds(List.of(e.getEmployeeId()), e.getCompanyId()).get(e.getEmployeeId());
-        return entryDto(e, person, true);
+        return detail(requireEntry(require(runId), entryId));
     }
 
     /** Removes an employee from a COMPLETED run; the run totals follow. */
@@ -210,6 +213,9 @@ public class PayrollRunService {
         PayrollRun r = require(runId);
         if (r.getStatus() != EStatus.COMPLETED) {
             throw ApiException.badRequest(EPayrollError.PAY_014);
+        }
+        if (payslips.existsByRunId(r.getId())) {
+            throw ApiException.badRequest(EPayrollError.PAY_025);
         }
         entries.delete(requireEntry(r, entryId));
         entries.flush();
@@ -249,7 +255,20 @@ public class PayrollRunService {
                 r.getTotalDeductions(), r.getNetPay(), r.getProcessedAt(), r.getCreatedDate());
     }
 
-    private static EntryDto entryDto(PayrollEntry e, Employee p, boolean withLines) {
+    /** An entry of the caller's company by its own id (Show Payroll). */
+    public PayrollEntry requireEntry(Long entryId) {
+        PayrollEntry e = entries.findById(entryId).orElseThrow(() -> ApiException.notFound(EPayrollError.PAY_018));
+        TenantGuard.assertSameCompany(e.getCompanyId(), EPayrollError.PAY_018);
+        return e;
+    }
+
+    /** The entry with its lines; photo and current name from employee-service. */
+    public EntryDto detail(PayrollEntry e) {
+        Employee person = employees.byIds(List.of(e.getEmployeeId()), e.getCompanyId()).get(e.getEmployeeId());
+        return entryDto(e, person, true);
+    }
+
+    public static EntryDto entryDto(PayrollEntry e, Employee p, boolean withLines) {
         EmployeeInfo info = new EmployeeInfo(e.getEmployeeId().toString(),
                 p != null ? p.employeeNo() : e.getEmployeeNo(), p != null ? p.fullName() : e.getEmployeeName(),
                 p != null ? p.email() : e.getEmployeeEmail(), p == null ? null : p.profileImageUrl());
@@ -262,7 +281,7 @@ public class PayrollRunService {
                 e.getOvertimeAmount(), e.getGrossPay(), e.getTotalDeductions(), e.getNetPay(), lines);
     }
 
-    PayrollRun require(Long id) {
+    public PayrollRun require(Long id) {
         PayrollRun r = runs.findByIdAndDeletedFalse(id).orElseThrow(() -> ApiException.notFound(EPayrollError.PAY_012));
         TenantGuard.assertSameCompany(r.getCompanyId(), EPayrollError.PAY_012);
         return r;

@@ -13,4 +13,6 @@ public interface PayrollEntryRepository extends JpaRepository<PayrollEntry, Long
     List<PayrollEntry> findByRunId(Long runId);
 
     Optional<PayrollEntry> findByIdAndRunId(Long id, Long runId);
+
+    List<PayrollEntry> findByCompanyIdAndEmployeeId(Long companyId, Long employeeId);
 }
