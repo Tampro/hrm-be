@@ -22,12 +22,13 @@ import java.util.Objects;
 
 /**
  * Review Cycles page (docs/analysis/06 §7.3.3). Names unique per company (EMP_011); reviews pick an active cycle
- * (checked by {@link #usable}) and a cycle used by a review cannot be deleted (added with the reviews).
+ * (checked by {@link #usable}) and a cycle used by a review cannot be deleted (EMP_010).
  */
 @Service
 @RequiredArgsConstructor
 public class ReviewCycleService {
     private final ReviewCycleRepository cycles;
+    private final EmployeeReviewRepository reviews;
 
     public record CycleDto(String id, String name, ReviewCycle.EFrequency frequency, String description,
                            EOrgStatus status, Instant createdDate, Instant updatedDate) {
@@ -89,7 +90,11 @@ public class ReviewCycleService {
 
     @Transactional
     public void delete(Long id) {
-        require(id).setDeleted(true);
+        ReviewCycle c = require(id);
+        if (reviews.existsByReviewCycleIdAndDeletedFalse(id)) {
+            throw ApiException.badRequest(EEmployeeError.EMP_010);
+        }
+        c.setDeleted(true);
     }
 
     /** A cycle of the company for a review; inactive only when the review already uses it (EMP_054). */
