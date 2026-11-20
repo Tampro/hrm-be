@@ -25,6 +25,7 @@
         <module>services/attendance-service</module>
         <module>services/recruitment-service</module>
         <module>services/payroll-service</module>
+        <module>services/asset-service</module>
         <module>services/gateway-server</module>
     </modules>
 
