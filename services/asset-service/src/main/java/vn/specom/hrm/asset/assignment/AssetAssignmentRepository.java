@@ -15,4 +15,7 @@ public interface AssetAssignmentRepository extends JpaRepository<AssetAssignment
     List<AssetAssignment> findByAssetIdInAndStatus(Collection<Long> assetIds, AssetAssignment.EStatus status);
 
     Page<AssetAssignment> findByAssetIdOrderByCheckoutDateDescIdDesc(Long assetId, Pageable pageable);
+
+    /** Recent Assignments of the dashboard. */
+    List<AssetAssignment> findTop5ByCompanyIdOrderByCheckoutDateDescIdDesc(Long companyId);
 }
