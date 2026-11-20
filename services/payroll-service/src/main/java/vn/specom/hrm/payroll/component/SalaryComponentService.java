@@ -17,6 +17,7 @@ import vn.specom.hrm.payroll.common.Texts;
 import vn.specom.hrm.payroll.component.SalaryComponent.ECalculation;
 import vn.specom.hrm.payroll.component.SalaryComponent.EStatus;
 import vn.specom.hrm.payroll.component.SalaryComponent.EType;
+import vn.specom.hrm.payroll.salary.EmployeeSalaryRepository;
 import vn.specom.hrm.security.TenantGuard;
 
 import java.math.BigDecimal;
@@ -25,8 +26,7 @@ import java.util.List;
 
 /**
  * Salary Components page (docs/analysis/06 §8.1.4). Names unique per company (PAY_003); a percentage is of the basic
- * salary and lies in 0–100 (PAY_004). Components used by salary structures cannot be deleted (checked once those
- * exist).
+ * salary and lies in 0–100 (PAY_004). Components used by a salary structure cannot be deleted (PAY_005).
  */
 @Service
 @RequiredArgsConstructor
@@ -34,6 +34,7 @@ public class SalaryComponentService {
     private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
 
     private final SalaryComponentRepository components;
+    private final EmployeeSalaryRepository salaries;
 
     public record ComponentDto(String id, String name, String description, EType type, ECalculation calculation,
                                BigDecimal value, EStatus status, Instant createdDate, Instant updatedDate) {
@@ -102,7 +103,11 @@ public class SalaryComponentService {
 
     @Transactional
     public void delete(Long id) {
-        require(id).setDeleted(true);
+        SalaryComponent c = require(id);
+        if (salaries.usesComponent(id)) {
+            throw ApiException.badRequest(EPayrollError.PAY_005);
+        }
+        c.setDeleted(true);
     }
 
     private void apply(SalaryComponent c, ComponentForm f, Long selfId) {

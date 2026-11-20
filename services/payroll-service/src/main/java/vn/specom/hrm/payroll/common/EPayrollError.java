@@ -12,7 +12,12 @@ public enum EPayrollError implements ErrorCode {
     PAY_002("The salary component does not exist."),
     PAY_003("This name already exists."),
     PAY_004("A percentage must be between 0 and 100."),
-    PAY_005("It is still in use and cannot be deleted.");
+    PAY_005("It is still in use and cannot be deleted."),
+    PAY_006("The employee service is unavailable. Please try again."),
+    PAY_007("The employee salary does not exist."),
+    PAY_008("The employee already has an active salary."),
+    PAY_009("The salary component {0} is inactive and cannot be chosen."),
+    PAY_010("A salary component is listed more than once.");
 
     private final String message;
 }
