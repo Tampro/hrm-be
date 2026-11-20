@@ -95,7 +95,11 @@ public enum EEmployeeError implements ErrorCode {
     EMP_085("The employee is already assigned to this training program."),
     EMP_086("The training session does not exist."),
     EMP_087("The employee is not a trainee of this program."),
-    EMP_088("The date range cannot exceed {0} days.");
+    EMP_088("The date range cannot exceed {0} days."),
+    EMP_089("The training assessment does not exist."),
+    EMP_090("The employee training does not belong to the assessment's program."),
+    EMP_091("This employee training already has a result for the assessment."),
+    EMP_092("The assessment result does not exist.");
 
     private final String message;
 }

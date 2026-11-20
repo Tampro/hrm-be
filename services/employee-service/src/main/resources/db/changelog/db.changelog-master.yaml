@@ -49,3 +49,5 @@ databaseChangeLog:
       file: db/changelog/changes/20261120430000_training_employee_changelog.mysql.sql
   - include:
       file: db/changelog/changes/20261120440000_training_session_changelog.mysql.sql
+  - include:
+      file: db/changelog/changes/20261120450000_training_assessment_changelog.mysql.sql

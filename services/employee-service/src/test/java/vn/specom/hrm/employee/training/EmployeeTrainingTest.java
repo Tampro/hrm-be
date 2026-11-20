@@ -49,10 +49,12 @@ class EmployeeTrainingTest {
     private final LifecycleSupport support = new LifecycleSupport(employees, mock(MediaClient.class));
     private final TrainingProgramService programs = new TrainingProgramService(programRepo, typeRepo,
             new TrainingTypeService(typeRepo, programRepo, mock(BranchRepository.class),
-                    mock(DepartmentRepository.class)), support, trainingRepo, mock(TrainingSessionRepository.class));
+                    mock(DepartmentRepository.class)), support, trainingRepo, mock(TrainingSessionRepository.class),
+            mock(TrainingAssessmentRepository.class));
     private final EmployeeTrainingService service = new EmployeeTrainingService(trainingRepo, programRepo, typeRepo,
             programs, employees, mock(DepartmentRepository.class), mock(DesignationRepository.class), support,
-            Clock.fixed(Instant.parse("2026-11-30T18:00:00Z"), ZoneOffset.UTC));
+            Clock.fixed(Instant.parse("2026-11-30T18:00:00Z"), ZoneOffset.UTC), mock(AssessmentResultRepository.class),
+            mock(TrainingAssessmentService.class));
 
     private TrainingProgram program;
 
