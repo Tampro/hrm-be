@@ -43,12 +43,17 @@ public class TrainingProgramService {
     private final TrainingTypeRepository typeRepo;
     private final TrainingTypeService types;
     private final LifecycleSupport support;
+    private final EmployeeTrainingRepository trainings;
 
-    /** materials only on the details. */
+    /**
+     * employees = assigned employee trainings; completedTrainings = of them COMPLETED (completion rate on the
+     * cards = completedTrainings / employees). materials only on the details.
+     */
     public record ProgramDto(String id, String name, Ref trainingType, String description, BigDecimal durationHours,
                              BigDecimal cost, Integer capacity, EStatus status, String prerequisites,
                              boolean mandatory, boolean selfEnrollment, List<String> materialIds,
-                             List<FileRef> materials, Instant createdDate, Instant updatedDate) {
+                             List<FileRef> materials, long employees, long completedTrainings,
+                             Instant createdDate, Instant updatedDate) {
     }
 
     public record StatusCounts(long all, Map<EStatus, Long> byStatus) {
@@ -78,7 +83,8 @@ public class TrainingProgramService {
         Page<TrainingProgram> page = programs.search(TrainingSupport.company(requestedCompanyId), typeId, status,
                 DepartmentService.kw(keyword), pageable);
         Map<Long, String> typeNames = typeNames(page.map(TrainingProgram::getTrainingTypeId).toSet());
-        return page.map(p -> dto(p, typeNames, false));
+        Map<Long, long[]> stats = stats(page.map(TrainingProgram::getId).toList());
+        return page.map(p -> dto(p, typeNames, stats, false));
     }
 
     @Transactional(readOnly = true)
@@ -123,9 +129,14 @@ public class TrainingProgramService {
         return detail(p);
     }
 
+    /** A program with employee trainings cannot be deleted (EMP_010). */
     @Transactional
     public void delete(Long id) {
-        require(id).setDeleted(true);
+        TrainingProgram p = require(id);
+        if (trainings.existsByProgramIdAndDeletedFalse(id)) {
+            throw ApiException.badRequest(EEmployeeError.EMP_010);
+        }
+        p.setDeleted(true);
     }
 
     /** A program of the company; any other id reads as not found. */
@@ -164,17 +175,35 @@ public class TrainingProgramService {
     }
 
     ProgramDto detail(TrainingProgram p) {
-        return dto(p, typeNames(Set.of(p.getTrainingTypeId())), true);
+        return dto(p, typeNames(Set.of(p.getTrainingTypeId())), stats(List.of(p.getId())), true);
     }
 
-    private ProgramDto dto(TrainingProgram p, Map<Long, String> typeNames, boolean withFiles) {
+    /** programId -> [employees, completed]. */
+    private Map<Long, long[]> stats(List<Long> programIds) {
+        Map<Long, long[]> out = new java.util.HashMap<>();
+        if (programIds.isEmpty()) {
+            return out;
+        }
+        for (Object[] r : trainings.countByProgram(programIds)) {
+            long[] c = out.computeIfAbsent((Long) r[0], k -> new long[2]);
+            c[0] += (Long) r[2];
+            if (r[1] == EmployeeTraining.EStatus.COMPLETED) {
+                c[1] += (Long) r[2];
+            }
+        }
+        return out;
+    }
+
+    private ProgramDto dto(TrainingProgram p, Map<Long, String> typeNames, Map<Long, long[]> stats,
+                           boolean withFiles) {
+        long[] c = stats.getOrDefault(p.getId(), new long[2]);
         List<Long> ids = p.getMaterialIds().stream().sorted().toList();
         return new ProgramDto(p.getId().toString(), p.getName(), new Ref(p.getTrainingTypeId().toString(),
                 typeNames.get(p.getTrainingTypeId())), p.getDescription(), p.getDurationHours(), p.getCost(),
                 p.getCapacity(), p.getStatus(), p.getPrerequisites(), p.isMandatory(), p.isSelfEnrollment(),
                 ids.stream().map(String::valueOf).toList(),
                 withFiles ? ids.stream().map(support::fileRef).filter(Objects::nonNull).toList() : null,
-                p.getCreatedDate(), p.getUpdatedDate());
+                c[0], c[1], p.getCreatedDate(), p.getUpdatedDate());
     }
 
     TrainingProgram require(Long id) {
