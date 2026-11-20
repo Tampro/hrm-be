@@ -40,7 +40,7 @@ import static vn.specom.hrm.employee.lifecycle.AwardController.COMPANY;
 @SecurityRequirement(name = "bearerAuth")
 public class LifecycleCatalogController {
     private static final String KIND = "warning-types, warning-severities, termination-types, complaint-types, "
-            + "resolution-types";
+            + "resolution-types, expense-types";
 
     private final LifecycleCatalogService service;
 

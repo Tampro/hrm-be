@@ -11,7 +11,8 @@ public enum ELifecycleCatalogKind {
     WARNING_SEVERITY("warning-severities", "severity"),
     TERMINATION_TYPE("termination-types", "termination type"),
     COMPLAINT_TYPE("complaint-types", "complaint type"),
-    RESOLUTION_TYPE("resolution-types", "resolution type");
+    RESOLUTION_TYPE("resolution-types", "resolution type"),
+    EXPENSE_TYPE("expense-types", "expense type");
 
     private final String path;
     private final String label;
