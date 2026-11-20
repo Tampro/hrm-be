@@ -39,7 +39,7 @@ spring:
             - id: employee-service
               uri: ${EMPLOYEE_SERVICE_URL:http://localhost:8083}
               predicates:
-                - Path=/api/v1/employees/**,/api/v1/employees,/api/v1/org/**,/api/v1/lifecycle/**,/api/v1/performance/**
+                - Path=/api/v1/employees/**,/api/v1/employees,/api/v1/org/**,/api/v1/lifecycle/**,/api/v1/performance/**,/api/v1/training/**
             - id: attendance-service
               uri: ${ATTENDANCE_SERVICE_URL:http://localhost:8084}
               predicates:

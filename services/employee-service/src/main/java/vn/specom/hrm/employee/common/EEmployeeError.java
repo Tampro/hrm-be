@@ -86,7 +86,9 @@ public enum EEmployeeError implements ErrorCode {
     EMP_076("An employee cannot review themselves."),
     EMP_077("The review is completed and cannot be changed."),
     EMP_078("The indicator is not part of this review."),
-    EMP_079("Rate every indicator before completing the review.");
+    EMP_079("Rate every indicator before completing the review."),
+    EMP_080("The training type does not exist."),
+    EMP_081("The training program does not exist.");
 
     private final String message;
 }
