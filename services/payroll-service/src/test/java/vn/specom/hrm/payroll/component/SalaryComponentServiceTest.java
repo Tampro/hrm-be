@@ -25,7 +25,8 @@ import static org.mockito.Mockito.when;
 
 class SalaryComponentServiceTest {
     private final SalaryComponentRepository repo = mock(SalaryComponentRepository.class);
-    private final SalaryComponentService service = new SalaryComponentService(repo);
+    private final SalaryComponentService service = new SalaryComponentService(repo,
+            mock(vn.specom.hrm.payroll.salary.EmployeeSalaryRepository.class));
 
     @BeforeEach
     void setUp() {

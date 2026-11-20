@@ -3,3 +3,5 @@
 databaseChangeLog:
   - include:
       file: db/changelog/changes/20261120460000_salary_component_changelog.mysql.sql
+  - include:
+      file: db/changelog/changes/20261120470000_employee_salary_changelog.mysql.sql

@@ -152,11 +152,17 @@ public final class EmployeeDtos {
     }
 
     /** List filters, shared by the list, the status tabs and the export. */
+    /** ids = only these employees (other services resolving names in one call); null = no such filter. */
     public record Filter(String keyword, Long branchId, Long departmentId, Long designationId, EEmployeeStatus status,
                          @Schema(description = "true = only employees missing a Required document type")
-                         Boolean missingRequiredDocuments) {
+                         Boolean missingRequiredDocuments, java.util.Set<Long> ids) {
         public Filter(String keyword, Long branchId, Long departmentId, Long designationId, EEmployeeStatus status) {
-            this(keyword, branchId, departmentId, designationId, status, null);
+            this(keyword, branchId, departmentId, designationId, status, null, null);
+        }
+
+        public Filter(String keyword, Long branchId, Long departmentId, Long designationId, EEmployeeStatus status,
+                      Boolean missingRequiredDocuments) {
+            this(keyword, branchId, departmentId, designationId, status, missingRequiredDocuments, null);
         }
     }
 }

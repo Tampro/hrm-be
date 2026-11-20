@@ -38,6 +38,9 @@ final class EmployeeSpecs {
                         cb.like(cb.lower(root.get("employeeNo")), like, '\\'),
                         cb.like(cb.lower(root.get("employeeCode")), like, '\\')));
             }
+            if (f.ids() != null) {
+                p.add(f.ids().isEmpty() ? cb.disjunction() : root.get("id").in(f.ids()));
+            }
             if (f.branchId() != null) {
                 p.add(cb.equal(root.get("branchId"), f.branchId()));
             }

@@ -29,6 +29,7 @@ import vn.specom.hrm.employee.employee.EmployeeDtos.StatusCounts;
 import vn.specom.hrm.employee.org.OrgService;
 import vn.specom.hrm.employee.org.OrgService.Names;
 import vn.specom.hrm.exception.ApiException;
+import vn.specom.hrm.exception.ECommonError;
 import vn.specom.hrm.security.CurrentUser;
 import vn.specom.hrm.security.TenantGuard;
 
@@ -62,6 +63,9 @@ public class EmployeeService {
 
     @Transactional(readOnly = true)
     public Page<EmployeeListItem> search(Long requestedCompanyId, Filter filter, Pageable pageable) {
+        if (filter.ids() != null && filter.ids().size() > 100) {
+            throw ApiException.badRequest(ECommonError.COMMON_001);
+        }
         Long companyId = company(requestedCompanyId);
         Page<Employee> page = employees.findAll(EmployeeSpecs.of(companyId, filter, true, required(companyId, filter)),
                 pageable);
