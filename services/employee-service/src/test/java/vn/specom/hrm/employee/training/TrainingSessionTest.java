@@ -48,7 +48,7 @@ class TrainingSessionTest {
     private final LifecycleSupport support = new LifecycleSupport(employees, mock(MediaClient.class));
     private final TrainingProgramService programs = new TrainingProgramService(programRepo, typeRepo,
             new TrainingTypeService(typeRepo, programRepo, mock(BranchRepository.class),
-                    mock(DepartmentRepository.class)), support, trainingRepo, sessionRepo);
+                    mock(DepartmentRepository.class)), support, trainingRepo, sessionRepo, mock(TrainingAssessmentRepository.class));
     private final TrainingSessionService service = new TrainingSessionService(sessionRepo, attendanceRepo,
             trainingRepo, programRepo, programs, support);
 

@@ -70,6 +70,8 @@ public class EmployeeTrainingService {
     private final DesignationRepository designations;
     private final LifecycleSupport support;
     private final Clock clock;
+    private final AssessmentResultRepository results;
+    private final TrainingAssessmentService assessments;
 
     public enum EResult { PASSED, FAILED }
 
@@ -81,12 +83,14 @@ public class EmployeeTrainingService {
                                   String department, String designation, String profileImageUrl) {
     }
 
-    /** certificate, employeeDetails and programDetails only on the details. */
+    /** certificate, employeeDetails, programDetails and assessmentResults only on the details. */
     public record TrainingDto(String id, EmployeeRef employee, ProgramRef program, EStatus status,
                               LocalDate assignedDate, LocalDate completionDate, EmployeeRef assignedBy,
                               BigDecimal score, Boolean passed, EResult result, String feedback, String notes,
                               String certificateId, FileRef certificate, EmployeeDetails employeeDetails,
-                              ProgramDto programDetails, Instant createdDate, Instant updatedDate) {
+                              ProgramDto programDetails,
+                              List<TrainingAssessmentService.EmployeeTrainingResult> assessmentResults,
+                              Instant createdDate, Instant updatedDate) {
     }
 
     public record StatusCounts(long all, Map<EStatus, Long> byStatus) {
@@ -255,9 +259,14 @@ public class EmployeeTrainingService {
         return new BulkResult(fresh.size(), already.stream().sorted().map(String::valueOf).toList());
     }
 
+    /** A training with assessment results cannot be deleted (EMP_010). */
     @Transactional
     public void delete(Long id) {
-        require(id).setDeleted(true);
+        EmployeeTraining t = require(id);
+        if (results.existsByEmployeeTrainingId(id)) {
+            throw ApiException.badRequest(EEmployeeError.EMP_010);
+        }
+        t.setDeleted(true);
     }
 
     private void apply(EmployeeTraining t, TrainingForm f) {
@@ -353,7 +362,8 @@ public class EmployeeTrainingService {
         return new TrainingDto(base.id(), base.employee(), base.program(), base.status(), base.assignedDate(),
                 base.completionDate(), base.assignedBy(), base.score(), base.passed(), base.result(), base.feedback(),
                 base.notes(), base.certificateId(), support.fileRef(t.getCertificateMediaId()), details,
-                programs.detail(programs.require(t.getProgramId())), base.createdDate(), base.updatedDate());
+                programs.detail(programs.require(t.getProgramId())), assessments.resultsOf(t), base.createdDate(),
+                base.updatedDate());
     }
 
     private static TrainingDto dto(EmployeeTraining t, Lookups l) {
@@ -366,7 +376,7 @@ public class EmployeeTrainingService {
                 t.getAssignedById() == null ? null : l.people().get(t.getAssignedById()), t.getScore(),
                 t.getPassed(), result, t.getFeedback(), t.getNotes(),
                 t.getCertificateMediaId() == null ? null : t.getCertificateMediaId().toString(), null, null, null,
-                t.getCreatedDate(), t.getUpdatedDate());
+                null, t.getCreatedDate(), t.getUpdatedDate());
     }
 
     private EmployeeTraining require(Long id) {

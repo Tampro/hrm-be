@@ -45,6 +45,7 @@ public class TrainingProgramService {
     private final LifecycleSupport support;
     private final EmployeeTrainingRepository trainings;
     private final TrainingSessionRepository sessions;
+    private final TrainingAssessmentRepository assessments;
 
     /**
      * employees = assigned employee trainings; completedTrainings = of them COMPLETED; sessions / completedSessions
@@ -131,11 +132,12 @@ public class TrainingProgramService {
         return detail(p);
     }
 
-    /** A program with employee trainings or sessions cannot be deleted (EMP_010). */
+    /** A program with employee trainings, sessions or assessments cannot be deleted (EMP_010). */
     @Transactional
     public void delete(Long id) {
         TrainingProgram p = require(id);
-        if (trainings.existsByProgramIdAndDeletedFalse(id) || sessions.existsByProgramIdAndDeletedFalse(id)) {
+        if (trainings.existsByProgramIdAndDeletedFalse(id) || sessions.existsByProgramIdAndDeletedFalse(id)
+                || assessments.existsByProgramIdAndDeletedFalse(id)) {
             throw ApiException.badRequest(EEmployeeError.EMP_010);
         }
         p.setDeleted(true);
