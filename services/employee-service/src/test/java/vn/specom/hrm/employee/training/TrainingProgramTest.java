@@ -35,7 +35,8 @@ class TrainingProgramTest {
     private final DepartmentRepository departments = mock(DepartmentRepository.class);
     private final TrainingTypeService types = new TrainingTypeService(typeRepo, programRepo, branches, departments);
     private final TrainingProgramService programs = new TrainingProgramService(programRepo, typeRepo, types,
-            new LifecycleSupport(mock(EmployeeRepository.class), mock(MediaClient.class)));
+            new LifecycleSupport(mock(EmployeeRepository.class), mock(MediaClient.class)),
+            mock(EmployeeTrainingRepository.class));
 
     private TrainingType type;
 
