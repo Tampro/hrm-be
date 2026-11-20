@@ -81,7 +81,12 @@ public enum EEmployeeError implements ErrorCode {
     EMP_071("The goal type or indicator category does not exist."),
     EMP_072("The indicator does not exist."),
     EMP_073("The review cycle does not exist."),
-    EMP_074("The goal does not exist.");
+    EMP_074("The goal does not exist."),
+    EMP_075("The review does not exist."),
+    EMP_076("An employee cannot review themselves."),
+    EMP_077("The review is completed and cannot be changed."),
+    EMP_078("The indicator is not part of this review."),
+    EMP_079("Rate every indicator before completing the review.");
 
     private final String message;
 }

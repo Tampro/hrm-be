@@ -25,6 +25,9 @@ public interface PerformanceIndicatorRepository extends JpaRepository<Performanc
 
     Optional<PerformanceIndicator> findByIdAndDeletedFalse(Long id);
 
+    /** What a review rates: the company's active indicators. */
+    List<PerformanceIndicator> findByCompanyIdAndStatusAndDeletedFalse(Long companyId, EOrgStatus status);
+
     @Query("select count(i) > 0 from PerformanceIndicator i where i.companyId = :companyId and i.deleted = false "
             + "and lower(i.name) = lower(:name) and i.id <> :id")
     boolean nameTaken(Long companyId, String name, Long id);
