@@ -130,8 +130,10 @@ public class MeetingRoomController {
         return ApiMessageDto.ok(service.changeStatus(id, form.status()));
     }
 
-    @Operation(summary = "Delete a meeting room")
-    @ApiResponses(@ApiResponse(responseCode = "404", description = NOT_FOUND))
+    @Operation(summary = "Delete a meeting room", description = "Only a room without meetings; deactivate otherwise.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "400", description = "The room has meetings (MTG_004)"),
+            @ApiResponse(responseCode = "404", description = NOT_FOUND)})
     @PreAuthorize("@PermissionChecker.has('MEETING_MANAGE')")
     @DeleteMapping("/{id}")
     public ApiMessageDto<Void> delete(@PathVariable Long id) {

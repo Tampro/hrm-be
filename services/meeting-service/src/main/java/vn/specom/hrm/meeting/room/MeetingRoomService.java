@@ -15,21 +15,27 @@ import vn.specom.hrm.exception.ApiException;
 import vn.specom.hrm.meeting.common.EMeetingError;
 import vn.specom.hrm.meeting.common.EStatus;
 import vn.specom.hrm.meeting.common.Texts;
+import vn.specom.hrm.meeting.meeting.MeetingRepository;
 import vn.specom.hrm.meeting.room.MeetingRoom.EType;
 import vn.specom.hrm.security.TenantGuard;
 
 import java.time.Instant;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-/** Meeting Rooms page (docs/analysis/06 §9.1.4): name unique in the company (MTG_003). */
+/**
+ * Meeting Rooms page (docs/analysis/06 §9.1.4): name unique in the company (MTG_003); a room with meetings cannot be
+ * deleted (MTG_004), deactivate it instead.
+ */
 @Service
 @RequiredArgsConstructor
 public class MeetingRoomService {
     private final MeetingRoomRepository rooms;
+    private final MeetingRepository meetings;
 
     public record RoomForm(
             @Schema(example = "Room A", requiredMode = Schema.RequiredMode.REQUIRED) @NotBlank @Size(max = 150)
@@ -45,9 +51,10 @@ public class MeetingRoomService {
             @Schema(description = "Omitted = ACTIVE on create, kept on edit") EStatus status) {
     }
 
-    /** equipmentCount = the Equipment column. */
+    /** equipmentCount = the Equipment column; meetings = the Meetings column (cancelled included). */
     public record RoomDto(String id, String name, String description, EType type, String location, int capacity,
-                          List<String> equipment, int equipmentCount, EStatus status, Instant createdDate) {
+                          List<String> equipment, int equipmentCount, long meetings, EStatus status,
+                          Instant createdDate) {
     }
 
     public record StatusCounts(long all, Map<EStatus, Long> byStatus) {
@@ -62,8 +69,14 @@ public class MeetingRoomService {
     @Transactional(readOnly = true)
     public Page<RoomDto> search(Long requestedCompanyId, String keyword, EType type, EStatus status,
                                 Pageable pageable) {
-        return rooms.search(Texts.company(requestedCompanyId), type, status, Texts.kw(keyword), pageable)
-                .map(MeetingRoomService::dto);
+        Page<MeetingRoom> page = rooms.search(Texts.company(requestedCompanyId), type, status, Texts.kw(keyword),
+                pageable);
+        Map<Long, Long> counts = new HashMap<>();
+        if (!page.isEmpty()) {
+            meetings.countByRoom(page.map(MeetingRoom::getId).toList())
+                    .forEach(r -> counts.put((Long) r[0], (Long) r[1]));
+        }
+        return page.map(r -> dto(r, counts.getOrDefault(r.getId(), 0L)));
     }
 
     @Transactional(readOnly = true)
@@ -105,7 +118,7 @@ public class MeetingRoomService {
 
     @Transactional(readOnly = true)
     public RoomDto get(Long id) {
-        return dto(require(id));
+        return detail(require(id));
     }
 
     @Transactional
@@ -113,7 +126,7 @@ public class MeetingRoomService {
         MeetingRoom r = new MeetingRoom();
         r.setCompanyId(Texts.company(requestedCompanyId));
         apply(r, form);
-        return dto(rooms.save(r));
+        return dto(rooms.save(r), 0);
     }
 
     /** Full replacement (equipment = full list); status omitted = kept. */
@@ -121,19 +134,23 @@ public class MeetingRoomService {
     public RoomDto update(Long id, RoomForm form) {
         MeetingRoom r = require(id);
         apply(r, form);
-        return dto(r);
+        return detail(r);
     }
 
     @Transactional
     public RoomDto changeStatus(Long id, EStatus status) {
         MeetingRoom r = require(id);
         r.setStatus(status);
-        return dto(r);
+        return detail(r);
     }
 
     @Transactional
     public void delete(Long id) {
-        require(id).setDeleted(true);
+        MeetingRoom r = require(id);
+        if (meetings.existsByRoomIdAndDeletedFalse(r.getId())) {
+            throw ApiException.badRequest(EMeetingError.MTG_004);
+        }
+        r.setDeleted(true);
     }
 
     private void apply(MeetingRoom r, RoomForm f) {
@@ -157,9 +174,14 @@ public class MeetingRoomService {
         }
     }
 
-    static RoomDto dto(MeetingRoom r) {
+    private RoomDto detail(MeetingRoom r) {
+        long n = meetings.countByRoom(List.of(r.getId())).stream().mapToLong(x -> (Long) x[1]).sum();
+        return dto(r, n);
+    }
+
+    static RoomDto dto(MeetingRoom r, long meetingCount) {
         return new RoomDto(r.getId().toString(), r.getName(), r.getDescription(), r.getType(), r.getLocation(),
-                r.getCapacity(), List.copyOf(r.getEquipment()), r.getEquipment().size(), r.getStatus(),
+                r.getCapacity(), List.copyOf(r.getEquipment()), r.getEquipment().size(), meetingCount, r.getStatus(),
                 r.getCreatedDate());
     }
 
