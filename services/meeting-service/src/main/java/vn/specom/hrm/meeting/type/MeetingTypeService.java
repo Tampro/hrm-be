@@ -15,17 +15,24 @@ import vn.specom.hrm.exception.ApiException;
 import vn.specom.hrm.meeting.common.EMeetingError;
 import vn.specom.hrm.meeting.common.EStatus;
 import vn.specom.hrm.meeting.common.Texts;
+import vn.specom.hrm.meeting.meeting.MeetingRepository;
 import vn.specom.hrm.security.TenantGuard;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
-/** Meeting Types page (docs/analysis/06 §9.1.3): name unique in the company (MTG_003). */
+/**
+ * Meeting Types page (docs/analysis/06 §9.1.3): name unique in the company (MTG_003); a type with meetings cannot be
+ * deleted (MTG_004), deactivate it instead.
+ */
 @Service
 @RequiredArgsConstructor
 public class MeetingTypeService {
     private final MeetingTypeRepository types;
+    private final MeetingRepository meetings;
 
     public record TypeForm(
             @Schema(example = "Team Meeting", requiredMode = Schema.RequiredMode.REQUIRED) @NotBlank @Size(max = 150)
@@ -38,8 +45,9 @@ public class MeetingTypeService {
             @Schema(description = "Omitted = ACTIVE on create, kept on edit") EStatus status) {
     }
 
+    /** meetings = the Meetings column (cancelled included, deleted not). */
     public record TypeDto(String id, String name, String description, String color, int defaultDurationMinutes,
-                          EStatus status, Instant createdDate) {
+                          EStatus status, long meetings, Instant createdDate) {
     }
 
     public record Option(String id, String name, String color, int defaultDurationMinutes) {
@@ -47,8 +55,13 @@ public class MeetingTypeService {
 
     @Transactional(readOnly = true)
     public Page<TypeDto> search(Long requestedCompanyId, String keyword, EStatus status, Pageable pageable) {
-        return types.search(Texts.company(requestedCompanyId), status, Texts.kw(keyword), pageable)
-                .map(MeetingTypeService::dto);
+        Page<MeetingType> page = types.search(Texts.company(requestedCompanyId), status, Texts.kw(keyword), pageable);
+        Map<Long, Long> counts = new HashMap<>();
+        if (!page.isEmpty()) {
+            meetings.countByType(page.map(MeetingType::getId).toList())
+                    .forEach(r -> counts.put((Long) r[0], (Long) r[1]));
+        }
+        return page.map(t -> dto(t, counts.getOrDefault(t.getId(), 0L)));
     }
 
     /** The Meeting Type dropdown of the meeting form: active types by name. */
@@ -62,7 +75,7 @@ public class MeetingTypeService {
 
     @Transactional(readOnly = true)
     public TypeDto get(Long id) {
-        return dto(require(id));
+        return detail(require(id));
     }
 
     @Transactional
@@ -70,7 +83,7 @@ public class MeetingTypeService {
         MeetingType t = new MeetingType();
         t.setCompanyId(Texts.company(requestedCompanyId));
         apply(t, form);
-        return dto(types.save(t));
+        return dto(types.save(t), 0);
     }
 
     /** Full replacement; status omitted = kept. */
@@ -78,7 +91,7 @@ public class MeetingTypeService {
     public TypeDto update(Long id, TypeForm form) {
         MeetingType t = require(id);
         apply(t, form);
-        return dto(t);
+        return detail(t);
     }
 
     /** Deactivate / activate. */
@@ -86,12 +99,16 @@ public class MeetingTypeService {
     public TypeDto changeStatus(Long id, EStatus status) {
         MeetingType t = require(id);
         t.setStatus(status);
-        return dto(t);
+        return detail(t);
     }
 
     @Transactional
     public void delete(Long id) {
-        require(id).setDeleted(true);
+        MeetingType t = require(id);
+        if (meetings.existsByMeetingTypeIdAndDeletedFalse(t.getId())) {
+            throw ApiException.badRequest(EMeetingError.MTG_004);
+        }
+        t.setDeleted(true);
     }
 
     private void apply(MeetingType t, TypeForm f) {
@@ -113,9 +130,14 @@ public class MeetingTypeService {
         }
     }
 
-    static TypeDto dto(MeetingType t) {
+    private TypeDto detail(MeetingType t) {
+        long n = meetings.countByType(List.of(t.getId())).stream().mapToLong(r -> (Long) r[1]).sum();
+        return dto(t, n);
+    }
+
+    static TypeDto dto(MeetingType t, long meetingCount) {
         return new TypeDto(t.getId().toString(), t.getName(), t.getDescription(), t.getColor(),
-                t.getDefaultDurationMinutes(), t.getStatus(), t.getCreatedDate());
+                t.getDefaultDurationMinutes(), t.getStatus(), meetingCount, t.getCreatedDate());
     }
 
     public MeetingType require(Long id) {

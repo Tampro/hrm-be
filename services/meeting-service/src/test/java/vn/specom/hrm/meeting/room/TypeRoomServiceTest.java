@@ -29,8 +29,10 @@ import static org.mockito.Mockito.when;
 class TypeRoomServiceTest {
     private final MeetingRoomRepository rooms = mock(MeetingRoomRepository.class);
     private final MeetingTypeRepository types = mock(MeetingTypeRepository.class);
-    private final MeetingRoomService roomService = new MeetingRoomService(rooms);
-    private final MeetingTypeService typeService = new MeetingTypeService(types);
+    private final vn.specom.hrm.meeting.meeting.MeetingRepository meetings =
+            mock(vn.specom.hrm.meeting.meeting.MeetingRepository.class);
+    private final MeetingRoomService roomService = new MeetingRoomService(rooms, meetings);
+    private final MeetingTypeService typeService = new MeetingTypeService(types, meetings);
 
     @BeforeEach
     void setUp() {

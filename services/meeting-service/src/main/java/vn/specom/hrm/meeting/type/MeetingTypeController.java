@@ -106,8 +106,10 @@ public class MeetingTypeController {
         return ApiMessageDto.ok(service.changeStatus(id, form.status()));
     }
 
-    @Operation(summary = "Delete a meeting type")
-    @ApiResponses(@ApiResponse(responseCode = "404", description = NOT_FOUND))
+    @Operation(summary = "Delete a meeting type", description = "Only a type without meetings; deactivate otherwise.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "400", description = "The type has meetings (MTG_004)"),
+            @ApiResponse(responseCode = "404", description = NOT_FOUND)})
     @PreAuthorize("@PermissionChecker.has('MEETING_MANAGE')")
     @DeleteMapping("/{id}")
     public ApiMessageDto<Void> delete(@PathVariable Long id) {
