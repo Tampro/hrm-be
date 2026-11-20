@@ -45,8 +45,10 @@ class PayrollRunServiceTest {
     private final SalaryComponentRepository components = mock(SalaryComponentRepository.class);
     private final AttendanceClient attendance = mock(AttendanceClient.class);
     private final EmployeeClient employees = mock(EmployeeClient.class);
+    private final vn.specom.hrm.payroll.payslip.PayslipRepository payslips =
+            mock(vn.specom.hrm.payroll.payslip.PayslipRepository.class);
     private final PayrollRunService service = new PayrollRunService(runs, entries, salaries, components, attendance,
-            employees, Clock.fixed(Instant.parse("2026-12-01T00:00:00Z"), ZoneOffset.UTC));
+            employees, payslips, Clock.fixed(Instant.parse("2026-12-01T00:00:00Z"), ZoneOffset.UTC));
 
     private final PayrollRun run = new PayrollRun();
     private final List<PayrollEntry> saved = new ArrayList<>();
@@ -113,6 +115,10 @@ class PayrollRunServiceTest {
         run.setStatus(EStatus.COMPLETED);
         assertCode(() -> service.process(5L), EPayrollError.PAY_013);
         assertCode(() -> service.delete(5L), EPayrollError.PAY_013);
+        when(payslips.existsByRunId(5L)).thenReturn(true);
+        assertCode(() -> service.cancel(5L), EPayrollError.PAY_025);
+        assertCode(() -> service.deleteEntry(5L, 1L), EPayrollError.PAY_025);
+        when(payslips.existsByRunId(5L)).thenReturn(false);
         assertThat(service.cancel(5L).status()).isEqualTo(EStatus.CANCELLED);
         assertCode(() -> service.cancel(5L), EPayrollError.PAY_023);
         run.setCompanyId(11L);
