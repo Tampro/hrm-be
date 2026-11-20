@@ -35,6 +35,15 @@ public interface AssetRepository extends JpaRepository<Asset, Long> {
 
     long countByAssetTypeIdAndDeletedFalse(Long assetTypeId);
 
+    /** Asset Distribution of the dashboard. */
+    @Query("select a.assetTypeId, count(a) from Asset a where a.companyId = :companyId and a.deleted = false "
+            + "group by a.assetTypeId")
+    List<Object[]> countAllByType(Long companyId);
+
+    /** Expiring Warranties: expiry within [from, to], soonest first. */
+    List<Asset> findTop5ByCompanyIdAndDeletedFalseAndWarrantyExpiryDateBetweenOrderByWarrantyExpiryDateAsc(
+            Long companyId, LocalDate from, LocalDate to);
+
     Optional<Asset> findByIdAndDeletedFalse(Long id);
 
     boolean existsByCompanyIdAndAssetCodeIgnoreCaseAndDeletedFalseAndIdNot(Long companyId, String assetCode, Long id);
