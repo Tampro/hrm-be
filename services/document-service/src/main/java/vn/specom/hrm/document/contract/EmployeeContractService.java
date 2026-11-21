@@ -67,7 +67,7 @@ public class EmployeeContractService {
                               LocalDate startDate, LocalDate endDate, long durationDays, BigDecimal progressPercent,
                               BigDecimal basicSalary, BigDecimal contractAmount, String termsAndConditions,
                               EmployeeContract.EStatus status, EmployeeContract.EStatus storedStatus,
-                              Instant createdDate) {
+                              String documentFileId, Instant createdDate) {
     }
 
     public record StatusCounts(long all, Map<EmployeeContract.EStatus, Long> byStatus) {
@@ -212,7 +212,8 @@ public class EmployeeContractService {
         return new ContractDto(c.getId().toString(), c.getContractNumber(),
                 t == null ? null : new TypeRef(t.getId().toString(), t.getName()), p, c.getStartDate(),
                 c.getEndDate(), days, progress(c.getStartDate(), c.getEndDate(), today()), c.getBasicSalary(),
-                c.getBasicSalary(), c.getTermsAndConditions(), effective(c), c.getStatus(), c.getCreatedDate());
+                c.getBasicSalary(), c.getTermsAndConditions(), effective(c), c.getStatus(),
+                c.getDocumentFileId() == null ? null : c.getDocumentFileId().toString(), c.getCreatedDate());
     }
 
     private LocalDate today() {

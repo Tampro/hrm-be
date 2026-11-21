@@ -30,9 +30,11 @@ class CategoryTypeServiceTest {
     private final DocumentCategoryRepository categories = mock(DocumentCategoryRepository.class);
     private final ContractTypeRepository types = mock(ContractTypeRepository.class);
     private final DocumentCategoryService categoryService = new DocumentCategoryService(categories,
-            mock(vn.specom.hrm.document.hr.HrDocumentRepository.class));
+            mock(vn.specom.hrm.document.hr.HrDocumentRepository.class),
+            mock(vn.specom.hrm.document.template.DocTemplateRepository.class));
     private final ContractTypeService typeService = new ContractTypeService(types,
-            mock(EmployeeContractRepository.class), java.time.Clock.systemUTC());
+            mock(EmployeeContractRepository.class),
+            mock(vn.specom.hrm.document.template.DocTemplateRepository.class), java.time.Clock.systemUTC());
 
     @BeforeEach
     void setUp() {

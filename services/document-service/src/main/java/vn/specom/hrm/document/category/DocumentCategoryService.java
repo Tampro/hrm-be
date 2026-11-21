@@ -13,6 +13,7 @@ import vn.specom.hrm.document.common.EDocumentError;
 import vn.specom.hrm.document.common.EStatus;
 import vn.specom.hrm.document.common.Texts;
 import vn.specom.hrm.document.hr.HrDocumentRepository;
+import vn.specom.hrm.document.template.DocTemplateRepository;
 import vn.specom.hrm.exception.ApiException;
 import vn.specom.hrm.security.TenantGuard;
 
@@ -31,6 +32,7 @@ import java.util.Map;
 public class DocumentCategoryService {
     private final DocumentCategoryRepository categories;
     private final HrDocumentRepository documents;
+    private final DocTemplateRepository templates;
 
     public record CategoryForm(
             @Schema(example = "HR Policies", requiredMode = Schema.RequiredMode.REQUIRED) @NotBlank @Size(max = 150)
@@ -106,7 +108,8 @@ public class DocumentCategoryService {
     @Transactional
     public void delete(Long id) {
         DocumentCategory c = require(id);
-        if (documents.existsByCategoryIdAndDeletedFalse(c.getId())) {
+        if (documents.existsByCategoryIdAndDeletedFalse(c.getId())
+                || templates.existsByCategoryIdAndDeletedFalse(c.getId())) {
             throw ApiException.badRequest(EDocumentError.DOC_004);
         }
         c.setDeleted(true);

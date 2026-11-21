@@ -3,7 +3,11 @@ package vn.specom.hrm.document.client;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import vn.specom.hrm.document.common.EDocumentError;
 import vn.specom.hrm.document.config.DocumentProperties;
 import vn.specom.hrm.exception.ApiException;
@@ -56,6 +60,24 @@ public class MediaClient {
         } catch (RuntimeException e) {
             return null;
         }
+    }
+
+    /** Uploads a generated file to the company's media library as the caller (MEDIA_UPLOAD there); type from the name. */
+    public MediaFile upload(Long companyId, String fileName, byte[] bytes) {
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("files", new ByteArrayResource(bytes) {
+            @Override
+            public String getFilename() {
+                return fileName;
+            }
+        });
+        JsonNode data = http.call(c -> c.post().uri(u -> u.path("/api/v1/media/files")
+                .queryParam("companyId", companyId).build()).contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(body)).path("data");
+        if (!data.isArray() || data.isEmpty()) {
+            throw new ApiException(org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE, EDocumentError.DOC_007);
+        }
+        return mapper.convertValue(data.get(0), MediaFile.class);
     }
 
     private MediaFile fetch(Long fileId) {

@@ -25,7 +25,12 @@ public enum EDocumentError implements ErrorCode {
     DOC_015("{0} is inactive and cannot be chosen."),
     DOC_016("An archived document cannot be assigned."),
     DOC_017("The contract does not exist."),
-    DOC_018("The end date cannot be before the start date.");
+    DOC_018("The end date cannot be before the start date."),
+    DOC_019("The template does not exist."),
+    DOC_020("An inactive template cannot be used."),
+    DOC_021("Fill in: {0}."),
+    DOC_022("Variable names use letters, digits and underscores only: {0}."),
+    DOC_023("Default values must be a JSON object of text values.");
 
     private final String message;
 }
