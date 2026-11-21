@@ -209,11 +209,15 @@ public class SettingsService {
 
     /** SETTINGS_003 when not configured, SETTINGS_004 with the server's first error line when sending fails. */
     public static void sendTest(Mailer mailer, String to, String text) {
-        send(mailer, to, "SPECOM HRM — test email", text);
+        send(mailer, to, "SPECOM HRM — test email", text, ESettingsError.SETTINGS_004);
     }
 
-    /** A plain-text email; SETTINGS_003 when not configured, SETTINGS_004 with the server's reason when it fails. */
-    public static void send(Mailer mailer, String to, String subject, String text) {
+    /**
+     * A plain-text email; SETTINGS_003 when not configured, `failed` (with the server's reason as {0}) when the
+     * server refuses it, so each caller reports its own action (test email, inquiry reply).
+     */
+    public static void send(Mailer mailer, String to, String subject, String text,
+                            vn.specom.hrm.exception.ErrorCode failed) {
         if (mailer == null) {
             throw ApiException.badRequest(ESettingsError.SETTINGS_003);
         }
@@ -226,8 +230,8 @@ public class SettingsService {
             mailer.sender().send(m);
         } catch (MailException e) {
             String reason = e.getMostSpecificCause().getMessage();
-            log.warn("Test email failed: {}", e.getClass().getSimpleName());
-            throw ApiException.badRequest(ESettingsError.SETTINGS_004,
+            log.warn("Email failed: {}", e.getClass().getSimpleName());
+            throw ApiException.badRequest(failed,
                     reason == null ? e.getClass().getSimpleName() : reason.lines().findFirst().orElse(""));
         }
     }

@@ -96,4 +96,16 @@ class SiteServiceTest {
         // an unknown or used link is not an error
         s.unsubscribeByToken("unknown");
     }
+
+    @Test
+    void aFailedReplyReportsItsOwnCodeNotTheTestEmailOne() {
+        var unreachable = SettingsService.buildMailer("127.0.0.1", 1, null, null,
+                vn.specom.hrm.iam.settings.SettingsDtos.EMailEncryption.NONE, "noreply@example.invalid", "HRM");
+        assertThatThrownBy(() -> SettingsService.send(unreachable, "visitor@example.invalid", "Re: Demo", "Hi",
+                ESiteError.SITE_008))
+                .extracting(e -> ((ApiException) e).getErrorCode()).isEqualTo(ESiteError.SITE_008);
+        assertThatThrownBy(() -> SettingsService.sendTest(unreachable, "a@example.invalid", "x"))
+                .extracting(e -> ((ApiException) e).getErrorCode())
+                .isEqualTo(vn.specom.hrm.iam.settings.ESettingsError.SETTINGS_004);
+    }
 }

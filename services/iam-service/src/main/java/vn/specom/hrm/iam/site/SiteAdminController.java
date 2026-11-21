@@ -151,7 +151,7 @@ public class SiteAdminController {
             + "a NEW inquiry becomes CONTACTED.")
     @ApiResponses({
             @ApiResponse(responseCode = "400", description = "Platform SMTP not configured (SETTINGS_003), sending "
-                    + "failed (SETTINGS_004)"),
+                    + "failed with the server's reason (SITE_008)"),
             @ApiResponse(responseCode = "404", description = "No such inquiry (SITE_005)")})
     @PostMapping("/inquiries/{id}/reply")
     public ApiMessageDto<InquiryDto> reply(@PathVariable Long id, @Valid @RequestBody ReplyForm form) {
