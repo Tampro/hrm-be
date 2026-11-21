@@ -28,6 +28,9 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long> 
 
     boolean existsByUsernameAndDeletedFalse(String username);
 
+    /** Forgot password: every account registered with this email (an email may serve several companies). */
+    List<UserAccount> findByEmailIgnoreCaseAndDeletedFalse(String email);
+
     /** Accounts counting toward the plan's max_users (locked ones included: they hold a seat until deleted). */
     long countByCompanyIdAndDeletedFalse(Long companyId);
 

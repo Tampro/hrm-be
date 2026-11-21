@@ -123,6 +123,10 @@ public class AuthService {
             keycloak.logout(tokens.refreshToken());
             throw ApiException.unauthorized(EIamError.AUTH_002);
         }
+        if (company.get().isEmailVerifyRequired() && company.get().getEmailVerifiedAt() == null) {
+            keycloak.logout(tokens.refreshToken());
+            throw ApiException.unauthorized(EIamError.AUTH_016);
+        }
         if (subscriptions.effective(company.get()).blocked() && !SubscriptionService.mayRenew(
                 u.getRoles().stream().filter(r -> !r.isDeleted()).map(r -> r.getCode())
                         .collect(java.util.stream.Collectors.toSet()))) {

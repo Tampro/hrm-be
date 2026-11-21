@@ -67,6 +67,24 @@ public class EmailNotifier {
         publish(approved ? EEmailTemplate.PAYOUT_APPROVED : EEmailTemplate.PAYOUT_REJECTED, c.getId(), admins(c), v);
     }
 
+    /** The one-time link of Forgot password (docs/analysis/06 §2.4), to the account's own email. */
+    public void passwordReset(UserAccount u, Company c, String link, long minutes) {
+        Map<String, String> v = base(c);
+        v.put("user_name", u.getFullName());
+        v.put("username", u.getUsername());
+        v.put("reset_link", link);
+        v.put("expires_minutes", String.valueOf(minutes));
+        publish(EEmailTemplate.PASSWORD_RESET, c.getId(), List.of(u.getEmail()), v);
+    }
+
+    /** Email verification of a new company (§2.5), to the company's email. */
+    public void emailVerify(Company c, String link, long hours) {
+        Map<String, String> v = base(c);
+        v.put("verify_link", link);
+        v.put("expires_hours", String.valueOf(hours));
+        publish(EEmailTemplate.EMAIL_VERIFY, c.getId(), List.of(c.getEmail()), v);
+    }
+
     private Map<String, String> account(UserAccount u, Company c, String temporaryPassword) {
         Map<String, String> v = base(c);
         v.put("user_name", u.getFullName());

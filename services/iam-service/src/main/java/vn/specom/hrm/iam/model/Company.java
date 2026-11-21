@@ -50,4 +50,12 @@ public class Company extends BaseAuditableEntity {
     /** The company whose code was given at creation; null = not referred. */
     @Column(name = "referred_by_company_id")
     private Long referredByCompanyId;
+
+    /** Email verification (docs/analysis/06 §2.5); null = not verified. */
+    @Column(name = "email_verified_at")
+    private java.time.Instant emailVerifiedAt;
+
+    /** Self-registered with Email Verification on: no login until the email is verified (AUTH_016). */
+    @Column(name = "email_verify_required", nullable = false)
+    private boolean emailVerifyRequired;
 }

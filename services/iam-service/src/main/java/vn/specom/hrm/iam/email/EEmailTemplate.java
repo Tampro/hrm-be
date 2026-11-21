@@ -21,7 +21,10 @@ public enum EEmailTemplate {
     PLAN_REQUEST_APPROVED(true, List.of("company_name", "plan_name", "billing_cycle", "notes")),
     PLAN_REQUEST_REJECTED(true, List.of("company_name", "plan_name", "notes")),
     PAYOUT_APPROVED(true, List.of("company_name", "amount", "notes")),
-    PAYOUT_REJECTED(true, List.of("company_name", "amount", "notes"));
+    PAYOUT_REJECTED(true, List.of("company_name", "amount", "notes")),
+    // Account emails the user asked for or must act on: a company cannot switch them off.
+    PASSWORD_RESET(false, List.of("user_name", "username", "company_name", "reset_link", "expires_minutes")),
+    EMAIL_VERIFY(false, List.of("company_name", "verify_link", "expires_hours"));
 
     public static final List<String> COMMON = List.of("app_name", "app_url");
 

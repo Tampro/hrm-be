@@ -16,6 +16,8 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
 
     boolean existsByCodeAndDeletedFalse(String code);
 
+    List<Company> findByEmailIgnoreCaseAndDeletedFalse(String email);
+
     Page<Company> findByDeletedFalse(Pageable pageable);
 
     String FILTER = "c.deleted = false"

@@ -27,6 +27,42 @@ public class MeController {
 
     private final vn.specom.hrm.iam.repository.CompanyRepository companies;
     private final vn.specom.hrm.iam.saas.SubscriptionService subscriptions;
+    private final ProfileService profiles;
+
+    @Operation(summary = "My profile: name, email, avatar")
+    @ApiResponses(@ApiResponse(responseCode = "403", description = "No HRM profile (AUTH_006)"))
+    @GetMapping("/profile")
+    public ApiMessageDto<ProfileService.ProfileDto> profile() {
+        return ApiMessageDto.ok(profiles.get());
+    }
+
+    @Operation(summary = "Update my profile", description = "Full replacement of name, email and avatar "
+            + "(avatarFileId null = none). The username never changes.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "400", description = "Email used by another account (IAM_017), avatar not a "
+                    + "JPG/PNG/GIF of your company up to 2 MB or no access to it (IAM_024)"),
+            @ApiResponse(responseCode = "503", description = "Keycloak (AUTH_005) or media-service (IAM_025) "
+                    + "unreachable")})
+    @org.springframework.web.bind.annotation.PutMapping("/profile")
+    public ApiMessageDto<ProfileService.ProfileDto> updateProfile(
+            @jakarta.validation.Valid @org.springframework.web.bind.annotation.RequestBody
+            ProfileService.ProfileForm form) {
+        return ApiMessageDto.ok(profiles.update(form));
+    }
+
+    @Operation(summary = "Change my password", description = "Every session ends afterwards, this one included: "
+            + "log in again with the new password.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "400", description = "Current password wrong (AUTH_017), policy not met "
+                    + "(AUTH_007), confirmation differs (validation)"),
+            @ApiResponse(responseCode = "503", description = "Keycloak unreachable (AUTH_005)")})
+    @org.springframework.web.bind.annotation.PutMapping("/password")
+    public ApiMessageDto<Void> changePassword(
+            @jakarta.validation.Valid @org.springframework.web.bind.annotation.RequestBody
+            ProfileService.PasswordForm form) {
+        profiles.changePassword(form);
+        return ApiMessageDto.ok(null);
+    }
 
     /** Limits: null = none. */
     public record CompanyContextDto(String companyId, String name, Integer maxUsers, Integer maxEmployees,

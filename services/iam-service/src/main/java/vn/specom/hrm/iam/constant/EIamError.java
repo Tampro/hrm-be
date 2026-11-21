@@ -20,6 +20,11 @@ public enum EIamError implements ErrorCode {
     AUTH_010("The reCAPTCHA check failed. Please try again."),
     AUTH_011("The reCAPTCHA service is unavailable. Please try again later."),
     AUTH_012("Sign-in is not allowed from this IP address."),
+    AUTH_013("Too many requests. Please try again later."),
+    AUTH_014("The link is invalid or has expired."),
+    AUTH_015("Self-registration is not enabled."),
+    AUTH_016("The company email address has not been verified yet. Check the inbox for the verification link."),
+    AUTH_017("The current password is incorrect."),
     IAM_001("The company does not exist."),
     IAM_002("The company code is already taken."),
     IAM_003("A company must be specified for this action."),
@@ -42,7 +47,9 @@ public enum EIamError implements ErrorCode {
     IAM_020("Enter an IPv4 / IPv6 address or a CIDR range: {0}."),
     IAM_021("This would block your own IP address {0}; add it first."),
     IAM_022("This IP address is already in the list."),
-    IAM_023("The IP address entry does not exist.");
+    IAM_023("The IP address entry does not exist."),
+    IAM_024("The avatar must be a JPG, PNG or GIF image of your company, at most 2 MB."),
+    IAM_025("The media service is unavailable. Please try again later.");
 
     private final String message;
 }

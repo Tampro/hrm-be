@@ -64,6 +64,7 @@ public class CompanyService {
     private final KeycloakClient keycloak;
     private final LocalAuthorityResolver authorityCache;
     private final vn.specom.hrm.iam.referral.ReferralService referral;
+    private final vn.specom.hrm.iam.auth.EmailVerificationService verification;
 
     /**
      * @param from first created day included (UTC); null = no lower bound
@@ -122,7 +123,53 @@ public class CompanyService {
                 .orElseThrow();
         CreatedUserDto adminUser = userService.createInCompany(c.getId(), new UserCreateForm(
                 form.admin().username(), form.admin().email(), form.admin().fullName(), Set.of(admin.getId())), true);
+        // Created by the super admin: the verification email is sent, but login is not held back (PO 2026-11-21).
+        if (verification.enabled()) {
+            verification.issue(c);
+        }
         return new CompanyCreatedDto(CompanyDto.of(c, subscriptions.effective(c)), adminUser);
+    }
+
+    /**
+     * Sign up (docs/analysis/06 §2.6): a new company whose first administrator is the person registering, with the
+     * password they chose. The code is derived from the name. With Email Verification on, nobody of the company can
+     * log in until the link sent to the email is opened (AUTH_016).
+     */
+    @Transactional
+    public Company register(String companyName, String email, String fullName, String password, String referralCode) {
+        Company c = new Company();
+        c.setCode(freeCode(companyName));
+        c.setName(companyName);
+        c.setEmail(email);
+        c.setStatus(ECompanyStatus.ACTIVE);
+        subscriptions.assignDefault(c);
+        c.setReferredByCompanyId(referral.referrerOf(referralCode));
+        boolean verify = verification.enabled();
+        c.setEmailVerifyRequired(verify);
+        c.setEmailVerifiedAt(verify ? null : Instant.now());
+        c = companies.save(c);
+        c.setReferralCode(vn.specom.hrm.iam.referral.ReferralService.codeFor(c.getId()));
+        roleService.createDefaultRoles(c.getId());
+        userService.createSelfRegisteredAdmin(c.getId(), email, fullName, password);
+        if (verify) {
+            verification.issue(c);
+        }
+        log.info("Company {} self-registered", c.getCode());
+        return c;
+    }
+
+    /** Letters and digits of the name (accents dropped), at most 12, plus 4 random characters until unused. */
+    String freeCode(String name) {
+        String base = java.text.Normalizer.normalize(name, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "").replace('đ', 'd').replace('Đ', 'D')
+                .toUpperCase(java.util.Locale.ROOT).replaceAll("[^A-Z0-9]", "");
+        base = base.isEmpty() ? "CO" : base.substring(0, Math.min(12, base.length()));
+        String code;
+        do {
+            code = base + "_" + vn.specom.hrm.iam.auth.AccountTokens.newToken()
+                    .replaceAll("[^A-Za-z0-9]", "").toUpperCase(java.util.Locale.ROOT).substring(0, 4);
+        } while (companies.existsByCodeAndDeletedFalse(code));
+        return code;
     }
 
     /** Full replacement of the editable profile (the code is the tenant key and stays). */
