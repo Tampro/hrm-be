@@ -171,28 +171,40 @@ public class SettingsService {
         if (s.host() == null || s.host().isBlank() || s.fromAddress() == null) {
             return null;
         }
+        return buildMailer(s.host(), s.port(), s.username(),
+                s.passwordEnc() == null ? null : cipher.decrypt(s.passwordEnc()), s.encryption(), s.fromAddress(),
+                s.fromName());
+    }
+
+    /** An SMTP sender with explicit timeouts (shared by the platform and the company email settings). */
+    public static Mailer buildMailer(String host, Integer port, String username, String password,
+                                     EMailEncryption encryption, String fromAddress, String fromName) {
         JavaMailSenderImpl sender = new JavaMailSenderImpl();
-        sender.setHost(s.host());
-        sender.setPort(s.port());
+        sender.setHost(host);
+        sender.setPort(port == null ? 587 : port);
         sender.setDefaultEncoding("UTF-8");
-        if (s.username() != null && !s.username().isBlank()) {
-            sender.setUsername(s.username());
-            sender.setPassword(s.passwordEnc() == null ? null : cipher.decrypt(s.passwordEnc()));
+        if (username != null && !username.isBlank()) {
+            sender.setUsername(username);
+            sender.setPassword(password);
         }
         Properties p = sender.getJavaMailProperties();
         p.put("mail.smtp.auth", String.valueOf(sender.getUsername() != null));
-        p.put("mail.smtp.starttls.enable", String.valueOf(s.encryption() == EMailEncryption.TLS));
-        p.put("mail.smtp.ssl.enable", String.valueOf(s.encryption() == EMailEncryption.SSL));
+        p.put("mail.smtp.starttls.enable", String.valueOf(encryption == EMailEncryption.TLS));
+        p.put("mail.smtp.ssl.enable", String.valueOf(encryption == EMailEncryption.SSL));
         p.put("mail.smtp.connectiontimeout", "5000");
         p.put("mail.smtp.timeout", "10000");
         p.put("mail.smtp.writetimeout", "10000");
-        return new Mailer(sender, s.fromAddress(), s.fromName());
+        return new Mailer(sender, fromAddress, fromName);
     }
 
     /** Sends one message with the stored settings; the error text of the mail server is returned, never a secret. */
     @Transactional(readOnly = true)
     public void sendTestEmail(String to) {
-        Mailer mailer = mailer();
+        sendTest(mailer(), to, "This is a test email from the SPECOM HRM platform settings.");
+    }
+
+    /** SETTINGS_003 when not configured, SETTINGS_004 with the server's first error line when sending fails. */
+    public static void sendTest(Mailer mailer, String to, String text) {
         if (mailer == null) {
             throw ApiException.badRequest(ESettingsError.SETTINGS_003);
         }
@@ -200,7 +212,7 @@ public class SettingsService {
         m.setFrom(mailer.fromName() == null ? mailer.fromAddress() : mailer.fromName() + " <" + mailer.fromAddress() + ">");
         m.setTo(to);
         m.setSubject("SPECOM HRM — test email");
-        m.setText("This is a test email from the SPECOM HRM platform settings.");
+        m.setText(text);
         try {
             mailer.sender().send(m);
         } catch (MailException e) {

@@ -27,6 +27,7 @@ public class EmailDispatcher {
     private final EmailTemplateService templates;
     private final CompanyEmailNotificationRepository toggles;
     private final SettingsService settings;
+    private final vn.specom.hrm.iam.settings.CompanyEmailService companyMail;
 
     /**
      * @param companyId company whose notification switch applies; null = not switchable
@@ -57,7 +58,8 @@ public class EmailDispatcher {
             log.info("Email {} switched off by company {}", e.template(), e.companyId());
             return;
         }
-        SettingsService.Mailer mailer = settings.mailer();
+        // The company's own SMTP when it set one up (and it is on), else the platform's.
+        SettingsService.Mailer mailer = companyMail.mailerFor(e.companyId());
         if (mailer == null) {
             log.info("Email {} skipped: SMTP not configured", e.template());
             return;
