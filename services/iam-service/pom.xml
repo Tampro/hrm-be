@@ -44,6 +44,12 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
+            <!-- Custom Pages: rich text sanitized before it is published (docs/analysis/06 §3.2.8). -->
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>${jsoup.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
         </dependency>

@@ -35,6 +35,8 @@ public class SecurityConfig {
             // Language selector and UI labels: the login page needs them (docs/analysis/06 §3).
             "/api/v1/languages",
             "/api/v1/languages/*/labels",
+            // Public website (docs/analysis/06 §3.2.7-3.2.10): landing, pages, contact form, newsletter.
+            "/api/v1/public/site/**",
             "/actuator/health/**",
             "/v3/api-docs/**",
             "/swagger-ui/**",
