@@ -21,4 +21,8 @@ public interface PayrollRunRepository extends JpaRepository<PayrollRun, Long> {
     List<Object[]> countByStatus(Long companyId, String kw);
 
     Optional<PayrollRun> findByIdAndDeletedFalse(Long id);
+
+    /** Dashboard: runs of a status paid within [from, to]. */
+    List<PayrollRun> findByCompanyIdAndStatusAndDeletedFalseAndPayDateBetween(Long companyId, PayrollRun.EStatus status,
+                                                                       java.time.LocalDate from, java.time.LocalDate to);
 }

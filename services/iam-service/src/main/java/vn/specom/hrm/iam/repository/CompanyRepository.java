@@ -61,4 +61,7 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
 
     @Query("select count(c) from Company c where c.deleted = false and c.referredByCompanyId = :companyId")
     long countReferredBy(Long companyId);
+
+    /** Super admin dashboard: every live company (the platform has few enough to aggregate in memory). */
+    List<Company> findAllByDeletedFalse();
 }

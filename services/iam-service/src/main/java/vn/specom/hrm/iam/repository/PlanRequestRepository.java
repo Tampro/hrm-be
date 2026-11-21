@@ -28,4 +28,7 @@ public interface PlanRequestRepository extends JpaRepository<PlanRequest, Long> 
 
     @Query("select r.status, count(r)" + FILTER + " group by r.status")
     List<Object[]> countByStatus(String keyword);
+
+    /** Super admin dashboard: Pending Requests. */
+    long countByStatus(EPlanRequestStatus status);
 }

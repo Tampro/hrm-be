@@ -115,6 +115,18 @@ public class MeetingService {
         return dtos(list, companyId, false);
     }
 
+    /** The meetings of [from, to] (at most 62 days), for the company calendar (docs/analysis/06 §5.2). */
+    @Transactional(readOnly = true)
+    public List<MeetingDto> inRange(Long requestedCompanyId, LocalDate from, LocalDate to) {
+        if (to.isBefore(from) || java.time.temporal.ChronoUnit.DAYS.between(from, to) + 1 > MAX_RANGE_DAYS) {
+            throw ApiException.badRequest(EMeetingError.MTG_021, MAX_RANGE_DAYS);
+        }
+        Long companyId = Texts.company(requestedCompanyId);
+        return dtos(meetings.inRange(companyId, from, to), companyId, false);
+    }
+
+    static final int MAX_RANGE_DAYS = 62;
+
     @Transactional(readOnly = true)
     public Summary summary(Long requestedCompanyId, LocalDate date) {
         LocalDate d = date != null ? date : Texts.today(clock);

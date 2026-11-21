@@ -69,6 +69,20 @@ public class MeetingController {
         return ApiMessageDto.ok(service.ofDay(companyId, date, status));
     }
 
+    @Operation(summary = "Meetings of a period (company calendar)",
+            description = "Meetings with meetingDate in [from, to] (at most 62 days), by date and start time; "
+                    + "cancelled ones included (see status).")
+    @ApiResponses(@ApiResponse(responseCode = "400", description = "Period reversed or longer than 62 days "
+            + "(MTG_021), " + NO_COMPANY))
+    @PreAuthorize("@PermissionChecker.has('MEETING_VIEW')")
+    @GetMapping("/range")
+    public ApiMessageDto<List<MeetingDto>> range(
+            @Parameter(description = COMPANY) @RequestParam(required = false) Long companyId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return ApiMessageDto.ok(service.inRange(companyId, from, to));
+    }
+
     @Operation(summary = "Meeting Summary of a date", description = "Counts per status and the total. " + DATE)
     @ApiResponses(@ApiResponse(responseCode = "400", description = NO_COMPANY))
     @PreAuthorize("@PermissionChecker.has('MEETING_VIEW')")

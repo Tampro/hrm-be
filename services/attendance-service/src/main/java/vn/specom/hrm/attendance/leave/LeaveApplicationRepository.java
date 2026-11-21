@@ -49,4 +49,17 @@ public interface LeaveApplicationRepository extends JpaRepository<LeaveApplicati
                                                LocalDate to);
 
     boolean existsByLeaveTypeId(Long leaveTypeId);
+
+    // ---- dashboard
+    long countByCompanyIdAndStatus(Long companyId, ERegularizationStatus status);
+
+    /** Rows of [status, count] of the applications starting in [from, to]. */
+    @Query("select a.status, count(a) from LeaveApplication a where a.companyId = :companyId "
+            + "and a.startDate >= :from and a.startDate <= :to group by a.status")
+    List<Object[]> countByStatusStartingBetween(Long companyId, LocalDate from, LocalDate to);
+
+    /** Applications of the status covering the date. */
+    @Query("select a from LeaveApplication a where a.companyId = :companyId and a.status = :status "
+            + "and a.startDate <= :date and a.endDate >= :date order by a.startDate")
+    List<LeaveApplication> covering(Long companyId, ERegularizationStatus status, LocalDate date);
 }

@@ -51,6 +51,36 @@ public class EmployeeController {
 
     private final EmployeeService service;
     private final OrgChartService chart;
+    private final EmployeeDashboardService dashboard;
+
+    @Operation(summary = "Employee figures of the company dashboard",
+            description = "Totals, new joiners this/last month, branches, today's birthdays (with photo links) and "
+                    + "the hiring trend (12 monthly counts of dateOfJoining) of `year` (default current year).")
+    @ApiResponses(@ApiResponse(responseCode = "400", description = "Super admin without companyId (EMP_019)"))
+    @PreAuthorize("@PermissionChecker.has('EMPLOYEE_VIEW')")
+    @GetMapping("/dashboard")
+    public ApiMessageDto<EmployeeDashboardService.EmployeeDashboard> dashboard(
+            @Parameter(description = COMPANY) @RequestParam(required = false) Long companyId,
+            @RequestParam(required = false) @jakarta.validation.constraints.Min(2000)
+            @jakarta.validation.constraints.Max(2100) Integer year) {
+        return ApiMessageDto.ok(dashboard.dashboard(companyId, year));
+    }
+
+    @Operation(summary = "Birthdays in a period (calendar)",
+            description = "Employees not terminated whose birthday falls in [from, to] (at most 62 days); date = the "
+                    + "occurrence in the period (29 Feb on 28 Feb in other years).")
+    @ApiResponses(@ApiResponse(responseCode = "400", description = "Period reversed or longer than 62 days "
+            + "(EMP_095), super admin without companyId (EMP_019)"))
+    @PreAuthorize("@PermissionChecker.has('EMPLOYEE_VIEW')")
+    @GetMapping("/birthdays")
+    public ApiMessageDto<java.util.List<EmployeeDashboardService.BirthdayDto>> birthdays(
+            @Parameter(description = COMPANY) @RequestParam(required = false) Long companyId,
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(
+                    iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate from,
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(
+                    iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate to) {
+        return ApiMessageDto.ok(dashboard.birthdays(companyId, from, to));
+    }
 
     @Operation(summary = "Employees of the company",
             description = "Filters combine; sort by employeeNo, fullName, dateOfJoining, createdDate. "

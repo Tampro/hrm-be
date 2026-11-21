@@ -70,4 +70,10 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Long> {
     @Query(value = "UPDATE recruitment_sequence SET next_value = next_value + 1 WHERE company_id = :companyId "
             + "AND name = :name", nativeQuery = true)
     void bumpSequence(Long companyId, String name);
+
+    /** Dashboard: [count, sum of positions] of PUBLISHED postings whose deadline has not passed. */
+    @Query("select count(p), coalesce(sum(p.positions), 0) from JobPosting p where p.companyId = :companyId "
+            + "and p.deleted = false and p.status = vn.specom.hrm.recruitment.posting.JobPosting.EStatus.PUBLISHED "
+            + "and (p.applicationDeadline is null or p.applicationDeadline >= :today)")
+    List<Object[]> activeCounts(Long companyId, java.time.LocalDate today);
 }
