@@ -61,4 +61,17 @@ public class EmployeeClient {
         }
         return out;
     }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Department(String id, String name, String branchId) {
+    }
+
+    /** Active departments of the company by id (employee-service; ORG_VIEW or EMPLOYEE_VIEW there). */
+    public Map<Long, Department> activeDepartments(Long companyId) {
+        JsonNode data = http.call(c -> c.get().uri(u -> u.path("/api/v1/org/departments/options")
+                .queryParam("companyId", companyId).build())).path("data");
+        List<Department> list = mapper.convertValue(data, new TypeReference<>() {
+        });
+        return list.stream().collect(Collectors.toMap(d -> Long.valueOf(d.id()), Function.identity(), (a, b) -> a));
+    }
 }
