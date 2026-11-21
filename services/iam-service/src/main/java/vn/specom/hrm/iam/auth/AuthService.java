@@ -37,19 +37,31 @@ public class AuthService {
     private final CompanyRepository companies;
     private final RevokedSessionStore revokedSessions;
     private final SubscriptionService subscriptions;
+    private final vn.specom.hrm.iam.ip.IpRestrictionService ipRestriction;
 
     @Transactional(readOnly = true)
     public TokenDto login(String username, String password) {
+        return login(username, password, null);
+    }
+
+    /** clientIp = X-Client-IP of the gateway; checked against the company's IP restriction (AUTH_012). */
+    @Transactional(readOnly = true)
+    public TokenDto login(String username, String password, String clientIp) {
         KeycloakTokens tokens = keycloak.passwordGrant(username, password);
-        assertMayUseHrm(tokens);
+        assertMayUseHrm(tokens, clientIp);
         return toDto(tokens);
     }
 
     /** Keycloak rotates the refresh token (revokeRefreshToken in the realm), so the old one stops working. */
     @Transactional(readOnly = true)
     public TokenDto refresh(String refreshToken) {
+        return refresh(refreshToken, null);
+    }
+
+    @Transactional(readOnly = true)
+    public TokenDto refresh(String refreshToken, String clientIp) {
         KeycloakTokens tokens = keycloak.refresh(refreshToken);
-        assertMayUseHrm(tokens);
+        assertMayUseHrm(tokens, clientIp);
         return toDto(tokens);
     }
 
@@ -71,10 +83,15 @@ public class AuthService {
      */
     @Transactional(readOnly = true)
     public TokenDto setInitialPassword(String username, String currentPassword, String newPassword) {
+        return setInitialPassword(username, currentPassword, newPassword, null);
+    }
+
+    @Transactional(readOnly = true)
+    public TokenDto setInitialPassword(String username, String currentPassword, String newPassword, String clientIp) {
         try {
             KeycloakTokens tokens = keycloak.passwordGrant(username, currentPassword);
             // No pending action: the password is already permanent — just log in.
-            assertMayUseHrm(tokens);
+            assertMayUseHrm(tokens, clientIp);
             return toDto(tokens);
         } catch (ApiException e) {
             if (e.getErrorCode() != EIamError.AUTH_004) {
@@ -86,10 +103,10 @@ public class AuthService {
             throw ApiException.unauthorized(EIamError.AUTH_001);
         }
         keycloak.setPermanentPassword(keycloakId, newPassword);
-        return login(username, newPassword);
+        return login(username, newPassword, clientIp);
     }
 
-    private void assertMayUseHrm(KeycloakTokens tokens) {
+    private void assertMayUseHrm(KeycloakTokens tokens, String clientIp) {
         Jwt jwt = jwtDecoder.decode(tokens.accessToken());
         if (HrmJwtAuthenticationConverter.isSuperAdmin(jwt)) {
             return;
@@ -111,6 +128,12 @@ public class AuthService {
                         .collect(java.util.stream.Collectors.toSet()))) {
             keycloak.logout(tokens.refreshToken());
             throw ApiException.unauthorized(EIamError.AUTH_009);
+        }
+        try {
+            ipRestriction.assertLoginAllowed(u.getCompanyId(), clientIp);
+        } catch (ApiException e) {
+            keycloak.logout(tokens.refreshToken());
+            throw e;
         }
     }
 

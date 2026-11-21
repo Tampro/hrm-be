@@ -57,7 +57,8 @@ class SettingsServiceTest {
 
     @Test
     void unknownTimezoneIsRefused() {
-        var s = new SystemSettings("vi", "dd/MM/yyyy", "HH:mm", DayOfWeek.MONDAY, "Mars/Olympus", false, true, false, null);
+        var s = new SystemSettings("vi", "dd/MM/yyyy", "HH:mm", DayOfWeek.MONDAY, "Mars/Olympus", false, true, false, null,
+                true);
         assertError(() -> service.saveSystem(s), ESettingsError.SETTINGS_001);
     }
 

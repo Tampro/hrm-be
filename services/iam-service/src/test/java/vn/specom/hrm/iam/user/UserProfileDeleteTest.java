@@ -34,7 +34,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class UserProfileDeleteTest {
+public class UserProfileDeleteTest {
     private final UserAccountRepository users = mock(UserAccountRepository.class);
     private final KeycloakClient keycloak = mock(KeycloakClient.class);
     private final UserService service = new UserService(users, mock(RoleRepository.class), keycloak,
@@ -111,7 +111,7 @@ class UserProfileDeleteTest {
                 .satisfies(e -> assertThat(((ApiException) e).getErrorCode()).isEqualTo(code));
     }
 
-    static void login(Long userId, Long companyId, String... perms) {
+    public static void login(Long userId, Long companyId, String... perms) {
         HrmPrincipal p = new HrmPrincipal(userId, "kc-" + userId, "user" + userId, companyId, false, Set.of(),
                 Set.of(perms));
         Jwt jwt = new Jwt("t", Instant.now(), Instant.now().plusSeconds(60), Map.of("alg", "none"),
