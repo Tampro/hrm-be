@@ -78,6 +78,8 @@ services:
       IAM_DB_PASSWORD: ${IAM_DB_PASSWORD}
       KEYCLOAK_INTERNAL_URL: http://keycloak:8080
       KEYCLOAK_ISSUER: http://localhost:8180/realms/hrm
+      # Avatar check in Profile Settings (the caller's own token).
+      MEDIA_SERVICE_URL: http://media-service:8082
       KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
       # First company admin (optional; both empty = skip). See BootstrapAdminRunner.
       ADMIN_USER: ${ADMIN_USER:-}

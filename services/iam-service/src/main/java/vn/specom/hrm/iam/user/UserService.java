@@ -113,6 +113,29 @@ public class UserService {
         return new CreatedUserDto(UserDto.of(saved), temporaryPassword);
     }
 
+    /**
+     * First administrator of a self-registered company (Sign up, docs/analysis/06 §2.6): the password is the one the
+     * person chose, so it is permanent and no account email with a temporary password is sent.
+     */
+    @Transactional
+    public UserAccount createSelfRegisteredAdmin(Long companyId, String email, String fullName, String password) {
+        if (users.existsByUsernameAndDeletedFalse(email)) {
+            throw ApiException.badRequest(EIamError.IAM_010);
+        }
+        Role admin = roles.findByCompanyIdAndCodeAndDeletedFalse(companyId,
+                vn.specom.hrm.iam.constant.EDefaultRole.COMPANY_ADMIN.name()).orElseThrow();
+        String keycloakId = keycloak.createUser(email, email, fullName, password, false);
+        UserAccount u = new UserAccount();
+        u.setKeycloakId(keycloakId);
+        u.setCompanyId(companyId);
+        u.setUsername(email);
+        u.setEmail(email);
+        u.setFullName(fullName);
+        u.setStatus(EUserStatus.ACTIVE);
+        u.setRoles(new HashSet<>(Set.of(admin)));
+        return users.save(u);
+    }
+
     @Transactional
     public UserDto replaceRoles(Long id, Set<Long> roleIds) {
         UserAccount u = require(id);

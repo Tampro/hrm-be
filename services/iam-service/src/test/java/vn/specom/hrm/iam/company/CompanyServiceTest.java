@@ -38,6 +38,9 @@ class CompanyServiceTest {
     private OrderService orders;
     private CompanyService service;
     private Company company;
+    private final vn.specom.hrm.iam.auth.EmailVerificationService verification =
+            mock(vn.specom.hrm.iam.auth.EmailVerificationService.class);
+    private final UserService userService = mock(UserService.class);
 
     @BeforeEach
     void setUp() {
@@ -46,8 +49,8 @@ class CompanyServiceTest {
         keycloak = mock(KeycloakClient.class);
         orders = mock(OrderService.class);
         service = new CompanyService(companies, mock(RoleRepository.class), mock(PlanRepository.class), users,
-                mock(RoleService.class), mock(UserService.class), orders, mock(SubscriptionService.class), keycloak,
-                mock(LocalAuthorityResolver.class), mock(vn.specom.hrm.iam.referral.ReferralService.class));
+                mock(RoleService.class), userService, orders, mock(SubscriptionService.class), keycloak,
+                mock(LocalAuthorityResolver.class), mock(vn.specom.hrm.iam.referral.ReferralService.class), verification);
         company = new Company();
         company.setId(10L);
         company.setCode("ACME");
@@ -101,6 +104,27 @@ class CompanyServiceTest {
         assertThat(active.getStatus()).isEqualTo(EUserStatus.LOCKED);
         assertThat(locked.isDeleted()).isTrue();
         verify(orders).cancelPendingOf(10L);
+    }
+
+    @Test
+    void selfRegisteredCompanyWaitsForEmailVerificationWhenItIsOn() {
+        when(verification.enabled()).thenReturn(true);
+        when(companies.save(org.mockito.ArgumentMatchers.any())).thenAnswer(i -> {
+            Company c = i.getArgument(0);
+            c.setId(20L);
+            return c;
+        });
+        Company c = service.register("Công ty Đông Á", "owner@example.invalid", "Owner Test", "Secret-123", null);
+        assertThat(c.getCode()).matches("CONGTYDONGA_[A-Z0-9]{4}");
+        assertThat(c.isEmailVerifyRequired()).isTrue();
+        assertThat(c.getEmailVerifiedAt()).isNull();
+        verify(userService).createSelfRegisteredAdmin(20L, "owner@example.invalid", "Owner Test", "Secret-123");
+        verify(verification).issue(c);
+
+        when(verification.enabled()).thenReturn(false);
+        Company d = service.register("Beta", "b@example.invalid", "B Test", "Secret-123", null);
+        assertThat(d.isEmailVerifyRequired()).isFalse();
+        assertThat(d.getEmailVerifiedAt()).isNotNull();
     }
 
     private static UserAccount user(Long id, Long companyId, String kc, EUserStatus status) {

@@ -25,6 +25,12 @@ public class SecurityConfig {
             "/api/v1/auth/refresh-token",
             "/api/v1/auth/logout",
             "/api/v1/auth/initial-password",
+            // Account self-service (docs/analysis/06 §2.4-2.6): rate limited, never reveal whether an email exists.
+            "/api/v1/auth/forgot-password",
+            "/api/v1/auth/reset-password",
+            "/api/v1/auth/register",
+            "/api/v1/auth/verify-email",
+            "/api/v1/auth/resend-verification",
             "/api/v1/settings/public",
             "/actuator/health/**",
             "/v3/api-docs/**",

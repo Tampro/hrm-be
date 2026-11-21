@@ -16,6 +16,11 @@ import vn.specom.hrm.iam.auth.AuthForms.InitialPasswordForm;
 import vn.specom.hrm.iam.auth.AuthForms.LoginForm;
 import vn.specom.hrm.iam.auth.AuthForms.RefreshTokenForm;
 import vn.specom.hrm.iam.auth.AuthForms.TokenDto;
+import vn.specom.hrm.iam.auth.AuthForms.ForgotPasswordForm;
+import vn.specom.hrm.iam.auth.AuthForms.RegisterForm;
+import vn.specom.hrm.iam.auth.AuthForms.RegisteredDto;
+import vn.specom.hrm.iam.auth.AuthForms.ResetPasswordForm;
+import vn.specom.hrm.iam.auth.AuthForms.TokenForm;
 import vn.specom.hrm.iam.login.LoginHistoryService;
 
 @Tag(name = "Auth")
@@ -26,6 +31,9 @@ public class AuthController {
     private final AuthService authService;
     private final vn.specom.hrm.iam.settings.RecaptchaVerifier recaptcha;
     private final LoginHistoryService loginHistory;
+    private final AccountService accounts;
+    private final EmailVerificationService verification;
+    private final AuthRateLimiter limiter;
 
     @Operation(summary = "Log in with username and password",
             description = "Returns Keycloak tokens. Access token lives 15 minutes, the refresh token rotates.")
@@ -78,6 +86,74 @@ public class AuthController {
                 form.newPassword(), clientIp(request));
         loginHistory.record(form.username(), request);
         return ApiMessageDto.ok(tokens);
+    }
+
+    @Operation(summary = "Forgot password: email a reset link",
+            description = "Always 200, whether or not the email has an account. The link is valid 30 minutes, once; "
+                    + "earlier links stop working.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "400", description = "reCAPTCHA missing or refused (AUTH_010)"),
+            @ApiResponse(responseCode = "429", description = "Too many requests from this IP (AUTH_013)")})
+    @PostMapping("/forgot-password")
+    public ApiMessageDto<Void> forgotPassword(@Valid @RequestBody ForgotPasswordForm form, HttpServletRequest request) {
+        limiter.checkIp("forgot", clientIp(request));
+        recaptcha.check(form.recaptchaToken());
+        if (limiter.allowEmail("forgot", form.email())) {
+            accounts.forgotPassword(form.email());
+        }
+        return ApiMessageDto.ok(null);
+    }
+
+    @Operation(summary = "Reset password with the emailed link",
+            description = "Sets the new password and ends every session of the account; then log in.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "400", description = "Link invalid, used or expired (AUTH_014), password "
+                    + "policy not met (AUTH_007)"),
+            @ApiResponse(responseCode = "503", description = "Keycloak unreachable (AUTH_005)")})
+    @PostMapping("/reset-password")
+    public ApiMessageDto<Void> resetPassword(@Valid @RequestBody ResetPasswordForm form) {
+        accounts.resetPassword(form.token(), form.newPassword());
+        return ApiMessageDto.ok(null);
+    }
+
+    @Operation(summary = "Sign up: create a company and become its administrator",
+            description = "Only when System Settings User Registration is on. With Email Verification on, log in "
+                    + "only after opening the link sent to the email (until then login answers AUTH_016).")
+    @ApiResponses({
+            @ApiResponse(responseCode = "400", description = "Validation (passwords differ), email already used "
+                    + "(IAM_010), user refused by Keycloak e.g. password policy (IAM_014), reCAPTCHA (AUTH_010)"),
+            @ApiResponse(responseCode = "403", description = "Self-registration not enabled (AUTH_015)"),
+            @ApiResponse(responseCode = "429", description = "Too many requests from this IP (AUTH_013)")})
+    @PostMapping("/register")
+    public ApiMessageDto<RegisteredDto> register(@Valid @RequestBody RegisterForm form, HttpServletRequest request) {
+        limiter.checkIp("register", clientIp(request));
+        recaptcha.check(form.recaptchaToken());
+        var c = accounts.register(form.name(), form.email(), form.password(), form.companyName(), form.referralCode());
+        return ApiMessageDto.ok(new RegisteredDto(c.getId().toString(), c.getCode(), c.isEmailVerifyRequired()));
+    }
+
+    @Operation(summary = "Verify the company email with the emailed link", description = "One-time.")
+    @ApiResponses(@ApiResponse(responseCode = "400", description = "Link invalid, used or expired (AUTH_014)"))
+    @PostMapping("/verify-email")
+    public ApiMessageDto<Void> verifyEmail(@Valid @RequestBody TokenForm form) {
+        verification.verify(form.token());
+        return ApiMessageDto.ok(null);
+    }
+
+    @Operation(summary = "Send the verification link again",
+            description = "Always 200; a company already verified (or an unknown email) gets nothing.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "400", description = "reCAPTCHA missing or refused (AUTH_010)"),
+            @ApiResponse(responseCode = "429", description = "Too many requests from this IP (AUTH_013)")})
+    @PostMapping("/resend-verification")
+    public ApiMessageDto<Void> resendVerification(@Valid @RequestBody ForgotPasswordForm form,
+                                                  HttpServletRequest request) {
+        limiter.checkIp("verify", clientIp(request));
+        recaptcha.check(form.recaptchaToken());
+        if (limiter.allowEmail("verify", form.email())) {
+            verification.resend(form.email());
+        }
+        return ApiMessageDto.ok(null);
     }
 
     private static String clientIp(HttpServletRequest request) {

@@ -31,6 +31,8 @@ spring:
           issuer-uri: ${KEYCLOAK_ISSUER:http://localhost:8180/realms/hrm}
 
 hrm:
+  # Profile avatars are media library files (docs/analysis/06 §3 Profile Settings).
+  media-service-url: ${MEDIA_SERVICE_URL:http://localhost:8082}
   keycloak:
     server-url: ${KEYCLOAK_INTERNAL_URL:http://localhost:8180}
     realm: ${KEYCLOAK_REALM:hrm}

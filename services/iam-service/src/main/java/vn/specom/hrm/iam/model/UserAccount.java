@@ -39,6 +39,10 @@ public class UserAccount extends BaseAuditableEntity {
     @Column(name = "full_name", nullable = false)
     private String fullName;
 
+    /** Profile picture: a file of the company's media library. */
+    @Column(name = "avatar_media_id")
+    private Long avatarMediaId;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private EUserStatus status;
