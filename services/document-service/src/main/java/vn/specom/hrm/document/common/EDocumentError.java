@@ -23,7 +23,9 @@ public enum EDocumentError implements ErrorCode {
     DOC_013("The employee is not an employee of the company."),
     DOC_014("Only a pending acknowledgment can be acknowledged."),
     DOC_015("{0} is inactive and cannot be chosen."),
-    DOC_016("An archived document cannot be assigned.");
+    DOC_016("An archived document cannot be assigned."),
+    DOC_017("The contract does not exist."),
+    DOC_018("The end date cannot be before the start date.");
 
     private final String message;
 }
