@@ -1,0 +1,100 @@
+package vn.specom.hrm.document.contract;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.security.core.context.SecurityContextHolder;
+import vn.specom.hrm.document.TestLogin;
+import vn.specom.hrm.document.category.DocumentCategory;
+import vn.specom.hrm.document.category.DocumentCategoryRepository;
+import vn.specom.hrm.document.category.DocumentCategoryService;
+import vn.specom.hrm.document.category.DocumentCategoryService.CategoryForm;
+import vn.specom.hrm.document.common.EDocumentError;
+import vn.specom.hrm.document.common.EStatus;
+import vn.specom.hrm.document.contract.ContractTypeService.TypeForm;
+import vn.specom.hrm.exception.ApiException;
+
+import java.util.List;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+class CategoryTypeServiceTest {
+    private final DocumentCategoryRepository categories = mock(DocumentCategoryRepository.class);
+    private final ContractTypeRepository types = mock(ContractTypeRepository.class);
+    private final DocumentCategoryService categoryService = new DocumentCategoryService(categories);
+    private final ContractTypeService typeService = new ContractTypeService(types);
+
+    @BeforeEach
+    void setUp() {
+        TestLogin.as(10L, "DOCUMENT_MANAGE", "CONTRACT_MANAGE");
+        when(categories.save(any())).thenAnswer(i -> {
+            DocumentCategory c = i.getArgument(0);
+            c.setId(1L);
+            return c;
+        });
+        when(types.save(any())).thenAnswer(i -> {
+            ContractType t = i.getArgument(0);
+            t.setId(2L);
+            return t;
+        });
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void categoryDefaultsAndRules() {
+        var c = categoryService.create(null, new CategoryForm(" HR Policies ", null, "#22c55e", null, true, null));
+        assertThat(c.name()).isEqualTo("HR Policies");
+        assertThat(c.color()).isEqualTo("#22C55E");
+        assertThat(c.icon()).isEqualTo("folder");
+        assertThat(c.mandatory()).isTrue();
+        assertThat(c.status()).isEqualTo(EStatus.ACTIVE);
+        when(categories.existsByCompanyIdAndNameIgnoreCaseAndDeletedFalseAndIdNot(eq(10L), anyString(), anyLong()))
+                .thenReturn(true);
+        assertCode(() -> categoryService.create(null, new CategoryForm("HR Policies", null, null, null, null, null)),
+                EDocumentError.DOC_003);
+        DocumentCategory other = new DocumentCategory();
+        other.setId(5L);
+        other.setCompanyId(11L);
+        when(categories.findByIdAndDeletedFalse(5L)).thenReturn(Optional.of(other));
+        assertCode(() -> categoryService.get(5L), EDocumentError.DOC_002);
+    }
+
+    @Test
+    void contractTypeDefaultsKeepAndCounts() {
+        var t = typeService.create(null, new TypeForm("Permanent", null, null, null, null, null, null));
+        assertThat(t.defaultDurationMonths()).isNull();
+        assertThat(t.probationMonths()).isZero();
+        assertThat(t.renewable()).isFalse();
+        ContractType stored = new ContractType();
+        stored.setId(2L);
+        stored.setCompanyId(10L);
+        stored.setRenewable(true);
+        stored.setStatus(EStatus.INACTIVE);
+        when(types.findByIdAndDeletedFalse(2L)).thenReturn(Optional.of(stored));
+        var edited = typeService.update(2L, new TypeForm("Fixed 12", null, 12, 2, 30, null, null));
+        assertThat(edited.renewable()).isTrue();
+        assertThat(edited.status()).isEqualTo(EStatus.INACTIVE);
+        assertThat(edited.defaultDurationMonths()).isEqualTo(12);
+        when(types.countByStatus(eq(10L), any(), anyString())).thenReturn(List.<Object[]>of(new Object[]{EStatus.ACTIVE, 3L}));
+        var counts = typeService.statusCounts(null, null, null);
+        assertThat(counts.all()).isEqualTo(3);
+        assertThat(counts.byStatus().get(EStatus.INACTIVE)).isZero();
+    }
+
+    private static void assertCode(org.assertj.core.api.ThrowableAssert.ThrowingCallable call, EDocumentError code) {
+        assertThatThrownBy(call).isInstanceOf(ApiException.class)
+                .satisfies(e -> assertThat(((ApiException) e).getErrorCode()).isEqualTo(code));
+    }
+}
