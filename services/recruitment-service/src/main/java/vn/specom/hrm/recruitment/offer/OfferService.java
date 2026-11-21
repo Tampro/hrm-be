@@ -49,7 +49,8 @@ import java.util.stream.Collectors;
  * (default the one the candidate applied for), the department an employee-service department (default the posting's),
  * Approved By an employee (name copied). Creating an offer moves a NEW / SCREENING / INTERVIEW candidate to OFFER and
  * refuses a HIRED / REJECTED one (REC_036); ACCEPTED makes the candidate HIRED; other statuses leave them. An offer past
- * its expiration date is only flagged (expired) while still open; EXPIRED is set by hand. Status moves freely.
+ * its expiration date is flagged (expired) while still open, and a nightly job sets EXPIRED (PO 2026-11-21).
+ * Status moves freely.
  */
 @Service
 @RequiredArgsConstructor
@@ -254,6 +255,12 @@ public class OfferService {
                 o.getApprovedByEmployeeId() == null ? null
                         : new Ref(o.getApprovedByEmployeeId().toString(), o.getApprovedByName()),
                 o.getBenefits(), o.getStatus(), o.getOfferDate(), o.getCreatedDate(), o.getUpdatedDate());
+    }
+
+    /** Nightly: open offers past their expiration date (Vietnam date) become EXPIRED. */
+    @Transactional
+    public int expireOverdue() {
+        return offers.expireOverdue(LocalDate.now(clock.withZone(ZONE)), OPEN, clock.instant());
     }
 
     static boolean expired(Offer o, LocalDate today) {

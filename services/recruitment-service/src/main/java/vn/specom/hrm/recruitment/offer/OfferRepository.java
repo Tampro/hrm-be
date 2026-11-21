@@ -10,6 +10,13 @@ import java.util.List;
 import java.util.Optional;
 
 public interface OfferRepository extends JpaRepository<Offer, Long> {
+    /** Nightly expiry: open offers whose expiration date has passed become EXPIRED. Returns how many. */
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("update Offer o set o.status = vn.specom.hrm.recruitment.offer.Offer.EStatus.EXPIRED, "
+            + "o.updatedDate = :now, o.updatedBy = 'system' where o.deleted = false and o.expirationDate < :today "
+            + "and o.status in :open")
+    int expireOverdue(java.time.LocalDate today, java.util.Collection<Offer.EStatus> open, java.time.Instant now);
+
     /** keyword matches the candidate's name or email, or the posting's title or code; the caller escapes with !. */
     String FILTERS = "from Offer o, vn.specom.hrm.recruitment.candidate.Candidate c, "
             + "vn.specom.hrm.recruitment.posting.JobPosting p "
