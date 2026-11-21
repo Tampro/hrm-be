@@ -61,3 +61,5 @@ databaseChangeLog:
       file: db/changelog/changes/20261121100000_zoom_permission_init_data.mysql.sql
   - include:
       file: db/changelog/changes/20261121120000_document_permission_init_data.mysql.sql
+  - include:
+      file: db/changelog/changes/20261121160000_login_history_changelog.mysql.sql

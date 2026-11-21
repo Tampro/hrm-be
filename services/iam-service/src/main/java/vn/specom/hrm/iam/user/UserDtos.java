@@ -66,6 +66,14 @@ public final class UserDtos {
             @NotNull Set<@NotNull Long> roleIds) {
     }
 
+    /** Edit user: full replacement of the profile; the username never changes. */
+    public record UserProfileForm(
+            @Schema(example = "Test User", requiredMode = Schema.RequiredMode.REQUIRED) @NotBlank @Size(max = 200)
+            String fullName,
+            @Schema(example = "user@example.invalid", requiredMode = Schema.RequiredMode.REQUIRED) @NotBlank @Email
+            @Size(max = 255) String email) {
+    }
+
     public record UserStatusForm(
             @Schema(description = "ACTIVE or LOCKED", example = "LOCKED", requiredMode = Schema.RequiredMode.REQUIRED)
             @NotNull EUserStatus status) {

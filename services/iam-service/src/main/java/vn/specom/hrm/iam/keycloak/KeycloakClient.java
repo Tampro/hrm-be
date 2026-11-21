@@ -215,6 +215,37 @@ public class KeycloakClient {
         return users != null && users.size() == 1 ? users.get(0).path("id").asText(null) : null;
     }
 
+    /** Edit user (PO, 2026-11-21): email and the display names; the username never changes. */
+    public void updateProfile(String keycloakId, String email, String fullName) {
+        String[] names = splitName(fullName);
+        try {
+            admin().put().uri(props.adminUrl() + "/users/" + keycloakId)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(Map.of("email", email, "firstName", names[0], "lastName", names[1]))
+                    .retrieve().toBodilessEntity();
+        } catch (HttpClientErrorException.Conflict e) {
+            throw ApiException.badRequest(EIamError.IAM_017);
+        } catch (RestClientException e) {
+            log.error("Keycloak update user failed: {}", e.getClass().getSimpleName());
+            throw new ApiException(org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE, EIamError.AUTH_005);
+        }
+    }
+
+    /**
+     * Delete user (PO, 2026-11-21): removed from Keycloak, so its sessions end and the username is free again;
+     * a user Keycloak no longer has counts as deleted.
+     */
+    public void deleteUser(String keycloakId) {
+        try {
+            admin().delete().uri(props.adminUrl() + "/users/" + keycloakId).retrieve().toBodilessEntity();
+        } catch (HttpClientErrorException.NotFound e) {
+            log.info("Keycloak user already gone");
+        } catch (RestClientException e) {
+            log.error("Keycloak delete user failed: {}", e.getClass().getSimpleName());
+            throw new ApiException(org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE, EIamError.AUTH_005);
+        }
+    }
+
     /** Ends every Keycloak session of the user (their refresh tokens stop working). */
     public void logoutSessions(String keycloakId) {
         admin().post().uri(props.adminUrl() + "/users/" + keycloakId + "/logout").retrieve().toBodilessEntity();
