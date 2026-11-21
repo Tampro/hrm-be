@@ -96,6 +96,7 @@ mvn -DskipTests package            # builds the jars the Dockerfiles copy
 #   ASSET_DB_PASSWORD                    (asset-service; same note for an existing MySQL volume)
 #   MEETING_DB_PASSWORD                  (meeting-service; same note for an existing MySQL volume)
 #   MEETING_ENC_KEY                      (meeting-service; encrypts Zoom client secrets: openssl rand -base64 32)
+#   DOCUMENT_DB_PASSWORD                 (document-service; same note for an existing MySQL volume)
 #   EMPLOYEE_SERVICE_CLIENT_SECRET        (secret of client hrm-employee-service; realm import and employee-service)
 #   HRM_SETTINGS_ENC_KEY                  (optional; base64 of 32 random bytes — needed to save the SMTP password
 #                                          or reCAPTCHA secret in Settings: openssl rand -base64 32)
