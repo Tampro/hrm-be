@@ -45,7 +45,12 @@ class SettingsServiceTest {
         });
         CurrencyRepository currencies = mock(CurrencyRepository.class);
         when(currencies.findFirstByDefaultCurrencyTrue()).thenReturn(Optional.empty());
-        service = new SettingsService(repo, currencies, new SecretCipher(KEY),
+        vn.specom.hrm.iam.language.LanguageRepository languages = mock(vn.specom.hrm.iam.language.LanguageRepository.class);
+        vn.specom.hrm.iam.language.Language vi = new vn.specom.hrm.iam.language.Language();
+        vi.setCode("vi");
+        vi.setEnabled(true);
+        when(languages.findByCode("vi")).thenReturn(Optional.of(vi));
+        service = new SettingsService(repo, currencies, languages, new SecretCipher(KEY),
                 new ObjectMapper().registerModule(new JavaTimeModule()), Clock.systemUTC());
     }
 

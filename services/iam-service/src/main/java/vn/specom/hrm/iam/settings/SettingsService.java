@@ -50,6 +50,7 @@ import java.util.function.Supplier;
 public class SettingsService {
     private final PlatformSettingRepository repo;
     private final CurrencyRepository currencies;
+    private final vn.specom.hrm.iam.language.LanguageRepository languages;
     private final SecretCipher cipher;
     private final ObjectMapper mapper;
     private final Clock clock;
@@ -67,6 +68,9 @@ public class SettingsService {
             ZoneId.of(s.defaultTimezone());
         } catch (DateTimeException e) {
             throw ApiException.badRequest(ESettingsError.SETTINGS_001, s.defaultTimezone());
+        }
+        if (!languages.findByCode(s.defaultLanguage()).map(l -> l.isEnabled()).orElse(false)) {
+            throw ApiException.badRequest(ESettingsError.SETTINGS_008, s.defaultLanguage());
         }
         return write(ESection.SYSTEM, s);
     }

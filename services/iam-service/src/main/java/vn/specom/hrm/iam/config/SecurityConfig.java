@@ -32,6 +32,9 @@ public class SecurityConfig {
             "/api/v1/auth/verify-email",
             "/api/v1/auth/resend-verification",
             "/api/v1/settings/public",
+            // Language selector and UI labels: the login page needs them (docs/analysis/06 §3).
+            "/api/v1/languages",
+            "/api/v1/languages/*/labels",
             "/actuator/health/**",
             "/v3/api-docs/**",
             "/swagger-ui/**",
