@@ -59,6 +59,10 @@ public class EmployeeContract extends BaseAuditableEntity {
     @Column(name = "status", nullable = false, length = 12)
     private EStatus status = EStatus.DRAFT;
 
+    /** The generated contract PDF (media library file), when one was attached. */
+    @Column(name = "document_file_id")
+    private Long documentFileId;
+
     @Column(name = "deleted", nullable = false)
     private boolean deleted;
 }

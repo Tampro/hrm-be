@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.specom.hrm.document.common.EDocumentError;
 import vn.specom.hrm.document.common.EStatus;
 import vn.specom.hrm.document.common.Texts;
+import vn.specom.hrm.document.template.DocTemplateRepository;
 import vn.specom.hrm.exception.ApiException;
 import vn.specom.hrm.security.TenantGuard;
 
@@ -31,6 +32,7 @@ import java.util.Map;
 public class ContractTypeService {
     private final ContractTypeRepository types;
     private final EmployeeContractRepository contracts;
+    private final DocTemplateRepository templates;
     private final java.time.Clock clock;
 
     public record TypeForm(
@@ -121,7 +123,8 @@ public class ContractTypeService {
     @Transactional
     public void delete(Long id) {
         ContractType t = require(id);
-        if (contracts.existsByContractTypeIdAndDeletedFalse(t.getId())) {
+        if (contracts.existsByContractTypeIdAndDeletedFalse(t.getId())
+                || templates.existsByContractTypeIdAndDeletedFalse(t.getId())) {
             throw ApiException.badRequest(EDocumentError.DOC_004);
         }
         t.setDeleted(true);
