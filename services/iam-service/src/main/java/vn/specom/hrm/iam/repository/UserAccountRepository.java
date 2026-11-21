@@ -42,4 +42,7 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long> 
 
     @Query("select count(u) > 0 from UserAccount u join u.roles r where r.id = :roleId and u.deleted = false")
     boolean existsActiveUserWithRole(Long roleId);
+
+    /** Super admin dashboard: Total Users. */
+    long countByDeletedFalse();
 }

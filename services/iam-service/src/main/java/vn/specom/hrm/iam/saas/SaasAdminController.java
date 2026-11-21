@@ -45,6 +45,18 @@ public class SaasAdminController {
     private final CatalogService catalog;
     private final OrderService orderService;
     private final PlanRequestService planRequestService;
+    private final AdminDashboardService dashboard;
+
+    @Operation(summary = "Super Admin Dashboard", description = "Totals, recently registered companies, top plans by "
+            + "approved revenue, and new companies / revenue per month of year (default: the current year, UTC). "
+            + "Revenue = final price of APPROVED plan orders by approval date.")
+    @ApiResponses(@ApiResponse(responseCode = "403", description = "Not a super admin"))
+    @GetMapping("/dashboard")
+    public ApiMessageDto<AdminDashboardService.AdminDashboard> dashboard(
+            @RequestParam(required = false) @jakarta.validation.constraints.Min(2000)
+            @jakarta.validation.constraints.Max(2100) Integer year) {
+        return ApiMessageDto.ok(dashboard.dashboard(year));
+    }
 
     @Operation(summary = "All plans (enabled or not)")
     @GetMapping("/plans")

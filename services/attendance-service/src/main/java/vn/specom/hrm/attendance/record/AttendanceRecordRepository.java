@@ -17,4 +17,9 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
     Optional<AttendanceRecord> findByEmployeeIdAndWorkDate(Long employeeId, LocalDate workDate);
 
     boolean existsByEmployeeIdAndWorkDateAndIdNot(Long employeeId, LocalDate workDate, Long id);
+
+    /** Dashboard: rows of [workDate, status, count] of the company's records in [from, to]. */
+    @org.springframework.data.jpa.repository.Query("select r.workDate, r.status, count(r) from AttendanceRecord r "
+            + "where r.companyId = :companyId and r.workDate between :from and :to group by r.workDate, r.status")
+    List<Object[]> countByDayAndStatus(Long companyId, LocalDate from, LocalDate to);
 }

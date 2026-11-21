@@ -46,4 +46,9 @@ public interface PlanOrderRepository extends JpaRepository<PlanOrder, Long> {
 
     @Query("select o.status, count(o)" + FILTER + " group by o.status")
     java.util.List<Object[]> countByStatus(String keyword, java.time.Instant from, java.time.Instant to);
+
+    // ---- super admin dashboard (docs/analysis/06 §3.1)
+    java.util.List<PlanOrder> findByStatus(EOrderStatus status);
+
+    long countByStatus(EOrderStatus status);
 }

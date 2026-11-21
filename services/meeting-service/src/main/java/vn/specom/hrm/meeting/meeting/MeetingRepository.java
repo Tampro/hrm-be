@@ -15,6 +15,11 @@ public interface MeetingRepository extends JpaRepository<Meeting, Long> {
             + "and (:status is null or m.status = :status) order by m.startTime, m.id")
     List<Meeting> ofDay(Long companyId, LocalDate date, Meeting.EStatus status);
 
+    /** The meetings of a period, by date and start time (cancelled included). */
+    @Query("select m from Meeting m where m.companyId = :companyId and m.deleted = false "
+            + "and m.meetingDate between :from and :to order by m.meetingDate, m.startTime, m.id")
+    List<Meeting> inRange(Long companyId, LocalDate from, LocalDate to);
+
     @Query("select m.status, count(m) from Meeting m where m.companyId = :companyId and m.deleted = false "
             + "and m.meetingDate = :date group by m.status")
     List<Object[]> countByStatus(Long companyId, LocalDate date);

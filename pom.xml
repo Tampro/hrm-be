@@ -28,6 +28,7 @@
         <module>services/asset-service</module>
         <module>services/meeting-service</module>
         <module>services/document-service</module>
+        <module>services/report-service</module>
         <module>services/gateway-server</module>
     </modules>
 
