@@ -109,8 +109,10 @@ public class DocumentCategoryController {
         return ApiMessageDto.ok(service.changeStatus(id, form.status()));
     }
 
-    @Operation(summary = "Delete a category")
-    @ApiResponses(@ApiResponse(responseCode = "404", description = NOT_FOUND))
+    @Operation(summary = "Delete a category", description = "Only a category without documents.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "400", description = "The category has documents (DOC_004)"),
+            @ApiResponse(responseCode = "404", description = NOT_FOUND)})
     @PreAuthorize("@PermissionChecker.has('DOCUMENT_MANAGE')")
     @DeleteMapping("/{id}")
     public ApiMessageDto<Void> delete(@PathVariable Long id) {

@@ -29,7 +29,8 @@ import static org.mockito.Mockito.when;
 class CategoryTypeServiceTest {
     private final DocumentCategoryRepository categories = mock(DocumentCategoryRepository.class);
     private final ContractTypeRepository types = mock(ContractTypeRepository.class);
-    private final DocumentCategoryService categoryService = new DocumentCategoryService(categories);
+    private final DocumentCategoryService categoryService = new DocumentCategoryService(categories,
+            mock(vn.specom.hrm.document.hr.HrDocumentRepository.class));
     private final ContractTypeService typeService = new ContractTypeService(types);
 
     @BeforeEach

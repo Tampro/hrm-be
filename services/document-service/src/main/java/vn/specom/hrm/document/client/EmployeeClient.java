@@ -28,8 +28,9 @@ public class EmployeeClient {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
+    /** userId = the IAM login account (null when the employee has none). */
     public record Employee(String id, String companyId, String employeeNo, String fullName, String email,
-                           String profileImageUrl, String status, Ref department, Ref designation) {
+                           String profileImageUrl, String status, Ref department, Ref designation, String userId) {
     }
 
     private final CallerHttp http;
