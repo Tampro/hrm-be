@@ -18,17 +18,20 @@ import vn.specom.hrm.security.TenantGuard;
 
 import java.time.Instant;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Contract Types page (docs/analysis/06 §9.4.6): name unique in the company (DOC_003). The Contracts column and the
- * in-use check on delete come with the employee contracts.
+ * Contract Types page (docs/analysis/06 §9.4.6): name unique in the company (DOC_003); the Contracts column counts the
+ * active contracts of the type; a type with contracts cannot be deleted (DOC_004).
  */
 @Service
 @RequiredArgsConstructor
 public class ContractTypeService {
     private final ContractTypeRepository types;
+    private final EmployeeContractRepository contracts;
+    private final java.time.Clock clock;
 
     public record TypeForm(
             @Schema(example = "Fixed-term 12 months", requiredMode = Schema.RequiredMode.REQUIRED) @NotBlank
@@ -42,8 +45,9 @@ public class ContractTypeService {
             @Schema(description = "Omitted = ACTIVE on create, kept on edit") EStatus status) {
     }
 
+    /** contracts = the Contracts column (active contracts of the type). */
     public record TypeDto(String id, String name, String description, Integer defaultDurationMonths,
-                          int probationMonths, int noticeDays, boolean renewable, EStatus status,
+                          int probationMonths, int noticeDays, boolean renewable, EStatus status, long contracts,
                           Instant createdDate) {
     }
 
@@ -56,8 +60,14 @@ public class ContractTypeService {
     @Transactional(readOnly = true)
     public Page<TypeDto> search(Long requestedCompanyId, String keyword, Boolean renewable, EStatus status,
                                 Pageable pageable) {
-        return types.search(Texts.company(requestedCompanyId), renewable, status, Texts.kw(keyword), pageable)
-                .map(ContractTypeService::dto);
+        Page<ContractType> page = types.search(Texts.company(requestedCompanyId), renewable, status,
+                Texts.kw(keyword), pageable);
+        Map<Long, Long> counts = new HashMap<>();
+        if (!page.isEmpty()) {
+            contracts.countActiveByType(page.map(ContractType::getId).toList(), Texts.today(clock))
+                    .forEach(r -> counts.put((Long) r[0], (Long) r[1]));
+        }
+        return page.map(t -> dto(t, counts.getOrDefault(t.getId(), 0L)));
     }
 
     @Transactional(readOnly = true)
@@ -82,7 +92,7 @@ public class ContractTypeService {
 
     @Transactional(readOnly = true)
     public TypeDto get(Long id) {
-        return dto(require(id));
+        return detail(require(id));
     }
 
     @Transactional
@@ -90,7 +100,7 @@ public class ContractTypeService {
         ContractType t = new ContractType();
         t.setCompanyId(Texts.company(requestedCompanyId));
         apply(t, form);
-        return dto(types.save(t));
+        return dto(types.save(t), 0);
     }
 
     /** Full replacement; renewable and status omitted = kept. */
@@ -98,19 +108,23 @@ public class ContractTypeService {
     public TypeDto update(Long id, TypeForm form) {
         ContractType t = require(id);
         apply(t, form);
-        return dto(t);
+        return detail(t);
     }
 
     @Transactional
     public TypeDto changeStatus(Long id, EStatus status) {
         ContractType t = require(id);
         t.setStatus(status);
-        return dto(t);
+        return detail(t);
     }
 
     @Transactional
     public void delete(Long id) {
-        require(id).setDeleted(true);
+        ContractType t = require(id);
+        if (contracts.existsByContractTypeIdAndDeletedFalse(t.getId())) {
+            throw ApiException.badRequest(EDocumentError.DOC_004);
+        }
+        t.setDeleted(true);
     }
 
     private void apply(ContractType t, TypeForm f) {
@@ -132,9 +146,14 @@ public class ContractTypeService {
         }
     }
 
-    static TypeDto dto(ContractType t) {
+    private TypeDto detail(ContractType t) {
+        return dto(t, contracts.countActiveByType(List.of(t.getId()), Texts.today(clock)).stream().mapToLong(r -> (Long) r[1]).sum());
+    }
+
+    static TypeDto dto(ContractType t, long contractCount) {
         return new TypeDto(t.getId().toString(), t.getName(), t.getDescription(), t.getDefaultDurationMonths(),
-                t.getProbationMonths(), t.getNoticeDays(), t.isRenewable(), t.getStatus(), t.getCreatedDate());
+                t.getProbationMonths(), t.getNoticeDays(), t.isRenewable(), t.getStatus(), contractCount,
+                t.getCreatedDate());
     }
 
     public ContractType require(Long id) {
