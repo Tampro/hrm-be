@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
  * Warnings page (docs/analysis/06 §7.2.4). Type and severity come from the company's lists; the warning is issued by
  * another employee of the company (EMP_053). The status moves freely (Change Status); acknowledging records the date
  * (today when omitted) and the employee's response. A warning past its expiry date is only flagged while Issued /
- * Acknowledged; EXPIRED is set by hand (no scheduled job).
+ * Acknowledged, and a nightly job sets EXPIRED (PO 2026-11-21).
  */
 @Service
 @RequiredArgsConstructor
@@ -49,6 +49,12 @@ public class WarningService {
     private final LifecycleCatalogRepository catalogItems;
     private final LifecycleSupport support;
     private final Clock clock;
+
+    /** Nightly: warnings in force past their expiry date (Vietnam date) become EXPIRED. */
+    @org.springframework.transaction.annotation.Transactional
+    public int expireOverdue() {
+        return warnings.expireOverdue(java.time.LocalDate.now(clock.withZone(ZONE)), IN_FORCE, clock.instant());
+    }
 
     public record ImprovementPlan(boolean hasImprovementPlan, String goals, LocalDate startDate, LocalDate endDate,
                                   String progress) {

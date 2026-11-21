@@ -9,6 +9,14 @@ import java.util.List;
 import java.util.Optional;
 
 public interface EmployeeWarningRepository extends JpaRepository<EmployeeWarning, Long> {
+    /** Nightly expiry: warnings in force whose expiry date has passed become EXPIRED. Returns how many. */
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("update EmployeeWarning w set w.status = "
+            + "vn.specom.hrm.employee.lifecycle.EmployeeWarning.EStatus.EXPIRED, w.updatedDate = :now, "
+            + "w.updatedBy = 'system' where w.deleted = false and w.expiryDate < :today and w.status in :inForce")
+    int expireOverdue(java.time.LocalDate today, java.util.Collection<EmployeeWarning.EStatus> inForce,
+                      java.time.Instant now);
+
     /** keyword matches the employee's name / email / no. or the subject; the caller escapes with !. */
     String FILTERS = "from EmployeeWarning w, vn.specom.hrm.employee.employee.Employee e "
             + "where e.id = w.employeeId and w.companyId = :companyId and w.deleted = false "
