@@ -99,7 +99,9 @@ public enum EEmployeeError implements ErrorCode {
     EMP_089("The training assessment does not exist."),
     EMP_090("The employee training does not belong to the assessment's program."),
     EMP_091("This employee training already has a result for the assessment."),
-    EMP_092("The assessment result does not exist.");
+    EMP_092("The assessment result does not exist."),
+    EMP_093("The date of leaving cannot be before the date of joining."),
+    EMP_094("The letter language is not supported: {0}.");
 
     private final String message;
 }

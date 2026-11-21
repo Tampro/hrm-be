@@ -51,6 +51,7 @@ public final class EmployeeDtos {
                                  String email, String phone, LocalDate dateOfBirth, EGender gender,
                                  String profileImageId, String profileImageUrl,
                                  Ref branch, Ref department, Ref designation, LocalDate dateOfJoining,
+                                 LocalDate dateOfLeaving,
                                  EEmploymentType employmentType, EEmployeeStatus status, String shiftId,
                                  String attendancePolicyId, Ref reportsTo,
                                  String addressLine1, String addressLine2, String city, String state, String country,
@@ -104,7 +105,10 @@ public final class EmployeeDtos {
             @Size(max = 30) String emergencyPhone,
             @Schema(description = "Ignored without EMPLOYEE_BANKING_VIEW") @Valid BankingForm banking,
             @Schema(description = "Employee this one reports to (Organization Chart); same company, no cycle")
-            Long reportsToId) {
+            Long reportsToId,
+            @Schema(description = "Last working day ({leaving_date} of the Experience Certificate); not before "
+                    + "dateOfJoining")
+            LocalDate dateOfLeaving) {
     }
 
     public record DocumentForm(

@@ -198,7 +198,7 @@ public class EmployeeExcelService {
                 branchId, departmentId, designationId, date(row, 9, excelRow, "dateOfJoining"),
                 enumOf(EEmploymentType.class, row, 10, excelRow, "employmentType"),
                 enumOf(EEmployeeStatus.class, row, 11, excelRow, "status"),
-                null, null, null, null, null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null, null, null, null, null);
         return new EmployeeCreateForm(text(row, 1), null, profile, List.of());
     }
 
