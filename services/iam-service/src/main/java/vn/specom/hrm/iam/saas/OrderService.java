@@ -49,6 +49,7 @@ public class OrderService {
     private final LocalAuthorityResolver authorityCache;
     private final vn.specom.hrm.iam.referral.ReferralService referral;
     private final vn.specom.hrm.iam.email.EmailNotifier notifier;
+    private final vn.specom.hrm.iam.me.AvatarMediaClient media;
     private final Clock clock;
 
     // ------------------------------------------------------------------ company side
@@ -106,6 +107,22 @@ public class OrderService {
         decide(o, EOrderStatus.CANCELLED, null);
         return dto(o);
     }
+
+    /** Receipt of a pending order (proof of the bank transfer); fileId null removes it. */
+    @Transactional
+    public OrderDto attachReceipt(Long id, Long fileId) {
+        PlanOrder o = require(id);
+        if (o.getStatus() != EOrderStatus.PENDING) {
+            throw ApiException.badRequest(ESaasError.SAAS_009);
+        }
+        if (fileId != null) {
+            media.requireCompanyFile(fileId, o.getCompanyId(), RECEIPT_TYPES, 5L * 1024 * 1024, ESaasError.SAAS_033);
+        }
+        o.setReceiptFileId(fileId);
+        return dto(o);
+    }
+
+    static final java.util.Set<String> RECEIPT_TYPES = java.util.Set.of("application/pdf", "image/jpeg", "image/png");
 
     // ------------------------------------------------------------------ super admin side
 

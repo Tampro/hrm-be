@@ -16,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -118,6 +119,24 @@ public class SubscriptionController {
     @PostMapping("/plan-requests/{id}/cancel")
     public ApiMessageDto<SaasDtos.PlanRequestDto> cancelRequest(@PathVariable Long id) {
         return ApiMessageDto.ok(planRequests.cancel(id));
+    }
+
+    @PreAuthorize("@PermissionChecker.has('SAAS_ORDER_CREATE')")
+    @PutMapping("/orders/{id}/receipt")
+    @Operation(summary = "Attach the payment receipt to a pending order",
+            description = "fileId: a PDF, JPG or PNG of your company's media library (max 5 MB); null removes it. "
+                    + "The super admin sees it on Plan Orders (receiptFileId).")
+    @ApiResponses({
+            @ApiResponse(responseCode = "400", description = "Not pending (SAAS_009), not a PDF/JPG/PNG of your "
+                    + "company up to 5 MB or no access to it (SAAS_033)"),
+            @ApiResponse(responseCode = "404", description = "No such order in your company (SAAS_008)"),
+            @ApiResponse(responseCode = "503", description = "media-service unreachable (IAM_025)")})
+    public ApiMessageDto<OrderDto> receipt(@PathVariable Long id, @RequestBody ReceiptForm form) {
+        return ApiMessageDto.ok(orderService.attachReceipt(id, form.fileId()));
+    }
+
+    public record ReceiptForm(@io.swagger.v3.oas.annotations.media.Schema(description = "Media file id; null removes")
+                              Long fileId) {
     }
 
     @Operation(summary = "Cancel a pending order")

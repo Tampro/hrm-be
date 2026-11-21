@@ -26,6 +26,10 @@ public class PlanOrder extends BaseAuditableEntity {
     @Column(name = "order_number", nullable = false, length = 30)
     private String orderNumber;
 
+    /** Proof of a bank transfer the company attached (docs/analysis/06 §10.2.3 Receipt): a media file id. */
+    @Column(name = "receipt_file_id")
+    private Long receiptFileId;
+
     @Column(name = "company_id", nullable = false)
     private Long companyId;
 

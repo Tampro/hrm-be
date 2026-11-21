@@ -46,8 +46,10 @@ public class RoleController {
     @ApiResponses(@ApiResponse(responseCode = "400", description = "Super admin without companyId (IAM_003)"))
     @PreAuthorize("@PermissionChecker.has('IAM_ROLE_VIEW')")
     @GetMapping("/roles")
-    public ApiMessageDto<List<RoleDto>> list(@Parameter(description = COMPANY_PARAM) @RequestParam(required = false) Long companyId) {
-        return ApiMessageDto.ok(roleService.list(companyId));
+    public ApiMessageDto<List<RoleDto>> list(@Parameter(description = COMPANY_PARAM) @RequestParam(required = false) Long companyId,
+                                             @Parameter(description = "Matches the role name or code")
+                                             @RequestParam(required = false) String keyword) {
+        return ApiMessageDto.ok(roleService.list(companyId, keyword));
     }
 
     @Operation(summary = "Role detail")

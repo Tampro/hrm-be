@@ -102,6 +102,7 @@ public class CatalogService {
         p.setStorageLimitGb(f.storageLimitGb());
         p.setTrialDays(f.trialDays());
         p.setAiIntegration(f.aiIntegration());
+        p.setRecommended(f.recommended());
         p.setDefaultPlan(f.defaultPlan());
         p.setEnabled(f.enabled() || f.defaultPlan());
     }

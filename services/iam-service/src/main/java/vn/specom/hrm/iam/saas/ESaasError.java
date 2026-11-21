@@ -39,7 +39,8 @@ public enum ESaasError implements ErrorCode {
     SAAS_029("There is already a pending payout request."),
     SAAS_030("The payout request does not exist."),
     SAAS_031("Only a pending payout request can be approved or rejected."),
-    SAAS_032("The referral program is disabled.");
+    SAAS_032("The referral program is disabled."),
+    SAAS_033("The receipt must be a PDF, JPG or PNG file of your company, at most 5 MB.");
 
     private final String message;
 }

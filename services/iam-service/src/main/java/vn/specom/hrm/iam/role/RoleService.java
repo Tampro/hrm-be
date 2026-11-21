@@ -40,8 +40,18 @@ public class RoleService {
 
     @Transactional(readOnly = true)
     public List<RoleDto> list(Long requestedCompanyId) {
+        return list(requestedCompanyId, null);
+    }
+
+    /** Roles page search (docs/analysis/06 §10.1.2): keyword on name or code, case-insensitive. */
+    @Transactional(readOnly = true)
+    public List<RoleDto> list(Long requestedCompanyId, String keyword) {
         Long companyId = TenantGuard.resolveCompany(requestedCompanyId, EIamError.IAM_003);
-        return roles.findByCompanyIdAndDeletedFalseOrderByIdAsc(companyId).stream().map(RoleDto::of).toList();
+        String kw = keyword == null ? "" : keyword.trim().toLowerCase(java.util.Locale.ROOT);
+        return roles.findByCompanyIdAndDeletedFalseOrderByIdAsc(companyId).stream()
+                .filter(r -> kw.isEmpty() || r.getName().toLowerCase(java.util.Locale.ROOT).contains(kw)
+                        || r.getCode().toLowerCase(java.util.Locale.ROOT).contains(kw))
+                .map(RoleDto::of).toList();
     }
 
     @Transactional(readOnly = true)

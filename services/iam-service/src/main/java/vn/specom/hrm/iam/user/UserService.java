@@ -48,8 +48,14 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public Page<UserDto> search(Long requestedCompanyId, String keyword, Pageable pageable) {
+        return search(requestedCompanyId, keyword, null, pageable);
+    }
+
+    /** roleId: only accounts holding this role (Users list Role filter, docs/analysis/06 §10.1.1). */
+    @Transactional(readOnly = true)
+    public Page<UserDto> search(Long requestedCompanyId, String keyword, Long roleId, Pageable pageable) {
         Long companyId = TenantGuard.resolveCompany(requestedCompanyId, EIamError.IAM_003);
-        return users.search(companyId, keyword == null ? "" : keyword.trim(), pageable).map(UserDto::of);
+        return users.search(companyId, keyword == null ? "" : keyword.trim(), roleId, pageable).map(UserDto::of);
     }
 
     @Transactional(readOnly = true)
