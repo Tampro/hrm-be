@@ -18,6 +18,8 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long> 
 
     Optional<UserAccount> findByIdAndDeletedFalse(Long id);
 
+    Optional<UserAccount> findByUsernameAndDeletedFalse(String username);
+
     List<UserAccount> findByCompanyIdAndDeletedFalse(Long companyId);
 
     @Query("select distinct u from UserAccount u join u.roles r where u.companyId = :companyId and u.deleted = false"

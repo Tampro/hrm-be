@@ -34,7 +34,10 @@ public enum EIamError implements ErrorCode {
     IAM_013("You cannot change your own roles or status."),
     IAM_014("The user could not be created in the authentication server."),
     IAM_015("You cannot grant permissions you do not hold: {0}."),
-    IAM_016("The company has no active administrator account.");
+    IAM_016("The company has no active administrator account."),
+    IAM_017("This email is already used by another account."),
+    IAM_018("The last active company administrator cannot be deleted."),
+    IAM_019("The login record does not exist.");
 
     private final String message;
 }

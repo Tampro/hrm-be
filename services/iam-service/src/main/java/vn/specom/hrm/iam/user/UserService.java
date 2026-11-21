@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.specom.hrm.exception.ApiException;
+import vn.specom.hrm.iam.constant.EDefaultRole;
 import vn.specom.hrm.iam.constant.EIamError;
 import vn.specom.hrm.iam.constant.EUserStatus;
 import vn.specom.hrm.iam.keycloak.KeycloakClient;
@@ -18,6 +19,7 @@ import vn.specom.hrm.iam.security.LocalAuthorityResolver;
 import vn.specom.hrm.iam.user.UserDtos.CreatedUserDto;
 import vn.specom.hrm.iam.user.UserDtos.UserCreateForm;
 import vn.specom.hrm.iam.user.UserDtos.UserDto;
+import vn.specom.hrm.iam.user.UserDtos.UserProfileForm;
 import vn.specom.hrm.security.CurrentUser;
 import vn.specom.hrm.security.HrmPrincipal;
 import vn.specom.hrm.security.TenantGuard;
@@ -129,6 +131,42 @@ public class UserService {
         keycloak.setEnabled(u.getKeycloakId(), status == EUserStatus.ACTIVE);
         authorityCache.evictAll();
         return UserDto.of(u);
+    }
+
+    /**
+     * Edit user: full name and email, in Keycloak first (a duplicate email is IAM_017), then here. Not one's own
+     * account (IAM_013).
+     */
+    @Transactional
+    public UserDto updateProfile(Long id, UserProfileForm form) {
+        UserAccount u = require(id);
+        assertNotSelf(u);
+        String email = form.email().trim();
+        String name = form.fullName().trim();
+        keycloak.updateProfile(u.getKeycloakId(), email, name);
+        u.setEmail(email);
+        u.setFullName(name);
+        return UserDto.of(u);
+    }
+
+    /**
+     * Delete user: soft-deleted here and removed from Keycloak (sessions end, the username is free again). Not one's
+     * own account (IAM_013), nor the company's last active administrator (IAM_018).
+     */
+    @Transactional
+    public void delete(Long id) {
+        UserAccount u = require(id);
+        assertNotSelf(u);
+        boolean admin = u.getRoles().stream().anyMatch(r -> EDefaultRole.COMPANY_ADMIN.name().equals(r.getCode()));
+        if (admin && u.getStatus() == EUserStatus.ACTIVE && users.findByCompanyAndRole(u.getCompanyId(),
+                EDefaultRole.COMPANY_ADMIN.name()).stream().filter(x -> x.getStatus() == EUserStatus.ACTIVE
+                && !x.getId().equals(u.getId())).findAny().isEmpty()) {
+            throw ApiException.badRequest(EIamError.IAM_018);
+        }
+        u.setDeleted(true);
+        u.setStatus(EUserStatus.LOCKED);
+        keycloak.deleteUser(u.getKeycloakId());
+        authorityCache.evictAll();
     }
 
     /** Administrator sets a permanent password for an account of their company ("Change Password"). */

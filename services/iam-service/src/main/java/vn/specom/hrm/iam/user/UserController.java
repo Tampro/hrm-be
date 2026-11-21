@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,6 +29,7 @@ import vn.specom.hrm.iam.user.UserDtos.CreatedUserDto;
 import vn.specom.hrm.iam.user.UserDtos.UserCreateForm;
 import vn.specom.hrm.iam.user.UserDtos.UserDto;
 import vn.specom.hrm.iam.user.UserDtos.UserPasswordForm;
+import vn.specom.hrm.iam.user.UserDtos.UserProfileForm;
 import vn.specom.hrm.iam.user.UserDtos.UserRolesForm;
 import vn.specom.hrm.iam.user.UserDtos.UserStatusForm;
 
@@ -107,5 +109,32 @@ public class UserController {
     @PutMapping("/{id}/status")
     public ApiMessageDto<UserDto> status(@PathVariable Long id, @Valid @RequestBody UserStatusForm form) {
         return ApiMessageDto.ok(userService.changeStatus(id, form.status()));
+    }
+
+    @Operation(summary = "Edit a user", description = "Full name and email (full replacement), in Keycloak too; the "
+            + "username never changes.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "400", description = "Own account (IAM_013), email used by another account "
+                    + "(IAM_017)"),
+            @ApiResponse(responseCode = "404", description = "No such user in your company (IAM_009)"),
+            @ApiResponse(responseCode = "503", description = "Keycloak unreachable (AUTH_005)")})
+    @PreAuthorize("@PermissionChecker.has('IAM_USER_UPDATE')")
+    @PutMapping("/{id}")
+    public ApiMessageDto<UserDto> update(@PathVariable Long id, @Valid @RequestBody UserProfileForm form) {
+        return ApiMessageDto.ok(userService.updateProfile(id, form));
+    }
+
+    @Operation(summary = "Delete a user", description = "Soft-deleted here and removed from Keycloak: every session "
+            + "ends and the username can be used again.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "400", description = "Own account (IAM_013), the last active company "
+                    + "administrator (IAM_018)"),
+            @ApiResponse(responseCode = "404", description = "No such user in your company (IAM_009)"),
+            @ApiResponse(responseCode = "503", description = "Keycloak unreachable (AUTH_005)")})
+    @PreAuthorize("@PermissionChecker.has('IAM_USER_UPDATE')")
+    @DeleteMapping("/{id}")
+    public ApiMessageDto<Void> delete(@PathVariable Long id) {
+        userService.delete(id);
+        return ApiMessageDto.ok(null);
     }
 }
