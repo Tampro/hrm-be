@@ -63,6 +63,18 @@ public class SubscriptionController {
         return ApiMessageDto.ok(orderService.mySubscription(companyId));
     }
 
+    @Operation(summary = "Start Trial of a plan", description = "The company uses the plan for its trial days, once "
+            + "per plan; not while a paid period runs. When the trial ends the default plan applies.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "400", description = "Plan not offered (SAAS_014), no trial (SAAS_034), "
+                    + "already tried (SAAS_035), a paid plan is running (SAAS_036)"),
+            @ApiResponse(responseCode = "404", description = "No such plan (SAAS_001)")})
+    @PreAuthorize("@PermissionChecker.hasInCompany('SAAS_ORDER_CREATE')")
+    @PostMapping("/plans/{id}/trial")
+    public ApiMessageDto<SubscriptionDto> startTrial(@PathVariable Long id) {
+        return ApiMessageDto.ok(orderService.startTrial(id));
+    }
+
     @Operation(summary = "Price an order (with coupon) without creating it")
     @ApiResponses(@ApiResponse(responseCode = "400", description = "No yearly price (SAAS_003), coupon invalid "
             + "(SAAS_006), below minimum spend (SAAS_007), plan not offered (SAAS_014)"))

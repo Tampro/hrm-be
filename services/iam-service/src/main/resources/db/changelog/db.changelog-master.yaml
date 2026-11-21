@@ -81,3 +81,5 @@ databaseChangeLog:
       file: db/changelog/changes/20261121230000_newsletter_unsubscribe_changelog.mysql.sql
   - include:
       file: db/changelog/changes/20261121240000_plan_recommended_order_receipt_changelog.mysql.sql
+  - include:
+      file: db/changelog/changes/20261121250000_plan_trial_changelog.mysql.sql

@@ -109,6 +109,28 @@ public class SubscriptionService {
         company.setOnTrial(false);
     }
 
+    /**
+     * Start Trial (docs/analysis/06 §10.2.1, PO 2026-11-21): an enabled plan with trial days, once per company and
+     * plan, not while a paid period runs (it would be replaced). When the trial ends the default plan applies.
+     */
+    public void startTrial(Company company, Plan plan, boolean triedBefore) {
+        Instant now = clock.instant();
+        if (plan.getTrialDays() <= 0) {
+            throw ApiException.badRequest(ESaasError.SAAS_034);
+        }
+        boolean trialingThis = Objects.equals(company.getPlanId(), plan.getId()) && company.isOnTrial();
+        if (triedBefore || trialingThis) {
+            throw ApiException.badRequest(ESaasError.SAAS_035);
+        }
+        if (!company.isOnTrial() && company.getPlanExpiresAt() != null && company.getPlanExpiresAt().isAfter(now)) {
+            throw ApiException.badRequest(ESaasError.SAAS_036,
+                    java.time.format.DateTimeFormatter.ISO_LOCAL_DATE.format(company.getPlanExpiresAt().atZone(ZoneOffset.UTC)));
+        }
+        company.setPlanId(plan.getId());
+        company.setOnTrial(true);
+        company.setPlanExpiresAt(now.plus(java.time.Duration.ofDays(plan.getTrialDays())));
+    }
+
     /** Super admin override: any plan, any end (null = no expiry). */
     public void assign(Company company, Plan plan, Instant expiresAt) {
         company.setPlanId(plan.getId());

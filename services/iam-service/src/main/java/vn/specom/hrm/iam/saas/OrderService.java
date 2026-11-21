@@ -50,9 +50,26 @@ public class OrderService {
     private final vn.specom.hrm.iam.referral.ReferralService referral;
     private final vn.specom.hrm.iam.email.EmailNotifier notifier;
     private final vn.specom.hrm.iam.me.AvatarMediaClient media;
+    private final CompanyPlanTrialRepository trials;
     private final Clock clock;
 
     // ------------------------------------------------------------------ company side
+
+    /** Start Trial of an offered plan for the caller's company; returns the new subscription. */
+    @Transactional
+    public SubscriptionDto startTrial(Long planId) {
+        Long companyId = TenantGuard.resolveCompany(null, EIamError.IAM_003);
+        Company c = company(companyId);
+        Plan p = offered(planId);
+        subscriptions.startTrial(c, p, trials.existsByCompanyIdAndPlanId(companyId, p.getId()));
+        CompanyPlanTrial t = new CompanyPlanTrial();
+        t.setCompanyId(companyId);
+        t.setPlanId(p.getId());
+        t.setEndsAt(c.getPlanExpiresAt());
+        trials.save(t);
+        authorityCache.evictAll();
+        return mySubscription(companyId);
+    }
 
     @Transactional(readOnly = true)
     public SubscriptionDto mySubscription(Long requestedCompanyId) {
