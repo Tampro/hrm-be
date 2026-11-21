@@ -64,6 +64,8 @@ public class SiteService {
     private final ObjectMapper mapper;
     private final Clock clock;
     private final boolean customJs;
+    @Value("${hrm.app-url:http://localhost:5173}")
+    private String appUrl;
 
     public SiteService(LandingSectionRepository sections, CustomPageRepository pages,
                        ContactInquiryRepository inquiries, NewsletterSubscriberRepository subscribers,
@@ -149,7 +151,14 @@ public class SiteService {
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED) @NotBlank @Size(max = 10_000) String message) {
     }
 
-    public record SubscriberDto(String id, String email, Instant subscribedDate) {
+    public record SubscriberDto(String id, String email, Instant subscribedDate,
+                                @Schema(description = "One-click unsubscribe link to put in every newsletter email")
+                                String unsubscribeUrl) {
+    }
+
+    public record UnsubscribeForm(
+            @Schema(description = "Token of the unsubscribe link", requiredMode = Schema.RequiredMode.REQUIRED)
+            @NotBlank @Size(max = 64) String token) {
     }
 
     // ------------------------------------------------------------------ landing page
@@ -380,6 +389,7 @@ public class SiteService {
         if (!subscribers.existsByEmail(e)) {
             NewsletterSubscriber n = new NewsletterSubscriber();
             n.setEmail(e);
+            n.setUnsubscribeToken(vn.specom.hrm.iam.auth.AccountTokens.newToken());
             subscribers.save(vn.specom.hrm.common.Nulls.nonNull(n));
         }
     }
@@ -387,7 +397,26 @@ public class SiteService {
     @Transactional(readOnly = true)
     public Page<SubscriberDto> subscribers(String keyword, Pageable pageable) {
         return subscribers.search(kw(keyword), pageable)
-                .map(n -> new SubscriberDto(n.getId().toString(), n.getEmail(), n.getCreatedDate()));
+                .map(n -> new SubscriberDto(n.getId().toString(), n.getEmail(), n.getCreatedDate(), unsubscribeUrl(n)));
+    }
+
+    /** The link for a newsletter email to this subscriber; empty when the address is not subscribed. */
+    @Transactional(readOnly = true)
+    public java.util.Optional<String> unsubscribeUrl(String email) {
+        return subscribers.findByEmail(email.trim().toLowerCase(Locale.ROOT)).map(this::unsubscribeUrl);
+    }
+
+    private String unsubscribeUrl(NewsletterSubscriber n) {
+        return appUrl + "/newsletter/unsubscribe?token=" + n.getUnsubscribeToken();
+    }
+
+    /** One click from the email: the address is removed. Unknown or already used token: nothing, still OK. */
+    @Transactional
+    public void unsubscribeByToken(String token) {
+        subscribers.findByUnsubscribeToken(token.trim()).ifPresent(n -> {
+            subscribers.delete(n);
+            log.info("Newsletter subscriber {} unsubscribed by link", n.getId());
+        });
     }
 
     @Transactional

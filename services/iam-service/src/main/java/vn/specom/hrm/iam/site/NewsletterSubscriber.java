@@ -15,4 +15,8 @@ import vn.specom.hrm.iam.model.BaseAuditableEntity;
 public class NewsletterSubscriber extends BaseAuditableEntity {
     @Column(name = "email", nullable = false)
     private String email;
+
+    /** Put in the unsubscribe link of every newsletter email; it only allows removing this address. */
+    @Column(name = "unsubscribe_token", nullable = false, length = 64)
+    private String unsubscribeToken;
 }

@@ -22,9 +22,11 @@ class SiteServiceTest {
     private final CustomPageRepository pages = mock(CustomPageRepository.class);
     private final SettingsService settings = mock(SettingsService.class, org.mockito.Mockito.RETURNS_DEEP_STUBS);
 
+    private final NewsletterSubscriberRepository subscribers = mock(NewsletterSubscriberRepository.class);
+
     private SiteService service(boolean customJs) {
         return new SiteService(sections, pages, mock(ContactInquiryRepository.class),
-                mock(NewsletterSubscriberRepository.class), settings, mock(CatalogService.class), mapper,
+                subscribers, settings, mock(CatalogService.class), mapper,
                 Clock.systemUTC(), customJs);
     }
 
@@ -76,5 +78,22 @@ class SiteServiceTest {
         assertThat(s.freeSlug("!!!", null)).isEqualTo("page");
         String clean = SiteService.sanitize("<h2 onclick=\"x()\">Hi</h2><script>alert(1)</script><a href=\"javascript:x\">a</a>");
         assertThat(clean).contains("<h2>Hi</h2>").doesNotContain("script", "onclick", "javascript");
+    }
+
+    @Test
+    void subscribeGivesAnUnsubscribeTokenAndTheLinkRemovesTheAddress() {
+        SiteService s = service(false);
+        var saved = org.mockito.ArgumentCaptor.forClass(NewsletterSubscriber.class);
+        s.subscribe(" News@Example.invalid ");
+        org.mockito.Mockito.verify(subscribers).save(saved.capture());
+        NewsletterSubscriber n = saved.getValue();
+        assertThat(n.getEmail()).isEqualTo("news@example.invalid");
+        assertThat(n.getUnsubscribeToken()).hasSizeGreaterThan(30);
+
+        when(subscribers.findByUnsubscribeToken(n.getUnsubscribeToken())).thenReturn(Optional.of(n));
+        s.unsubscribeByToken(n.getUnsubscribeToken());
+        org.mockito.Mockito.verify(subscribers).delete(n);
+        // an unknown or used link is not an error
+        s.unsubscribeByToken("unknown");
     }
 }

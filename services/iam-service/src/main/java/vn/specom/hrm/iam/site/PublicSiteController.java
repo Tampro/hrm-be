@@ -80,6 +80,19 @@ public class PublicSiteController {
         return ApiMessageDto.ok(null);
     }
 
+    @Operation(summary = "Unsubscribe from the newsletter (link in every newsletter email)",
+            description = "Always 200: an unknown or already used link changes nothing.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "400", description = "Validation"),
+            @ApiResponse(responseCode = "429", description = "Too many requests from this IP (AUTH_013)")})
+    @PostMapping("/newsletter/unsubscribe")
+    public ApiMessageDto<Void> unsubscribe(@Valid @RequestBody SiteService.UnsubscribeForm form,
+                                           HttpServletRequest request) {
+        limiter.checkIp("unsubscribe", ip(request));
+        service.unsubscribeByToken(form.token());
+        return ApiMessageDto.ok(null);
+    }
+
     private static String ip(HttpServletRequest request) {
         return LoginHistoryService.clientIp(request.getHeader("X-Client-IP"), request.getRemoteAddr());
     }
