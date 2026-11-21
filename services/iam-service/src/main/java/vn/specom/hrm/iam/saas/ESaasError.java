@@ -43,7 +43,11 @@ public enum ESaasError implements ErrorCode {
     SAAS_033("The receipt must be a PDF, JPG or PNG file of your company, at most 5 MB."),
     SAAS_034("This plan has no trial."),
     SAAS_035("Your company has already tried this plan."),
-    SAAS_036("Your company has a paid plan running until {0}; a trial would replace it.");
+    SAAS_036("Your company has a paid plan running until {0}; a trial would replace it."),
+    SAAS_037("Stripe payment is not available."),
+    SAAS_038("Stripe could not start the payment: {0}."),
+    SAAS_039("This order cannot be paid this way."),
+    SAAS_040("The Stripe notification is not valid.");
 
     private final String message;
 }

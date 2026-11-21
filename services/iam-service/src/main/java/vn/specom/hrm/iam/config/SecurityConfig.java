@@ -37,6 +37,8 @@ public class SecurityConfig {
             "/api/v1/languages/*/labels",
             // Public website (docs/analysis/06 §3.2.7-3.2.10): landing, pages, contact form, newsletter.
             "/api/v1/public/site/**",
+            // Stripe webhook: authenticated by the Stripe-Signature header, not by a token.
+            "/api/v1/public/payments/stripe/webhook",
             "/actuator/health/**",
             "/v3/api-docs/**",
             "/swagger-ui/**",

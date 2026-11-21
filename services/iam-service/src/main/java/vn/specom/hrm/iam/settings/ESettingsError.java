@@ -16,7 +16,9 @@ public enum ESettingsError implements ErrorCode {
     SETTINGS_006("A secret is required to enable reCAPTCHA."),
     SETTINGS_007("A stored secret cannot be read with the current encryption key."),
     SETTINGS_008("The language {0} does not exist or is disabled."),
-    SETTINGS_009("The currency {0} does not exist.");
+    SETTINGS_009("The currency {0} does not exist."),
+    SETTINGS_010("Stripe needs a publishable key, a secret key and a webhook signing secret to be enabled."),
+    SETTINGS_011("The Stripe keys are not {0} mode keys.");
 
     private final String message;
 }

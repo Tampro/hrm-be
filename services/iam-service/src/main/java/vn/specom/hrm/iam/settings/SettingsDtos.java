@@ -23,7 +23,7 @@ public final class SettingsDtos {
     }
 
     public enum ESection {
-        SYSTEM, BRAND, CURRENCY_FORMAT, SEO, COOKIE, EMAIL, BANK_TRANSFER, STORAGE, RECAPTCHA
+        SYSTEM, BRAND, CURRENCY_FORMAT, SEO, COOKIE, EMAIL, BANK_TRANSFER, STORAGE, RECAPTCHA, STRIPE
     }
 
     // ------------------------------------------------------------------ System
@@ -227,11 +227,46 @@ public final class SettingsDtos {
         }
     }
 
+    // ------------------------------------------------------------------ Stripe (docs/analysis/06 §3.3.2 Payment)
+
+    public enum EStripeMode { TEST, LIVE }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record StripeSettings(boolean enabled, EStripeMode mode, String publishableKey, String secretKeyEnc,
+                                 String webhookSecretEnc) {
+        static StripeSettings defaults() {
+            return new StripeSettings(false, EStripeMode.TEST, null, null, null);
+        }
+    }
+
+    public record StripeSettingsForm(
+            @Schema(description = "Offer Stripe Checkout on plan orders", example = "true") boolean enabled,
+            @Schema(description = "TEST or LIVE: the keys must be of that mode") @NotNull EStripeMode mode,
+            @Schema(description = "Publishable key (public)", example = "pk_test_xxx")
+            @Size(max = 255) @Pattern(regexp = "^$|pk_(test|live)_[A-Za-z0-9]+") String publishableKey,
+            @Schema(description = "Secret key — write-only. Omitted = keep; empty = remove.") @Size(max = 255) String secretKey,
+            @Schema(description = "Webhook signing secret (whsec_…) — write-only. Omitted = keep; empty = remove.")
+            @Size(max = 255) String webhookSecret) {
+    }
+
+    public record StripeSettingsView(boolean enabled, EStripeMode mode, String publishableKey, boolean secretKeySet,
+                                     boolean webhookSecretSet) {
+        static StripeSettingsView of(StripeSettings s) {
+            return new StripeSettingsView(s.enabled(), s.mode(), s.publishableKey(), s.secretKeyEnc() != null,
+                    s.webhookSecretEnc() != null);
+        }
+    }
+
+    @Schema(description = "Payment methods a company can choose on a plan order")
+    public record PublicPayments(boolean bankTransfer, boolean stripe, String stripePublishableKey) {
+    }
+
     // ------------------------------------------------------------------ public bundle
 
     @Schema(description = "Everything the FE may show before login. No secret, no internal value.")
     public record PublicSettings(SystemSettings system, BrandSettings brand, CurrencySettingsView currency,
-                                 SeoSettings seo, CookieSettings cookie, PublicRecaptcha recaptcha) {
+                                 SeoSettings seo, CookieSettings cookie, PublicRecaptcha recaptcha,
+                                 PublicPayments payments) {
     }
 
     public record PublicRecaptcha(boolean enabled, ERecaptchaVersion version, String siteKey) {

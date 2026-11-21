@@ -30,6 +30,10 @@ public class PlanOrder extends BaseAuditableEntity {
     @Column(name = "receipt_file_id")
     private Long receiptFileId;
 
+    /** Stripe Checkout Session of a STRIPE order: the webhook finds the order by it. */
+    @Column(name = "stripe_session_id")
+    private String stripeSessionId;
+
     @Column(name = "company_id", nullable = false)
     private Long companyId;
 
