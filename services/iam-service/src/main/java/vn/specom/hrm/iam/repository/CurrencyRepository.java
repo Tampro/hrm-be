@@ -12,6 +12,8 @@ import java.util.Optional;
 public interface CurrencyRepository extends JpaRepository<Currency, Long> {
     boolean existsByCode(String code);
 
+    Optional<Currency> findByCode(String code);
+
     Optional<Currency> findFirstByDefaultCurrencyTrue();
 
     List<Currency> findAllByOrderByDefaultCurrencyDescCodeAsc();
