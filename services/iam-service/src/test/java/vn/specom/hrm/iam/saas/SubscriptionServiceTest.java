@@ -110,6 +110,32 @@ class SubscriptionServiceTest {
         assertThat(SubscriptionService.mayRenew(java.util.Set.of("HR"))).isFalse();
     }
 
+    @Test
+    void startTrialOncePerPlanAndNotOverAPaidPeriod() {
+        Plan ent = plan(3L, false, 7, 100);
+        Company c = company(1L, null, false);
+        service.startTrial(c, ent, false);
+        assertThat(c.getPlanId()).isEqualTo(3L);
+        assertThat(c.isOnTrial()).isTrue();
+        assertThat(c.getPlanExpiresAt()).isEqualTo(NOW.plusSeconds(7 * 86400));
+        // trialing it now, or tried before
+        assertTrial(() -> service.startTrial(c, ent, false), ESaasError.SAAS_035);
+        assertTrial(() -> service.startTrial(company(1L, null, false), ent, true), ESaasError.SAAS_035);
+        // no trial days
+        assertTrial(() -> service.startTrial(company(1L, null, false), pro, false), ESaasError.SAAS_034);
+        // a paid period is running
+        assertTrial(() -> service.startTrial(company(2L, NOW.plusSeconds(86400), false), ent, false), ESaasError.SAAS_036);
+        // another plan's trial may be replaced by this one
+        Company onTrial = company(1L, NOW.plusSeconds(86400), true);
+        service.startTrial(onTrial, ent, false);
+        assertThat(onTrial.getPlanId()).isEqualTo(3L);
+    }
+
+    private static void assertTrial(org.assertj.core.api.ThrowableAssert.ThrowingCallable call, ESaasError code) {
+        org.assertj.core.api.Assertions.assertThatThrownBy(call)
+                .extracting(e -> ((vn.specom.hrm.exception.ApiException) e).getErrorCode()).isEqualTo(code);
+    }
+
     private static Plan plan(Long id, boolean isDefault, int trialDays, Integer maxUsers) {
         Plan p = new Plan();
         p.setId(id);
