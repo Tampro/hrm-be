@@ -310,6 +310,10 @@ public class EmployeeService {
         e.setDepartmentId(p.departmentId());
         e.setDesignationId(p.designationId());
         e.setDateOfJoining(p.dateOfJoining());
+        if (p.dateOfLeaving() != null && p.dateOfLeaving().isBefore(p.dateOfJoining())) {
+            throw ApiException.badRequest(EEmployeeError.EMP_093);
+        }
+        e.setDateOfLeaving(p.dateOfLeaving());
         e.setEmploymentType(p.employmentType());
         e.setStatus(p.status());
         e.setShiftId(p.shiftId());
@@ -382,7 +386,8 @@ public class EmployeeService {
                 e.getEmployeeCode(), e.getFullName(), e.getEmail(), e.getPhone(), e.getDateOfBirth(), e.getGender(),
                 str(e.getProfileMediaId()), photo == null ? null : photo.viewUrl(),
                 ref(e.getBranchId(), n.branches()), ref(e.getDepartmentId(), n.departments()),
-                ref(e.getDesignationId(), n.designations()), e.getDateOfJoining(), e.getEmploymentType(),
+                ref(e.getDesignationId(), n.designations()), e.getDateOfJoining(), e.getDateOfLeaving(),
+                e.getEmploymentType(),
                 e.getStatus(), str(e.getShiftId()), str(e.getAttendancePolicyId()), reportsTo(e),
                 e.getAddressLine1(), e.getAddressLine2(), e.getCity(), e.getState(), e.getCountry(), e.getPostalCode(),
                 e.getEmergencyName(), e.getEmergencyRelationship(), e.getEmergencyPhone(), banking,

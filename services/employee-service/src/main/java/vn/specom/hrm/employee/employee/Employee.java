@@ -70,6 +70,9 @@ public class Employee extends BaseAuditableEntity {
     @Column(name = "date_of_joining", nullable = false)
     private LocalDate dateOfJoining;
 
+    @Column(name = "date_of_leaving")
+    private LocalDate dateOfLeaving;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "employment_type", nullable = false, length = 20)
     private EEmploymentType employmentType;
