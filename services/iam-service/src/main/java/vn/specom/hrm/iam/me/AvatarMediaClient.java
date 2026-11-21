@@ -81,6 +81,12 @@ public class AvatarMediaClient {
         try {
             JsonNode body = http.get().uri("/api/v1/media/files/{id}", fileId)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + callerToken())
+                    .headers(h -> {
+                        String actAs = vn.specom.hrm.security.RemoteAuthorityResolver.actAsHeader();
+                        if (actAs != null) {
+                            h.set(vn.specom.hrm.security.RemoteAuthorityResolver.ACT_AS_HEADER, actAs);
+                        }
+                    })
                     .retrieve().body(JsonNode.class);
             JsonNode data = body == null ? null : body.path("data");
             return data == null || data.isMissingNode() || data.isNull() ? null : mapper.convertValue(data, MediaFile.class);

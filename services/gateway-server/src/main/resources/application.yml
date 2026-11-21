@@ -19,7 +19,7 @@ spring:
               "[/**]":
                 allowed-origins: ${HRM_CORS_ORIGINS:http://localhost:5173}
                 allowed-methods: GET,POST,PUT,DELETE,OPTIONS
-                allowed-headers: Authorization,Content-Type,Accept-Language
+                allowed-headers: Authorization,Content-Type,Accept-Language,X-Act-As-Company
                 exposed-headers: X-Trace-Id,Content-Disposition
           # Each service sets its own CORS headers too; keep only the gateway's.
           default-filters:

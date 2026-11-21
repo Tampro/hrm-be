@@ -117,7 +117,8 @@ public class MeController {
 
     private static HrmPrincipal requireProfile() {
         HrmPrincipal p = CurrentUser.get();
-        if (!p.superAdmin() && p.userId() == null) {
+        // A super admin in "Login as Company" has a company but no HRM account (userId null): that is a profile.
+        if (!p.superAdmin() && p.userId() == null && p.companyId() == null) {
             throw ApiException.forbidden(EIamError.AUTH_006);
         }
         return p;

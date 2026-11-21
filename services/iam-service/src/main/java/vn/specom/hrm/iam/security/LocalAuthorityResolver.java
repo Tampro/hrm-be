@@ -36,6 +36,7 @@ public class LocalAuthorityResolver implements AuthorityResolver {
     private final CompanyRepository companies;
     private final RevokedSessionStore revokedSessions;
     private final SubscriptionService subscriptions;
+    private final vn.specom.hrm.iam.impersonation.ImpersonationService impersonation;
 
     private final Cache<String, Optional<HrmPrincipal>> cache =
             Caffeine.newBuilder().expireAfterWrite(Duration.ofSeconds(30)).maximumSize(10_000).build();
@@ -47,6 +48,15 @@ public class LocalAuthorityResolver implements AuthorityResolver {
             throw new InvalidBearerTokenException("Session logged out");
         }
         boolean superAdmin = HrmJwtAuthenticationConverter.isSuperAdmin(jwt);
+        String actAs = vn.specom.hrm.security.RemoteAuthorityResolver.actAsHeader();
+        if (actAs != null) {
+            // Login as Company: only a super admin's own active session; anything else is refused, never ignored.
+            if (!superAdmin) {
+                throw new InvalidBearerTokenException("Act-as header without super admin");
+            }
+            return impersonation.principalFor(actAs, jwt.getSubject(), jwt.getClaimAsString("preferred_username"))
+                    .orElseThrow(() -> new InvalidBearerTokenException("Act-as session ended or expired"));
+        }
         Optional<HrmPrincipal> local = cache.get(jwt.getSubject(), this::load);
         if (local.isPresent()) {
             HrmPrincipal p = local.get();
