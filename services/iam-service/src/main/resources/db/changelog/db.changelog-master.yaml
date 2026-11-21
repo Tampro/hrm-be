@@ -85,3 +85,5 @@ databaseChangeLog:
       file: db/changelog/changes/20261121250000_plan_trial_changelog.mysql.sql
   - include:
       file: db/changelog/changes/20261121260000_company_setting_changelog.mysql.sql
+  - include:
+      file: db/changelog/changes/20261121270000_cookie_consent_changelog.mysql.sql

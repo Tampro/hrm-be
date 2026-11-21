@@ -13,7 +13,8 @@ public enum ESiteError implements ErrorCode {
     SITE_003("The landing page is switched off."),
     SITE_004("The page does not exist."),
     SITE_005("The inquiry does not exist."),
-    SITE_006("The subscriber does not exist.");
+    SITE_006("The subscriber does not exist."),
+    SITE_007("The period must end on or after its start and last at most {0} days.");
 
     private final String message;
 }
