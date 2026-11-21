@@ -170,14 +170,18 @@ public class CompanyService {
     }
 
     /**
-     * Soft delete (PO, 2026-11-18): rows stay for history, every account is disabled in Keycloak (sessions end), open
-     * orders are cancelled, and the code becomes free for a new company. Not reversible through the API.
+     * Soft delete (PO, 2026-11-18): rows stay for history, open orders are cancelled, and the code becomes free for a
+     * new company. Not reversible through the API. Every account is removed from Keycloak and soft-deleted here
+     * (PO, 2026-11-21): usernames are unique across the platform, so a disabled leftover would keep the employee's
+     * email from being used by another company (IAM_010).
      */
     @Transactional
     public void delete(Long id) {
         Company c = require(id);
         for (UserAccount u : users.findByCompanyIdAndDeletedFalse(c.getId())) {
-            keycloak.setEnabled(u.getKeycloakId(), false);
+            keycloak.deleteUser(u.getKeycloakId());
+            u.setDeleted(true);
+            u.setStatus(EUserStatus.LOCKED);
         }
         orderService.cancelPendingOf(c.getId());
         c.setDeleted(true);
