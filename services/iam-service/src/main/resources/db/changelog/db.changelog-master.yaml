@@ -77,3 +77,5 @@ databaseChangeLog:
       file: db/changelog/changes/20261121210000_language_changelog.mysql.sql
   - include:
       file: db/changelog/changes/20261121220000_website_changelog.mysql.sql
+  - include:
+      file: db/changelog/changes/20261121230000_newsletter_unsubscribe_changelog.mysql.sql
