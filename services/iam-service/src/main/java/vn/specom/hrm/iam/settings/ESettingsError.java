@@ -14,7 +14,8 @@ public enum ESettingsError implements ErrorCode {
     SETTINGS_004("The test email could not be sent: {0}."),
     SETTINGS_005("These file types cannot be allowed: {0}."),
     SETTINGS_006("A secret is required to enable reCAPTCHA."),
-    SETTINGS_007("A stored secret cannot be read with the current encryption key.");
+    SETTINGS_007("A stored secret cannot be read with the current encryption key."),
+    SETTINGS_008("The language {0} does not exist or is disabled.");
 
     private final String message;
 }

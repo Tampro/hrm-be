@@ -49,7 +49,12 @@ public enum EIamError implements ErrorCode {
     IAM_022("This IP address is already in the list."),
     IAM_023("The IP address entry does not exist."),
     IAM_024("The avatar must be a JPG, PNG or GIF image of your company, at most 2 MB."),
-    IAM_025("The media service is unavailable. Please try again later.");
+    IAM_025("The media service is unavailable. Please try again later."),
+    IAM_026("The language {0} already exists."),
+    IAM_027("The language {0} does not exist."),
+    IAM_028("A system language (vi, en, ko) cannot be deleted."),
+    IAM_029("The default language cannot be disabled or deleted. Choose another default language first."),
+    IAM_030("Invalid label: {0}. Keys use letters, digits, dot, dash or underscore (max 200); texts at most 2000 characters; an import has 1 to 10000 keys; new keys come in through import.");
 
     private final String message;
 }

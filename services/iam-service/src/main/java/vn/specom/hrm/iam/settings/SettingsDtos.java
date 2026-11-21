@@ -30,7 +30,7 @@ public final class SettingsDtos {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record SystemSettings(
-            @Schema(description = "Default Language: vi | en | ko", example = "vi") @NotNull @Pattern(regexp = "vi|en|ko") String defaultLanguage,
+            @Schema(description = "Default Language: code of an enabled language (Language Management)", example = "vi") @NotNull @Pattern(regexp = "[a-z]{2,3}(-[A-Z]{2})?") String defaultLanguage,
             @Schema(description = "Date Format (pattern shown by the FE)", example = "dd/MM/yyyy")
             @NotNull @Pattern(regexp = "dd/MM/yyyy|MM/dd/yyyy|yyyy-MM-dd|dd-MM-yyyy|dd.MM.yyyy") String dateFormat,
             @Schema(description = "Time Format", example = "HH:mm") @NotNull @Pattern(regexp = "HH:mm|hh:mm a|HH:mm:ss") String timeFormat,
