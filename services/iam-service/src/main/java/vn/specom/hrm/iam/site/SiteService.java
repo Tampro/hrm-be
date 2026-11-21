@@ -355,13 +355,13 @@ public class SiteService {
     }
 
     /**
-     * Send Reply through the platform SMTP (SETTINGS_003 when none, SETTINGS_004 when it fails).
+     * Send Reply through the platform SMTP (SETTINGS_003 when none, SITE_008 with the server's reason when it fails).
      * TODO(assumption): a NEW inquiry becomes CONTACTED once replied to.
      */
     @Transactional
     public InquiryDto reply(Long id, ReplyForm f) {
         ContactInquiry c = requireInquiry(id);
-        SettingsService.send(settings.mailer(), c.getEmail(), f.subject().trim(), f.message());
+        SettingsService.send(settings.mailer(), c.getEmail(), f.subject().trim(), f.message(), ESiteError.SITE_008);
         c.setLastRepliedAt(clock.instant());
         if (c.getStatus() == ContactInquiry.EStatus.NEW) {
             c.setStatus(ContactInquiry.EStatus.CONTACTED);

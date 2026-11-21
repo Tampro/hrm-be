@@ -14,7 +14,8 @@ public enum ESiteError implements ErrorCode {
     SITE_004("The page does not exist."),
     SITE_005("The inquiry does not exist."),
     SITE_006("The subscriber does not exist."),
-    SITE_007("The period must end on or after its start and last at most {0} days.");
+    SITE_007("The period must end on or after its start and last at most {0} days."),
+    SITE_008("The reply could not be sent: {0}.");
 
     private final String message;
 }
