@@ -151,6 +151,19 @@ public class SubscriptionController {
                               Long fileId) {
     }
 
+    @Operation(summary = "Pay a pending order with Stripe",
+            description = "For an order created with paymentMethod STRIPE. Returns the Stripe Checkout URL to send "
+                    + "the browser to; the order is approved by the Stripe webhook once paid.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "400", description = "Not a pending STRIPE order with an amount (SAAS_039), "
+                    + "Stripe off or no default currency (SAAS_037), Stripe refused (SAAS_038)"),
+            @ApiResponse(responseCode = "404", description = "No such order in your company (SAAS_008)")})
+    @PreAuthorize("@PermissionChecker.hasInCompany('SAAS_ORDER_CREATE')")
+    @PostMapping("/orders/{id}/stripe-checkout")
+    public ApiMessageDto<SaasDtos.StripeCheckoutDto> stripeCheckout(@PathVariable Long id) {
+        return ApiMessageDto.ok(orderService.stripeCheckout(id));
+    }
+
     @Operation(summary = "Cancel a pending order")
     @ApiResponses({
             @ApiResponse(responseCode = "400", description = "Not pending (SAAS_009)"),

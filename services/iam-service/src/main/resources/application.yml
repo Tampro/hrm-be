@@ -33,6 +33,9 @@ spring:
 hrm:
   # Profile avatars are media library files (docs/analysis/06 §3 Profile Settings).
   media-service-url: ${MEDIA_SERVICE_URL:http://localhost:8082}
+  stripe:
+    # Stripe REST API; overridable so a stub can stand in during tests.
+    api-url: ${STRIPE_API_URL:https://api.stripe.com}
   landing:
     # Landing Page -> Advanced -> Custom JavaScript runs on the public site: published only when the operator
     # turns it on (PO 2026-11-21).

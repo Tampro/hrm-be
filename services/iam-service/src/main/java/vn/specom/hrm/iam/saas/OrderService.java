@@ -33,6 +33,7 @@ import java.time.format.DateTimeFormatter;
  * number as content, the super admin approves (plan activated / extended) or rejects.
  */
 @Service
+@lombok.extern.slf4j.Slf4j
 @RequiredArgsConstructor
 public class OrderService {
     private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("yyMMdd").withZone(ZoneOffset.UTC);
@@ -51,6 +52,9 @@ public class OrderService {
     private final vn.specom.hrm.iam.email.EmailNotifier notifier;
     private final vn.specom.hrm.iam.me.AvatarMediaClient media;
     private final CompanyPlanTrialRepository trials;
+    private final vn.specom.hrm.iam.payment.StripeClient stripeClient;
+    @org.springframework.beans.factory.annotation.Value("${hrm.app-url:http://localhost:5173}")
+    private String appUrl;
     private final Clock clock;
 
     // ------------------------------------------------------------------ company side
@@ -106,7 +110,14 @@ public class OrderService {
         o.setOriginalPrice(q.originalPrice());
         o.setDiscountAmount(q.discountAmount());
         o.setFinalPrice(q.finalPrice());
-        o.setPaymentMethod(EPaymentMethod.BANK_TRANSFER);
+        EPaymentMethod method = form.paymentMethod() == null ? EPaymentMethod.BANK_TRANSFER : form.paymentMethod();
+        if (method == EPaymentMethod.MANUAL) {
+            throw ApiException.badRequest(ESaasError.SAAS_039);
+        }
+        if (method == EPaymentMethod.STRIPE && settings.activeStripe() == null) {
+            throw ApiException.badRequest(ESaasError.SAAS_037);
+        }
+        o.setPaymentMethod(method);
         o.setPaymentReference(form.paymentReference());
         o.setStatus(EOrderStatus.PENDING);
         return dto(orders.save(o));
@@ -140,6 +151,60 @@ public class OrderService {
     }
 
     static final java.util.Set<String> RECEIPT_TYPES = java.util.Set.of("application/pdf", "image/jpeg", "image/png");
+
+    // ------------------------------------------------------------------ Stripe
+
+    /** Pay a pending STRIPE order of the caller's company: a Checkout Session in the default currency. */
+    @Transactional
+    public SaasDtos.StripeCheckoutDto stripeCheckout(Long id) {
+        PlanOrder o = require(id);
+        if (o.getStatus() != EOrderStatus.PENDING || o.getPaymentMethod() != EPaymentMethod.STRIPE
+                || o.getFinalPrice() == null || o.getFinalPrice().signum() <= 0) {
+            throw ApiException.badRequest(ESaasError.SAAS_039);
+        }
+        var stripe = settings.activeStripe();
+        String currency = settings.currency().defaultCurrencyCode();
+        if (stripe == null || currency == null) {
+            throw ApiException.badRequest(ESaasError.SAAS_037);
+        }
+        Plan plan = catalog.requirePlan(o.getPlanId());
+        long amount = vn.specom.hrm.iam.payment.StripeClient.minorUnits(o.getFinalPrice(), currency);
+        String back = appUrl + "/billing/orders/" + o.getId() + "?stripe=";
+        var session = stripeClient.createCheckout(stripe.secretKey(), o.getId().toString(), o.getOrderNumber(),
+                o.getCompanyId().toString(), plan.getName() + " (" + o.getBillingCycle().name().toLowerCase(java.util.Locale.ROOT) + ")",
+                amount, currency, back + "success", back + "cancel");
+        o.setStripeSessionId(session.id());
+        return new SaasDtos.StripeCheckoutDto(session.id(), session.url());
+    }
+
+    /**
+     * Webhook: the Checkout Session was paid. Approves the order once (a repeated event changes nothing) and only
+     * when Stripe charged the order's amount in the default currency; anything else is logged, never approved.
+     */
+    @Transactional
+    public void onStripePaid(String sessionId, String paymentIntent, long amountTotal, String currency) {
+        PlanOrder o = orders.findByStripeSessionId(sessionId).orElse(null);
+        if (o == null) {
+            log.warn("Stripe session {} matches no order", sessionId);
+            return;
+        }
+        if (o.getStatus() != EOrderStatus.PENDING) {
+            log.info("Stripe event for order {} already handled ({})", o.getOrderNumber(), o.getStatus());
+            return;
+        }
+        String expectedCurrency = settings.currency().defaultCurrencyCode();
+        long expected = expectedCurrency == null ? -2
+                : vn.specom.hrm.iam.payment.StripeClient.minorUnits(o.getFinalPrice(), expectedCurrency);
+        if (expected != amountTotal || expectedCurrency == null || !expectedCurrency.equalsIgnoreCase(currency)) {
+            log.error("Stripe paid {} {} for order {} but {} {} was expected: left PENDING", amountTotal, currency,
+                    o.getOrderNumber(), expected, expectedCurrency);
+            return;
+        }
+        o.setPaymentReference(paymentIntent);
+        decide(o, EOrderStatus.APPROVED, "Paid with Stripe", "stripe");
+        activate(o, "Paid with Stripe");
+        log.info("Order {} paid with Stripe and approved", o.getOrderNumber());
+    }
 
     // ------------------------------------------------------------------ super admin side
 
@@ -182,7 +247,12 @@ public class OrderService {
     @Transactional
     public OrderDto approve(Long id, String notes) {
         PlanOrder o = require(id);
-        decide(o, EOrderStatus.APPROVED, notes);
+        decide(o, EOrderStatus.APPROVED, notes, CurrentUser.get().keycloakId());
+        return activate(o, notes);
+    }
+
+    /** After approval (by the super admin or by Stripe): the plan runs, commission, email. */
+    private OrderDto activate(PlanOrder o, String notes) {
         Company c = company(o.getCompanyId());
         Plan plan = catalog.requirePlan(o.getPlanId());
         subscriptions.activate(c, plan, o.getBillingCycle());
@@ -263,12 +333,16 @@ public class OrderService {
     // ------------------------------------------------------------------ helpers
 
     private void decide(PlanOrder o, EOrderStatus to, String notes) {
+        decide(o, to, notes, CurrentUser.get().keycloakId());
+    }
+
+    private void decide(PlanOrder o, EOrderStatus to, String notes, String processedBy) {
         if (o.getStatus() != EOrderStatus.PENDING) {
             throw ApiException.badRequest(ESaasError.SAAS_009);
         }
         o.setStatus(to);
         o.setProcessedAt(clock.instant());
-        o.setProcessedBy(CurrentUser.get().keycloakId());
+        o.setProcessedBy(processedBy);
         if (notes != null) {
             o.setNotes(notes);
         }

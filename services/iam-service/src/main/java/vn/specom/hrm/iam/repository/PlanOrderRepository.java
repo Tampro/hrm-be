@@ -10,6 +10,8 @@ import vn.specom.hrm.iam.saas.EOrderStatus;
 import java.util.Collection;
 
 public interface PlanOrderRepository extends JpaRepository<PlanOrder, Long> {
+    java.util.Optional<PlanOrder> findByStripeSessionId(String stripeSessionId);
+
     Page<PlanOrder> findByCompanyId(Long companyId, Pageable pageable);
 
     Page<PlanOrder> findByStatus(EOrderStatus status, Pageable pageable);

@@ -274,13 +274,73 @@ public class SettingsService {
         return read(ESection.RECAPTCHA, RecaptchaSettings.class, RecaptchaSettings::defaults);
     }
 
+    // ------------------------------------------------------------------ Stripe
+
+    @Transactional(readOnly = true)
+    public SettingsDtos.StripeSettingsView stripe() {
+        return SettingsDtos.StripeSettingsView.of(stripeStored());
+    }
+
+    /** Secrets are write-only: omitted = keep, empty = remove. Enabled needs all three keys, of the chosen mode. */
+    @Transactional
+    public SettingsDtos.StripeSettingsView saveStripe(SettingsDtos.StripeSettingsForm f) {
+        SettingsDtos.StripeSettings old = stripeStored();
+        String secret = old.secretKeyEnc();
+        if (f.secretKey() != null) {
+            secret = f.secretKey().isEmpty() ? null : cipher.encrypt(f.secretKey().trim());
+        }
+        String hook = old.webhookSecretEnc();
+        if (f.webhookSecret() != null) {
+            hook = f.webhookSecret().isEmpty() ? null : cipher.encrypt(f.webhookSecret().trim());
+        }
+        String pk = f.publishableKey() == null || f.publishableKey().isBlank() ? null : f.publishableKey().trim();
+        if (f.enabled() && (pk == null || secret == null || hook == null)) {
+            throw ApiException.badRequest(ESettingsError.SETTINGS_010);
+        }
+        String prefix = f.mode() == SettingsDtos.EStripeMode.LIVE ? "live_" : "test_";
+        if ((pk != null && !pk.startsWith("pk_" + prefix))
+                || (f.secretKey() != null && !f.secretKey().isEmpty() && !f.secretKey().trim().startsWith("sk_" + prefix)
+                && !f.secretKey().trim().startsWith("rk_" + prefix))) {
+            throw ApiException.badRequest(ESettingsError.SETTINGS_011, f.mode());
+        }
+        return SettingsDtos.StripeSettingsView.of(write(ESection.STRIPE,
+                new SettingsDtos.StripeSettings(f.enabled(), f.mode(), pk, secret, hook)));
+    }
+
+    /** For checkout and the webhook: the decrypted keys; null while Stripe is off. Never logged. */
+    @Transactional(readOnly = true)
+    public ActiveStripe activeStripe() {
+        SettingsDtos.StripeSettings s = stripeStored();
+        if (!s.enabled() || s.secretKeyEnc() == null || s.webhookSecretEnc() == null) {
+            return null;
+        }
+        return new ActiveStripe(cipher.decrypt(s.secretKeyEnc()), cipher.decrypt(s.webhookSecretEnc()), s.mode());
+    }
+
+    public record ActiveStripe(String secretKey, String webhookSecret, SettingsDtos.EStripeMode mode) {
+        @Override
+        public String toString() {
+            return "ActiveStripe[" + mode + "]";
+        }
+    }
+
+    private SettingsDtos.StripeSettings stripeStored() {
+        return read(ESection.STRIPE, SettingsDtos.StripeSettings.class, SettingsDtos.StripeSettings::defaults);
+    }
+
     // ------------------------------------------------------------------ public bundle
 
     @Transactional(readOnly = true)
     public PublicSettings publicSettings() {
         RecaptchaSettings r = recaptchaStored();
         return new PublicSettings(system(), brand(), currency(), seo(), cookie(),
-                new PublicRecaptcha(r.enabled(), r.version(), r.enabled() ? r.siteKey() : null));
+                new PublicRecaptcha(r.enabled(), r.version(), r.enabled() ? r.siteKey() : null), payments());
+    }
+
+    private SettingsDtos.PublicPayments payments() {
+        SettingsDtos.StripeSettings st = stripeStored();
+        boolean stripe = st.enabled() && st.secretKeyEnc() != null && st.webhookSecretEnc() != null;
+        return new SettingsDtos.PublicPayments(bankTransfer().enabled(), stripe, stripe ? st.publishableKey() : null);
     }
 
     // ------------------------------------------------------------------ storage of a section

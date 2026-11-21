@@ -180,6 +180,27 @@ public class SettingsController {
         return ApiMessageDto.ok(settings.saveStorage(form));
     }
 
+    @io.swagger.v3.oas.annotations.Operation(summary = "Stripe payment settings",
+            description = "Secrets are never returned (secretKeySet, webhookSecretSet).")
+    @PreAuthorize("@PermissionChecker.isSuperAdmin()")
+    @GetMapping("/admin/payment/stripe")
+    public ApiMessageDto<SettingsDtos.StripeSettingsView> stripe() {
+        return ApiMessageDto.ok(settings.stripe());
+    }
+
+    @io.swagger.v3.oas.annotations.Operation(summary = "Save Stripe payment settings",
+            description = "Full replacement; secretKey and webhookSecret are write-only (omitted = keep, empty = "
+                    + "remove), encrypted with HRM_SETTINGS_ENC_KEY. The webhook URL to register at Stripe is "
+                    + "/api/v1/public/payments/stripe/webhook (event checkout.session.completed).")
+    @ApiResponses(@ApiResponse(responseCode = "400", description = "Enabled without all keys (SETTINGS_010), keys "
+            + "not of the chosen mode (SETTINGS_011), encryption key not configured (SETTINGS_002), validation"))
+    @PreAuthorize("@PermissionChecker.isSuperAdmin()")
+    @PutMapping("/admin/payment/stripe")
+    public ApiMessageDto<SettingsDtos.StripeSettingsView> saveStripe(
+            @Valid @RequestBody SettingsDtos.StripeSettingsForm form) {
+        return ApiMessageDto.ok(settings.saveStripe(form));
+    }
+
     @PreAuthorize("@PermissionChecker.isSuperAdmin()")
     @GetMapping("/admin/recaptcha")
     public ApiMessageDto<RecaptchaSettingsView> recaptcha() {

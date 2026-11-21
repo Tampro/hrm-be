@@ -86,7 +86,13 @@ public final class SaasDtos {
             @NotNull EBillingCycle billingCycle,
             @Schema(description = "Optional coupon code", example = "WELCOME10") @Size(max = 50) String couponCode,
             @Schema(description = "Bank transfer reference, if already paid", example = "FT2611180001")
-            @Size(max = 100) String paymentReference) {
+            @Size(max = 100) String paymentReference,
+            @Schema(description = "BANK_TRANSFER (default) or STRIPE; STRIPE orders are paid with "
+                    + "POST /saas/orders/{id}/stripe-checkout") EPaymentMethod paymentMethod) {
+    }
+
+    @Schema(description = "Redirect the browser to url; Stripe returns to the app when done")
+    public record StripeCheckoutDto(String sessionId, String url) {
     }
 
     public record QuoteDto(BigDecimal originalPrice, BigDecimal discountAmount, BigDecimal finalPrice, String couponCode) {
