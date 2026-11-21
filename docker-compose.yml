@@ -225,6 +225,9 @@ services:
       MEETING_DB_URL: jdbc:mysql://mysql:3306/hrm_meeting?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       MEETING_DB_USERNAME: ${MEETING_DB_USERNAME:-hrm_meeting}
       MEETING_DB_PASSWORD: ${MEETING_DB_PASSWORD}
+      MEETING_ENC_KEY: ${MEETING_ENC_KEY:?set in .env}
+      ZOOM_OAUTH_URL: ${ZOOM_OAUTH_URL:-https://zoom.us/oauth/token}
+      ZOOM_API_URL: ${ZOOM_API_URL:-https://api.zoom.us/v2}
       KEYCLOAK_INTERNAL_URL: http://keycloak:8080
       KEYCLOAK_ISSUER: http://localhost:8180/realms/hrm
       IAM_SERVICE_URL: http://iam-service:8081

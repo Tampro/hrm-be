@@ -57,3 +57,5 @@ databaseChangeLog:
       file: db/changelog/changes/20261120520000_meeting_permission_init_data.mysql.sql
   - include:
       file: db/changelog/changes/20261121090000_event_permission_init_data.mysql.sql
+  - include:
+      file: db/changelog/changes/20261121100000_zoom_permission_init_data.mysql.sql

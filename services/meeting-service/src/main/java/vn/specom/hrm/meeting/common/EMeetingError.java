@@ -28,7 +28,12 @@ public enum EMeetingError implements ErrorCode {
     MTG_018("The event must end after it starts."),
     MTG_019("Only a pending event can be approved or rejected."),
     MTG_020("A department is not an active department of the company."),
-    MTG_021("The period must end on or after its start and last at most {0} days.");
+    MTG_021("The period must end on or after its start and last at most {0} days."),
+    MTG_022("Zoom is not set up for the company yet: save and test the Zoom settings first."),
+    MTG_023("Zoom rejected the credentials. Check the Account ID, Client ID and Client Secret."),
+    MTG_024("Zoom is unavailable. Please try again."),
+    MTG_025("Enter the client secret."),
+    MTG_026("The stored Zoom secret cannot be read; save the Zoom settings again.");
 
     private final String message;
 }
