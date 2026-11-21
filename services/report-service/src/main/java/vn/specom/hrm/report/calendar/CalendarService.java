@@ -46,7 +46,10 @@ public class CalendarService {
     public record CalendarView(LocalDate from, LocalDate to, LocalDate today, List<Event> events,
                                @Schema(description = "From today on, in date order, at most 10") List<Event> upcoming,
                                @Schema(description = "Kinds left out, with the reason (COMMON_004 = no permission)")
-                               Map<EKind, String> unavailable) {
+                               Map<EKind, String> unavailable,
+                               @Schema(description = "Events per kind in the period (This Month panel); kinds left "
+                                       + "out are absent") Map<EKind, Long> counts,
+                               long total) {
     }
 
     public CalendarView calendar(Long companyId, LocalDate from, LocalDate to) {
@@ -85,7 +88,13 @@ public class CalendarService {
                 .thenComparing(Event::kind));
         LocalDate today = LocalDate.now(clock);
         List<Event> upcoming = events.stream().filter(e -> !e.end().isBefore(today)).limit(UPCOMING).toList();
-        return new CalendarView(from, to, today, events, upcoming, unavailable);
+        Map<EKind, Long> counts = new LinkedHashMap<>();
+        for (EKind kind : EKind.values()) {
+            if (!unavailable.containsKey(kind)) {
+                counts.put(kind, events.stream().filter(e -> e.kind() == kind).count());
+            }
+        }
+        return new CalendarView(from, to, today, events, upcoming, unavailable, counts, events.size());
     }
 
     static List<Event> meetings(JsonNode list) {

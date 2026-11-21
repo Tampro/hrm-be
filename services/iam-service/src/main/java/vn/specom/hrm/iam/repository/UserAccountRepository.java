@@ -37,8 +37,9 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long> 
     @Query("select u from UserAccount u where u.companyId = :companyId and u.deleted = false and "
             + "(:keyword = '' or lower(u.username) like lower(concat('%', :keyword, '%')) "
             + "or lower(u.fullName) like lower(concat('%', :keyword, '%')) "
-            + "or lower(u.email) like lower(concat('%', :keyword, '%')))")
-    Page<UserAccount> search(Long companyId, String keyword, Pageable pageable);
+            + "or lower(u.email) like lower(concat('%', :keyword, '%'))) "
+            + "and (:roleId is null or exists (select 1 from u.roles r where r.id = :roleId))")
+    Page<UserAccount> search(Long companyId, String keyword, Long roleId, Pageable pageable);
 
     @Query("select count(u) > 0 from UserAccount u join u.roles r where r.id = :roleId and u.deleted = false")
     boolean existsActiveUserWithRole(Long roleId);

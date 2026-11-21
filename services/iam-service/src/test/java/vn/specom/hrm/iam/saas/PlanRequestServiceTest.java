@@ -93,7 +93,7 @@ class PlanRequestServiceTest {
         when(orders.activateManually(10L, 4L, EBillingCycle.MONTHLY, "Plan request #1"))
                 .thenReturn(new SaasDtos.OrderDto("77", "ORD1", "10", "4", EBillingCycle.MONTHLY, null, BigDecimal.TEN,
                         BigDecimal.ZERO, BigDecimal.TEN, EPaymentMethod.MANUAL, null, EOrderStatus.APPROVED, null, null,
-                        null, null));
+                        null, null, null));
 
         var dto = service.approve(1L, "ok");
 

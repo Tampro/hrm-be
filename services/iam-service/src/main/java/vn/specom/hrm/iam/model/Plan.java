@@ -52,6 +52,10 @@ public class Plan extends BaseAuditableEntity {
     @Column(name = "ai_integration", nullable = false)
     private boolean aiIntegration;
 
+    /** "Recommended" badge on the plan card (docs/analysis/06 §10.2.1); display only. */
+    @Column(name = "recommended", nullable = false)
+    private boolean recommended;
+
     @Column(name = "is_default", nullable = false)
     private boolean defaultPlan;
 

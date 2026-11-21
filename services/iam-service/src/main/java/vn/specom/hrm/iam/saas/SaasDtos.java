@@ -26,11 +26,13 @@ public final class SaasDtos {
 
     public record PlanDto(String id, String code, String name, String description, BigDecimal monthlyPrice,
                           BigDecimal yearlyPrice, Integer maxUsers, Integer maxEmployees, BigDecimal storageLimitGb,
-                          int trialDays, boolean aiIntegration, boolean defaultPlan, boolean enabled) {
+                          int trialDays, boolean aiIntegration, boolean defaultPlan, boolean enabled,
+                          boolean recommended) {
         public static PlanDto of(Plan p) {
             return p == null ? null : new PlanDto(SaasDtos.str(p.getId()), p.getCode(), p.getName(), p.getDescription(),
                     p.getMonthlyPrice(), p.getYearlyPrice(), p.getMaxUsers(), p.getMaxEmployees(),
-                    p.getStorageLimitGb(), p.getTrialDays(), p.isAiIntegration(), p.isDefaultPlan(), p.isEnabled());
+                    p.getStorageLimitGb(), p.getTrialDays(), p.isAiIntegration(), p.isDefaultPlan(), p.isEnabled(),
+                    p.isRecommended());
         }
     }
 
@@ -56,7 +58,9 @@ public final class SaasDtos {
                     example = "false") boolean aiIntegration,
             @Schema(description = "The plan new companies get and expired ones fall back to; setting it unsets the previous default",
                     example = "false") boolean defaultPlan,
-            @Schema(description = "Offered to companies", example = "true") boolean enabled) {
+            @Schema(description = "Offered to companies", example = "true") boolean enabled,
+            @Schema(description = "Shows the Recommended badge on the plan card", example = "false")
+            boolean recommended) {
     }
 
     public record PlanStatusForm(
@@ -94,12 +98,14 @@ public final class SaasDtos {
     public record OrderDto(String id, String orderNumber, String companyId, String planId, EBillingCycle billingCycle,
                            String couponCode, BigDecimal originalPrice, BigDecimal discountAmount, BigDecimal finalPrice,
                            EPaymentMethod paymentMethod, String paymentReference, EOrderStatus status,
-                           Instant createdDate, Instant processedAt, String notes, BankTransferDto bankTransfer) {
+                           Instant createdDate, Instant processedAt, String notes, BankTransferDto bankTransfer,
+                           @Schema(description = "Media file id of the payment receipt the company attached")
+                           String receiptFileId) {
         public static OrderDto of(PlanOrder o, BankTransferDto bank) {
             return new OrderDto(SaasDtos.str(o.getId()), o.getOrderNumber(), SaasDtos.str(o.getCompanyId()), SaasDtos.str(o.getPlanId()),
                     o.getBillingCycle(), o.getCouponCode(), o.getOriginalPrice(), o.getDiscountAmount(),
                     o.getFinalPrice(), o.getPaymentMethod(), o.getPaymentReference(), o.getStatus(),
-                    o.getCreatedDate(), o.getProcessedAt(), o.getNotes(), bank);
+                    o.getCreatedDate(), o.getProcessedAt(), o.getNotes(), bank, SaasDtos.str(o.getReceiptFileId()));
         }
     }
 

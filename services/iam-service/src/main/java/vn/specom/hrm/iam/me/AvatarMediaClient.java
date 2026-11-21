@@ -50,10 +50,16 @@ public class AvatarMediaClient {
 
     /** The file, when it is a JPG/PNG/GIF of the company of at most 2 MB; otherwise IAM_024. */
     public MediaFile requireAvatar(Long fileId, Long companyId) {
-        MediaFile f = fetch(fileId);
+        return requireCompanyFile(fileId, companyId, TYPES, MAX_BYTES, EIamError.IAM_024);
+    }
+
+    /** A file of the company's media library of one of the types and at most maxBytes; otherwise `refused`. */
+    public MediaFile requireCompanyFile(Long fileId, Long companyId, Set<String> types, long maxBytes,
+                                        vn.specom.hrm.exception.ErrorCode refused) {
+        MediaFile f = fetch(fileId, refused);
         if (f == null || !Objects.equals(f.companyId(), String.valueOf(companyId))
-                || !TYPES.contains(f.mimeType()) || f.sizeBytes() > MAX_BYTES) {
-            throw ApiException.badRequest(EIamError.IAM_024);
+                || !types.contains(f.mimeType()) || f.sizeBytes() > maxBytes) {
+            throw ApiException.badRequest(refused);
         }
         return f;
     }
@@ -64,14 +70,14 @@ public class AvatarMediaClient {
             return null;
         }
         try {
-            MediaFile f = fetch(fileId);
+            MediaFile f = fetch(fileId, EIamError.IAM_024);
             return f == null ? null : f.viewUrl();
         } catch (RuntimeException e) {
             return null;
         }
     }
 
-    private MediaFile fetch(Long fileId) {
+    private MediaFile fetch(Long fileId, vn.specom.hrm.exception.ErrorCode refused) {
         try {
             JsonNode body = http.get().uri("/api/v1/media/files/{id}", fileId)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + callerToken())
@@ -80,7 +86,7 @@ public class AvatarMediaClient {
             return data == null || data.isMissingNode() || data.isNull() ? null : mapper.convertValue(data, MediaFile.class);
         } catch (HttpClientErrorException.NotFound | HttpClientErrorException.Forbidden e) {
             // Not a file of the caller's company, or the caller may not open the media library.
-            throw ApiException.badRequest(EIamError.IAM_024);
+            throw ApiException.badRequest(refused);
         } catch (RestClientException e) {
             log.warn("media-service call failed: {}", e.getClass().getSimpleName());
             throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, EIamError.IAM_025);

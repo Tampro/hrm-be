@@ -51,6 +51,10 @@ class ReportServiceTest {
         assertThat(v.events()).extracting(e -> e.kind() + ":" + e.title())
                 .containsExactly("HOLIDAY:National Day", "BIRTHDAY:Test Person", "MEETING:Team");
         assertThat(v.unavailable()).containsEntry(EKind.LEAVE, "COMMON_004").hasSize(1);
+        // This Month panel: per kind (the cancelled meeting is not counted), the unavailable kind left out
+        assertThat(v.counts()).containsEntry(EKind.MEETING, 1L).containsEntry(EKind.HOLIDAY, 1L)
+                .containsEntry(EKind.BIRTHDAY, 1L).doesNotContainKey(EKind.LEAVE);
+        assertThat(v.total()).isEqualTo(3);
         // the holiday ends today, so it is still upcoming
         assertThat(v.upcoming()).hasSize(3);
     }

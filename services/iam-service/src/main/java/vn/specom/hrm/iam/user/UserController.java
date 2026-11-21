@@ -49,8 +49,9 @@ public class UserController {
     public ApiMessageDto<ResponseListDto<UserDto>> list(
             @Parameter(description = COMPANY_PARAM) @RequestParam(required = false) Long companyId,
             @Parameter(description = "Matches username, full name or email") @RequestParam(required = false) String keyword,
+            @Parameter(description = "Only accounts holding this role") @RequestParam(required = false) Long roleId,
             @ParameterObject @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
-        Page<UserDto> page = userService.search(companyId, keyword, pageable);
+        Page<UserDto> page = userService.search(companyId, keyword, roleId, pageable);
         return ApiMessageDto.ok(ResponseListDto.of(page));
     }
 
