@@ -60,9 +60,10 @@ public class Fanout {
     public Map<String, Part> all(Map<String, Call> calls) {
         String token = callerToken();
         String lang = LocaleContextHolder.getLocale().toLanguageTag();
+        String actAs = vn.specom.hrm.security.RemoteAuthorityResolver.actAsHeader();
         Map<String, CompletableFuture<Part>> running = new LinkedHashMap<>();
         calls.forEach((key, call) -> running.put(key,
-                CompletableFuture.supplyAsync(() -> one(call, token, lang), pool)));
+                CompletableFuture.supplyAsync(() -> one(call, token, lang, actAs), pool)));
         Map<String, Part> out = new LinkedHashMap<>();
         running.forEach((key, f) -> {
             try {
@@ -77,11 +78,16 @@ public class Fanout {
         return out;
     }
 
-    Part one(Call call, String token, String lang) {
+    Part one(Call call, String token, String lang, String actAs) {
         try {
             JsonNode body = client(call.baseUrl()).get().uri(call.uri())
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                     .header(HttpHeaders.ACCEPT_LANGUAGE, lang)
+                    .headers(h -> {
+                        if (actAs != null) {
+                            h.set(vn.specom.hrm.security.RemoteAuthorityResolver.ACT_AS_HEADER, actAs);
+                        }
+                    })
                     .retrieve().body(JsonNode.class);
             JsonNode data = body == null ? null : body.get("data");
             return new Part(data == null || data.isNull() ? null : data, null);

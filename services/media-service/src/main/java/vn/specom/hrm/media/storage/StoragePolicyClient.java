@@ -79,6 +79,12 @@ public class StoragePolicyClient {
         try {
             ApiMessageDto<Remote> body = client.get().uri("/api/v1/settings/storage")
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt.getToken().getTokenValue())
+                    .headers(h -> {
+                        String actAs = vn.specom.hrm.security.RemoteAuthorityResolver.actAsHeader();
+                        if (actAs != null) {
+                            h.set(vn.specom.hrm.security.RemoteAuthorityResolver.ACT_AS_HEADER, actAs);
+                        }
+                    })
                     .retrieve().body(Nulls.nonNull(TYPE));
             if (body == null || body.getData() == null) {
                 return null;

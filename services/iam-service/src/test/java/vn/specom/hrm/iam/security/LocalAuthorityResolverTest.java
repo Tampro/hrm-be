@@ -26,7 +26,8 @@ class LocalAuthorityResolverTest {
         when(users.findByKeycloakIdAndDeletedFalse(anyString())).thenReturn(Optional.empty());
         RevokedSessionStore revoked = new RevokedSessionStore(Duration.ofMinutes(15));
         LocalAuthorityResolver resolver = new LocalAuthorityResolver(users, mock(CompanyRepository.class), revoked,
-                mock(vn.specom.hrm.iam.saas.SubscriptionService.class));
+                mock(vn.specom.hrm.iam.saas.SubscriptionService.class),
+                mock(vn.specom.hrm.iam.impersonation.ImpersonationService.class));
         Jwt jwt = new Jwt("t", Instant.now(), Instant.now().plusSeconds(900), Map.of("alg", "RS256"),
                 Map.of("sub", "kc-root", "sid", "sid-1", "realm_access", Map.of("roles", List.of("SUPER_ADMIN"))));
 

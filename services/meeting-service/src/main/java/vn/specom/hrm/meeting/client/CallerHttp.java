@@ -33,13 +33,21 @@ class CallerHttp {
     private final ErrorCode unavailable;
     private final String name;
     private final Supplier<String> tokenSource;
+    /** Calls made as the caller pass Login as Company on; a service account never acts as a company. */
+    private final boolean asCaller;
 
     CallerHttp(String baseUrl, ObjectMapper mapper, ErrorCode unavailable, String name) {
-        this(baseUrl, mapper, unavailable, name, CallerHttp::callerToken);
+        this(baseUrl, mapper, unavailable, name, CallerHttp::callerToken, true);
     }
 
     /** tokenSource = the service account instead of the caller (see ServiceTokenProvider). */
     CallerHttp(String baseUrl, ObjectMapper mapper, ErrorCode unavailable, String name, Supplier<String> tokenSource) {
+        this(baseUrl, mapper, unavailable, name, tokenSource, false);
+    }
+
+    private CallerHttp(String baseUrl, ObjectMapper mapper, ErrorCode unavailable, String name,
+                       Supplier<String> tokenSource, boolean asCaller) {
+        this.asCaller = asCaller;
         SimpleClientHttpRequestFactory rf = new SimpleClientHttpRequestFactory();
         rf.setConnectTimeout(Nulls.nonNull(Duration.ofSeconds(2)));
         rf.setReadTimeout(Nulls.nonNull(Duration.ofSeconds(10)));
@@ -55,6 +63,12 @@ class CallerHttp {
         try {
             RestClient.RequestHeadersSpec<?> spec = request.apply(client)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenSource.get())
+                    .headers(h -> {
+                        String actAs = asCaller ? vn.specom.hrm.security.RemoteAuthorityResolver.actAsHeader() : null;
+                        if (actAs != null) {
+                            h.set(vn.specom.hrm.security.RemoteAuthorityResolver.ACT_AS_HEADER, actAs);
+                        }
+                    })
                     .header(HttpHeaders.ACCEPT_LANGUAGE, LocaleContextHolder.getLocale().toLanguageTag());
             JsonNode body = spec.retrieve().body(JsonNode.class);
             return body == null ? mapper.createObjectNode() : body;
