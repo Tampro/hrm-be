@@ -75,3 +75,5 @@ databaseChangeLog:
       file: db/changelog/changes/20261121200100_account_email_template_init_data.mysql.sql
   - include:
       file: db/changelog/changes/20261121210000_language_changelog.mysql.sql
+  - include:
+      file: db/changelog/changes/20261121220000_website_changelog.mysql.sql

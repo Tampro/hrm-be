@@ -38,6 +38,10 @@ public class GatewaySecurityConfig {
                         .pathMatchers(HttpMethod.GET, "/api/v1/media/files/*/content").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/v1/settings/public").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/v1/languages", "/api/v1/languages/*/labels").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/v1/public/site/landing", "/api/v1/public/site/pages",
+                                "/api/v1/public/site/pages/*").permitAll()
+                        .pathMatchers(HttpMethod.POST, "/api/v1/public/site/contact", "/api/v1/public/site/newsletter")
+                                .permitAll()
                         // Biometric devices cannot log in: attendance-service checks their per-device key instead.
                         .pathMatchers(HttpMethod.POST, "/api/v1/attendance/biometric/punches").permitAll()
                         // Public career page: read and apply only, limited per IP (CareerRateLimitFilter).

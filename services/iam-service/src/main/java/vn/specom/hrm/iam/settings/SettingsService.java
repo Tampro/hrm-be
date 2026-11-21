@@ -209,13 +209,18 @@ public class SettingsService {
 
     /** SETTINGS_003 when not configured, SETTINGS_004 with the server's first error line when sending fails. */
     public static void sendTest(Mailer mailer, String to, String text) {
+        send(mailer, to, "SPECOM HRM — test email", text);
+    }
+
+    /** A plain-text email; SETTINGS_003 when not configured, SETTINGS_004 with the server's reason when it fails. */
+    public static void send(Mailer mailer, String to, String subject, String text) {
         if (mailer == null) {
             throw ApiException.badRequest(ESettingsError.SETTINGS_003);
         }
         SimpleMailMessage m = new SimpleMailMessage();
         m.setFrom(mailer.fromName() == null ? mailer.fromAddress() : mailer.fromName() + " <" + mailer.fromAddress() + ">");
         m.setTo(to);
-        m.setSubject("SPECOM HRM — test email");
+        m.setSubject(subject);
         m.setText(text);
         try {
             mailer.sender().send(m);

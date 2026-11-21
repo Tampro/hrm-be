@@ -33,6 +33,10 @@ spring:
 hrm:
   # Profile avatars are media library files (docs/analysis/06 §3 Profile Settings).
   media-service-url: ${MEDIA_SERVICE_URL:http://localhost:8082}
+  landing:
+    # Landing Page -> Advanced -> Custom JavaScript runs on the public site: published only when the operator
+    # turns it on (PO 2026-11-21).
+    custom-js: ${HRM_LANDING_CUSTOM_JS:false}
   keycloak:
     server-url: ${KEYCLOAK_INTERNAL_URL:http://localhost:8180}
     realm: ${KEYCLOAK_REALM:hrm}
