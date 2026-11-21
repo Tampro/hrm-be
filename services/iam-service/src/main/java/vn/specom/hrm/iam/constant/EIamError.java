@@ -19,6 +19,7 @@ public enum EIamError implements ErrorCode {
     AUTH_009("The company subscription has expired. Ask your company administrator to renew it."),
     AUTH_010("The reCAPTCHA check failed. Please try again."),
     AUTH_011("The reCAPTCHA service is unavailable. Please try again later."),
+    AUTH_012("Sign-in is not allowed from this IP address."),
     IAM_001("The company does not exist."),
     IAM_002("The company code is already taken."),
     IAM_003("A company must be specified for this action."),
@@ -37,7 +38,11 @@ public enum EIamError implements ErrorCode {
     IAM_016("The company has no active administrator account."),
     IAM_017("This email is already used by another account."),
     IAM_018("The last active company administrator cannot be deleted."),
-    IAM_019("The login record does not exist.");
+    IAM_019("The login record does not exist."),
+    IAM_020("Enter an IPv4 / IPv6 address or a CIDR range: {0}."),
+    IAM_021("This would block your own IP address {0}; add it first."),
+    IAM_022("This IP address is already in the list."),
+    IAM_023("The IP address entry does not exist.");
 
     private final String message;
 }

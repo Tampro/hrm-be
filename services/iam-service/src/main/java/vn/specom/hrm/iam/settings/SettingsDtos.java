@@ -41,10 +41,16 @@ public final class SettingsDtos {
             @Schema(description = "Landing Page enabled", example = "true") boolean landingPage,
             @Schema(description = "User Registration (self sign-up) enabled", example = "false") boolean userRegistration,
             @Schema(description = "Terms and Conditions URL", example = "https://example.com/terms")
-            @Size(max = 500) @Pattern(regexp = "^$|https?://.+") String termsUrl) {
+            @Size(max = 500) @Pattern(regexp = "^$|https?://.+") String termsUrl,
+            @Schema(description = "IP Restriction master switch: off = no company list is enforced; null (settings "
+                    + "saved before it existed) = on", example = "true") Boolean ipRestriction) {
         static SystemSettings defaults() {
             return new SystemSettings("vi", "dd/MM/yyyy", "HH:mm", DayOfWeek.MONDAY, "Asia/Ho_Chi_Minh", false, true,
-                    false, null);
+                    false, null, true);
+        }
+
+        public boolean ipRestrictionOn() {
+            return ipRestriction == null || ipRestriction;
         }
     }
 
@@ -70,10 +76,13 @@ public final class SettingsDtos {
             @NotNull ESidebarVariant sidebarVariant,
             @NotNull ESidebarStyle sidebarStyle,
             @NotNull ELayoutDirection layoutDirection,
-            @NotNull EThemeMode themeMode) {
+            @NotNull EThemeMode themeMode,
+            @Schema(description = "Company Mobile Number", example = "+84 28 0000 0000")
+            @Size(max = 30) @Pattern(regexp = "^$|[0-9+()\\-. ]{3,30}") String companyMobile,
+            @Schema(description = "Company Address (footer, contact sections)") @Size(max = 500) String companyAddress) {
         static BrandSettings defaults() {
             return new BrandSettings(null, null, null, "SPECOM HRM", null, "blue", ESidebarVariant.INSET,
-                    ESidebarStyle.PLAIN, ELayoutDirection.LTR, EThemeMode.LIGHT);
+                    ESidebarStyle.PLAIN, ELayoutDirection.LTR, EThemeMode.LIGHT, null, null);
         }
     }
 

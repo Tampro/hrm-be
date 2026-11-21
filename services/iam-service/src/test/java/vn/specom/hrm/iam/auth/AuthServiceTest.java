@@ -47,7 +47,8 @@ class AuthServiceTest {
         companies = mock(CompanyRepository.class);
         revoked = new vn.specom.hrm.iam.security.RevokedSessionStore(java.time.Duration.ofMinutes(15));
         service = new AuthService(keycloak, decoder, users, companies, revoked,
-                new vn.specom.hrm.iam.saas.SubscriptionService(mock(vn.specom.hrm.iam.repository.PlanRepository.class), users, java.time.Clock.systemUTC()));
+                new vn.specom.hrm.iam.saas.SubscriptionService(mock(vn.specom.hrm.iam.repository.PlanRepository.class), users, java.time.Clock.systemUTC()),
+                mock(vn.specom.hrm.iam.ip.IpRestrictionService.class));
         when(keycloak.passwordGrant("demo", "pw")).thenReturn(TOKENS);
     }
 

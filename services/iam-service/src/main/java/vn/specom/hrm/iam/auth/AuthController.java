@@ -35,12 +35,13 @@ public class AuthController {
                     + "reCAPTCHA missing or refused (AUTH_010)"),
             @ApiResponse(responseCode = "401", description = "Wrong credentials (AUTH_001), account locked or "
                     + "company inactive (AUTH_002), too many attempts (AUTH_008)"),
-            @ApiResponse(responseCode = "403", description = "No HRM profile for this account (AUTH_006)"),
+            @ApiResponse(responseCode = "403", description = "No HRM profile for this account (AUTH_006), IP not "
+                    + "allowed by the company's IP restriction (AUTH_012)"),
             @ApiResponse(responseCode = "503", description = "Keycloak unreachable (AUTH_005)")})
     @PostMapping("/login")
     public ApiMessageDto<TokenDto> login(@Valid @RequestBody LoginForm form, HttpServletRequest request) {
         recaptcha.check(form.recaptchaToken());
-        TokenDto tokens = authService.login(form.username(), form.password());
+        TokenDto tokens = authService.login(form.username(), form.password(), clientIp(request));
         loginHistory.record(form.username(), request);
         return ApiMessageDto.ok(tokens);
     }
@@ -51,8 +52,8 @@ public class AuthController {
             @ApiResponse(responseCode = "401", description = "Refresh token invalid or expired (AUTH_003), "
                     + "account locked or company inactive (AUTH_002)")})
     @PostMapping("/refresh-token")
-    public ApiMessageDto<TokenDto> refresh(@Valid @RequestBody RefreshTokenForm form) {
-        return ApiMessageDto.ok(authService.refresh(form.refreshToken()));
+    public ApiMessageDto<TokenDto> refresh(@Valid @RequestBody RefreshTokenForm form, HttpServletRequest request) {
+        return ApiMessageDto.ok(authService.refresh(form.refreshToken(), clientIp(request)));
     }
 
     @Operation(summary = "End the session of a refresh token",
@@ -74,8 +75,12 @@ public class AuthController {
                                                    HttpServletRequest request) {
         recaptcha.check(form.recaptchaToken());
         TokenDto tokens = authService.setInitialPassword(form.username(), form.currentPassword(),
-                form.newPassword());
+                form.newPassword(), clientIp(request));
         loginHistory.record(form.username(), request);
         return ApiMessageDto.ok(tokens);
+    }
+
+    private static String clientIp(HttpServletRequest request) {
+        return LoginHistoryService.clientIp(request.getHeader("X-Client-IP"), request.getRemoteAddr());
     }
 }
