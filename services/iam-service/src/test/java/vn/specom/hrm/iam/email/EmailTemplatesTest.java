@@ -52,11 +52,12 @@ class EmailTemplatesTest {
         CompanyEmailNotification off = new CompanyEmailNotification();
         off.setEnabled(false);
         when(toggles.findByCompanyIdAndTemplateCode(10L, "PAYOUT_APPROVED")).thenReturn(Optional.of(off));
-        EmailDispatcher d = new EmailDispatcher(templates, toggles, settings);
+        var companyMail = mock(vn.specom.hrm.iam.settings.CompanyEmailService.class);
+        EmailDispatcher d = new EmailDispatcher(templates, toggles, settings, companyMail);
 
         d.send(new EmailDispatcher.EmailEvent(EEmailTemplate.PAYOUT_APPROVED, 10L, List.of("a@example.invalid"), Map.of()));
 
-        verify(settings, never()).mailer();
+        verify(companyMail, never()).mailerFor(any());
         verify(templates, never()).render(anyString(), anyString(), any());
     }
 
@@ -64,8 +65,10 @@ class EmailTemplatesTest {
     void nothingIsSentWithoutSmtpSettings() {
         SettingsService settings = mock(SettingsService.class);
         EmailTemplateService templates = mock(EmailTemplateService.class);
-        when(settings.mailer()).thenReturn(null);
-        EmailDispatcher d = new EmailDispatcher(templates, mock(CompanyEmailNotificationRepository.class), settings);
+        var companyMail = mock(vn.specom.hrm.iam.settings.CompanyEmailService.class);
+        when(companyMail.mailerFor(null)).thenReturn(null);
+        EmailDispatcher d = new EmailDispatcher(templates, mock(CompanyEmailNotificationRepository.class), settings,
+                companyMail);
 
         d.send(new EmailDispatcher.EmailEvent(EEmailTemplate.COMPANY_CREATE, null, List.of("a@example.invalid"), Map.of()));
 
