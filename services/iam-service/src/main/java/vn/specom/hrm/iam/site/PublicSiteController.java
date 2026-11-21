@@ -34,6 +34,7 @@ public class PublicSiteController {
     private final SiteService service;
     private final AuthRateLimiter limiter;
     private final RecaptchaVerifier recaptcha;
+    private final CookieConsentService consents;
 
     @Operation(summary = "The landing page", description = "Displayed sections in order, their content, the plans "
             + "offered and the published custom pages.")
@@ -91,6 +92,18 @@ public class PublicSiteController {
         limiter.checkIp("unsubscribe", ip(request));
         service.unsubscribeByToken(form.token());
         return ApiMessageDto.ok(null);
+    }
+
+    @Operation(summary = "Record a cookie consent choice", description = "Kept only while Cookie Settings -> Enable "
+            + "Logging is on (recorded = false otherwise). The IP is stored shortened. No token needed.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "400", description = "Validation"),
+            @ApiResponse(responseCode = "429", description = "Too many requests from this IP (AUTH_013)")})
+    @PostMapping("/cookie-consent")
+    public ApiMessageDto<java.util.Map<String, Boolean>> cookieConsent(
+            @Valid @RequestBody CookieConsentService.ConsentForm form, HttpServletRequest request) {
+        limiter.checkIp("cookie", ip(request));
+        return ApiMessageDto.ok(java.util.Map.of("recorded", consents.record(form, ip(request))));
     }
 
     private static String ip(HttpServletRequest request) {

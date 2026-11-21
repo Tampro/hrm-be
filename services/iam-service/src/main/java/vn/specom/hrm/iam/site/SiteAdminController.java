@@ -42,6 +42,21 @@ import java.util.Map;
 @PreAuthorize("@PermissionChecker.isSuperAdmin()")
 public class SiteAdminController {
     private final SiteService service;
+    private final CookieConsentService consents;
+
+    @Operation(summary = "Download Accepted Cookies (CSV)", description = "Consent choices of the period, UTC dates, "
+            + "both included; default the last 30 days, at most 366. Columns: consented_at, choice, categories, ip "
+            + "(shortened).")
+    @ApiResponses(@ApiResponse(responseCode = "400", description = "Period reversed or too long (SITE_007)"))
+    @GetMapping("/cookie-consents/export")
+    public org.springframework.http.ResponseEntity<byte[]> cookieConsents(
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate from,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate to) {
+        return org.springframework.http.ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"cookie-consents.csv\"")
+                .body(consents.csv(from, to));
+    }
 
     // ---- landing page
 

@@ -41,7 +41,7 @@ public class GatewaySecurityConfig {
                         .pathMatchers(HttpMethod.GET, "/api/v1/public/site/landing", "/api/v1/public/site/pages",
                                 "/api/v1/public/site/pages/*").permitAll()
                         .pathMatchers(HttpMethod.POST, "/api/v1/public/site/contact", "/api/v1/public/site/newsletter",
-                                "/api/v1/public/site/newsletter/unsubscribe")
+                                "/api/v1/public/site/newsletter/unsubscribe", "/api/v1/public/site/cookie-consent")
                                 .permitAll()
                         // Biometric devices cannot log in: attendance-service checks their per-device key instead.
                         .pathMatchers(HttpMethod.POST, "/api/v1/attendance/biometric/punches").permitAll()
