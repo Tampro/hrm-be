@@ -28,6 +28,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.when;
 
 class CompanyServiceTest {
@@ -83,16 +84,22 @@ class CompanyServiceTest {
     }
 
     @Test
-    void deleteIsSoftDisablesEveryAccountAndCancelsOpenOrders() {
-        when(users.findByCompanyIdAndDeletedFalse(10L)).thenReturn(List.of(
-                user(1L, 10L, "kc-1", EUserStatus.ACTIVE), user(2L, 10L, "kc-2", EUserStatus.LOCKED)));
+    void deleteIsSoftRemovesEveryAccountFromKeycloakAndCancelsOpenOrders() {
+        UserAccount active = user(1L, 10L, "kc-1", EUserStatus.ACTIVE);
+        UserAccount locked = user(2L, 10L, "kc-2", EUserStatus.LOCKED);
+        when(users.findByCompanyIdAndDeletedFalse(10L)).thenReturn(List.of(active, locked));
 
         service.delete(10L);
 
         assertThat(company.isDeleted()).isTrue();
         assertThat(company.getStatus()).isEqualTo(ECompanyStatus.SUSPENDED);
-        verify(keycloak).setEnabled("kc-1", false);
-        verify(keycloak).setEnabled("kc-2", false);
+        // Removed, not just disabled: the usernames become free for another company.
+        verify(keycloak).deleteUser("kc-1");
+        verify(keycloak).deleteUser("kc-2");
+        verify(keycloak, never()).setEnabled(anyString(), anyBoolean());
+        assertThat(active.isDeleted()).isTrue();
+        assertThat(active.getStatus()).isEqualTo(EUserStatus.LOCKED);
+        assertThat(locked.isDeleted()).isTrue();
         verify(orders).cancelPendingOf(10L);
     }
 

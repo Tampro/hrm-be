@@ -138,9 +138,11 @@ public class CompanyController {
         return ApiMessageDto.ok(companyService.resetPassword(id, form.userId(), form.newPassword()));
     }
 
-    @Operation(summary = "Delete a company (soft)", description = "Keeps its data, disables every account in "
-            + "Keycloak, cancels pending orders and frees the code. Cannot be undone through the API.")
-    @ApiResponses(@ApiResponse(responseCode = "404", description = "No such company (IAM_001)"))
+    @Operation(summary = "Delete a company (soft)", description = "Keeps its data, removes every account from "
+            + "Keycloak (their usernames become free; sessions end), cancels pending orders and frees the code. "
+            + "Cannot be undone through the API.")
+    @ApiResponses({@ApiResponse(responseCode = "404", description = "No such company (IAM_001)"),
+            @ApiResponse(responseCode = "503", description = "Keycloak unreachable (AUTH_005)")})
     @DeleteMapping("/{id}")
     public ApiMessageDto<Void> delete(@PathVariable Long id) {
         companyService.delete(id);
