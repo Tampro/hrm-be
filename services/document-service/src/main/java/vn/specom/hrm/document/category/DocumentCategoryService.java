@@ -12,21 +12,25 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.specom.hrm.document.common.EDocumentError;
 import vn.specom.hrm.document.common.EStatus;
 import vn.specom.hrm.document.common.Texts;
+import vn.specom.hrm.document.hr.HrDocumentRepository;
 import vn.specom.hrm.exception.ApiException;
 import vn.specom.hrm.security.TenantGuard;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
- * Document Categories page (docs/analysis/06 §9.4.7): name unique in the company (DOC_003). The Documents column and
- * the in-use check on delete come with the HR documents.
+ * Document Categories page (docs/analysis/06 §9.4.7): name unique in the company (DOC_003); a category with documents
+ * cannot be deleted (DOC_004), deactivate it instead.
  */
 @Service
 @RequiredArgsConstructor
 public class DocumentCategoryService {
     private final DocumentCategoryRepository categories;
+    private final HrDocumentRepository documents;
 
     public record CategoryForm(
             @Schema(example = "HR Policies", requiredMode = Schema.RequiredMode.REQUIRED) @NotBlank @Size(max = 150)
@@ -40,8 +44,9 @@ public class DocumentCategoryService {
             @Schema(description = "Omitted = ACTIVE on create, kept on edit") EStatus status) {
     }
 
+    /** documents = the Documents column (deleted documents left out). */
     public record CategoryDto(String id, String name, String description, String color, String icon,
-                              boolean mandatory, EStatus status, Instant createdDate) {
+                              boolean mandatory, EStatus status, long documents, Instant createdDate) {
     }
 
     public record Option(String id, String name, String color, String icon, boolean mandatory) {
@@ -50,8 +55,14 @@ public class DocumentCategoryService {
     @Transactional(readOnly = true)
     public Page<CategoryDto> search(Long requestedCompanyId, String keyword, EStatus status, Boolean mandatory,
                                     Pageable pageable) {
-        return categories.search(Texts.company(requestedCompanyId), status, mandatory, Texts.kw(keyword), pageable)
-                .map(DocumentCategoryService::dto);
+        Page<DocumentCategory> page = categories.search(Texts.company(requestedCompanyId), status, mandatory,
+                Texts.kw(keyword), pageable);
+        Map<Long, Long> counts = new HashMap<>();
+        if (!page.isEmpty()) {
+            documents.countByCategory(page.map(DocumentCategory::getId).toList())
+                    .forEach(r -> counts.put((Long) r[0], (Long) r[1]));
+        }
+        return page.map(c -> dto(c, counts.getOrDefault(c.getId(), 0L)));
     }
 
     /** The Category dropdown of the document form: active categories. */
@@ -65,7 +76,7 @@ public class DocumentCategoryService {
 
     @Transactional(readOnly = true)
     public CategoryDto get(Long id) {
-        return dto(require(id));
+        return detail(require(id));
     }
 
     @Transactional
@@ -73,7 +84,7 @@ public class DocumentCategoryService {
         DocumentCategory c = new DocumentCategory();
         c.setCompanyId(Texts.company(requestedCompanyId));
         apply(c, form);
-        return dto(categories.save(c));
+        return dto(categories.save(c), 0);
     }
 
     /** Full replacement; mandatory and status omitted = kept. */
@@ -81,7 +92,7 @@ public class DocumentCategoryService {
     public CategoryDto update(Long id, CategoryForm form) {
         DocumentCategory c = require(id);
         apply(c, form);
-        return dto(c);
+        return detail(c);
     }
 
     /** Deactivate / activate. */
@@ -89,12 +100,16 @@ public class DocumentCategoryService {
     public CategoryDto changeStatus(Long id, EStatus status) {
         DocumentCategory c = require(id);
         c.setStatus(status);
-        return dto(c);
+        return detail(c);
     }
 
     @Transactional
     public void delete(Long id) {
-        require(id).setDeleted(true);
+        DocumentCategory c = require(id);
+        if (documents.existsByCategoryIdAndDeletedFalse(c.getId())) {
+            throw ApiException.badRequest(EDocumentError.DOC_004);
+        }
+        c.setDeleted(true);
     }
 
     private void apply(DocumentCategory c, CategoryForm f) {
@@ -119,9 +134,13 @@ public class DocumentCategoryService {
         }
     }
 
-    static CategoryDto dto(DocumentCategory c) {
+    private CategoryDto detail(DocumentCategory c) {
+        return dto(c, documents.countByCategory(List.of(c.getId())).stream().mapToLong(r -> (Long) r[1]).sum());
+    }
+
+    static CategoryDto dto(DocumentCategory c, long documentCount) {
         return new CategoryDto(c.getId().toString(), c.getName(), c.getDescription(), c.getColor(), c.getIcon(),
-                c.isMandatory(), c.getStatus(), c.getCreatedDate());
+                c.isMandatory(), c.getStatus(), documentCount, c.getCreatedDate());
     }
 
     public DocumentCategory require(Long id) {

@@ -22,7 +22,7 @@ public final class TestLogin {
         set(new HrmPrincipal(null, "kc-root", "root", null, true, Set.of(), Set.of()));
     }
 
-    private static void set(HrmPrincipal p) {
+    public static void set(HrmPrincipal p) {
         Jwt jwt = new Jwt("t", Instant.now(), Instant.now().plusSeconds(60), Map.of("alg", "none"),
                 Map.of("sub", p.keycloakId()));
         JwtAuthenticationToken auth = new JwtAuthenticationToken(jwt, List.of(), p.keycloakId());
