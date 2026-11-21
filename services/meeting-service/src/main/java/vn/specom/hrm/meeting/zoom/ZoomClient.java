@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClient;
@@ -17,6 +17,7 @@ import vn.specom.hrm.exception.ApiException;
 import vn.specom.hrm.meeting.common.EMeetingError;
 import vn.specom.hrm.meeting.config.MeetingProperties;
 
+import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
@@ -47,8 +48,9 @@ public class ZoomClient {
     }
 
     public ZoomClient(MeetingProperties props) {
-        SimpleClientHttpRequestFactory rf = new SimpleClientHttpRequestFactory();
-        rf.setConnectTimeout(Nulls.nonNull(Duration.ofSeconds(3)));
+        // The JDK HttpClient: HttpURLConnection (SimpleClientHttpRequestFactory) cannot send PATCH, which Zoom needs.
+        HttpClient http = HttpClient.newBuilder().connectTimeout(Nulls.nonNull(Duration.ofSeconds(3))).build();
+        JdkClientHttpRequestFactory rf = new JdkClientHttpRequestFactory(http);
         rf.setReadTimeout(Nulls.nonNull(Duration.ofSeconds(10)));
         this.client = RestClient.builder().requestFactory(rf).build();
         this.urls = props.zoom();
