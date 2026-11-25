@@ -97,6 +97,13 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_healthy
+    healthcheck:
+      # busybox wget ships with the alpine JRE image; it exits non-zero on a 503 (not ready).
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8081/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
 
   media-service:
     build: ./services/media-service
@@ -120,6 +127,13 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_healthy
+    healthcheck:
+      # busybox wget ships with the alpine JRE image; it exits non-zero on a 503 (not ready).
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8082/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
 
   employee-service:
     build: ./services/employee-service
@@ -142,6 +156,13 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_healthy
+    healthcheck:
+      # busybox wget ships with the alpine JRE image; it exits non-zero on a 503 (not ready).
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8083/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
 
   attendance-service:
     build: ./services/attendance-service
@@ -163,6 +184,13 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_healthy
+    healthcheck:
+      # busybox wget ships with the alpine JRE image; it exits non-zero on a 503 (not ready).
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8084/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
 
   recruitment-service:
     build: ./services/recruitment-service
@@ -184,6 +212,13 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_healthy
+    healthcheck:
+      # busybox wget ships with the alpine JRE image; it exits non-zero on a 503 (not ready).
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8085/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
 
   payroll-service:
     build: ./services/payroll-service
@@ -203,6 +238,13 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_healthy
+    healthcheck:
+      # busybox wget ships with the alpine JRE image; it exits non-zero on a 503 (not ready).
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8086/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
 
   asset-service:
     build: ./services/asset-service
@@ -222,6 +264,13 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_healthy
+    healthcheck:
+      # busybox wget ships with the alpine JRE image; it exits non-zero on a 503 (not ready).
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8087/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
 
   meeting-service:
     build: ./services/meeting-service
@@ -243,6 +292,13 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_healthy
+    healthcheck:
+      # busybox wget ships with the alpine JRE image; it exits non-zero on a 503 (not ready).
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8088/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
 
   document-service:
     build: ./services/document-service
@@ -264,6 +320,14 @@ services:
         condition: service_healthy
 
   # Dashboard and calendar: no database, no secret; reads the other services with the caller's token.
+    healthcheck:
+      # busybox wget ships with the alpine JRE image; it exits non-zero on a 503 (not ready).
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8089/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+
   report-service:
     build: ./services/report-service
     environment:
@@ -281,6 +345,13 @@ services:
     depends_on:
       keycloak:
         condition: service_healthy
+    healthcheck:
+      # busybox wget ships with the alpine JRE image; it exits non-zero on a 503 (not ready).
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8090/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
 
   gateway-server:
     build: ./services/gateway-server
@@ -300,8 +371,35 @@ services:
     ports:
       - "8080:8080"
     depends_on:
+      iam-service:
+        condition: service_healthy
+      media-service:
+        condition: service_healthy
+      employee-service:
+        condition: service_healthy
+      attendance-service:
+        condition: service_healthy
+      recruitment-service:
+        condition: service_healthy
+      payroll-service:
+        condition: service_healthy
+      asset-service:
+        condition: service_healthy
+      meeting-service:
+        condition: service_healthy
+      document-service:
+        condition: service_healthy
+      report-service:
+        condition: service_healthy
       keycloak:
         condition: service_healthy
+    healthcheck:
+      # busybox wget ships with the alpine JRE image; it exits non-zero on a 503 (not ready).
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
 
 volumes:
   mysql-data:
